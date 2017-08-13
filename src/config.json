@@ -1,0 +1,20 @@
+{
+    "background": false,
+    "colors": true,
+    "donate-level": 5,
+    "log-file": null,
+    "print-time": 60,
+    "retries": 5,
+    "retry-pause": 5,
+    "syslog": false,
+    "threads": null,
+    "pools": [
+        {
+            "url": "pool.minemonero.pro:5555",
+            "user": "",
+            "pass": "x",
+            "keepalive": true,
+            "nicehash": false
+        }
+    ]
+}
