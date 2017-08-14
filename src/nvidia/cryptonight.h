@@ -28,6 +28,7 @@ typedef struct {
 extern "C" {
 
 int cuda_get_devicecount();
+int cuda_get_runtime_version();
 int cuda_get_deviceinfo(nvid_ctx *ctx);
 int cryptonight_extra_cpu_init(nvid_ctx *ctx);
 void cryptonight_extra_cpu_set_data( nvid_ctx* ctx, const void *data, uint32_t len);

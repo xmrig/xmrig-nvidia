@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(xmrig)
+project(xmrig-nvidia)
 
 option(WITH_AEON "CryptoNight-Lite support" ON)
 
@@ -146,5 +146,5 @@ include_directories(${UV_INCLUDE_DIR})
 
 add_subdirectory(src/3rdparty/jansson)
 
-add_executable(xmrig ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_CPUID} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG})
-target_link_libraries(xmrig xmrig-cuda jansson ${UV_LIBRARIES} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_CPUID} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG})
+target_link_libraries(${PROJECT_NAME} xmrig-cuda jansson ${UV_LIBRARIES} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})

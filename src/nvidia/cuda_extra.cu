@@ -261,6 +261,16 @@ extern "C" int cuda_get_devicecount()
     return 0;
 }
 
+extern "C" int cuda_get_runtime_version()
+{
+    int runtimeVersion = 0;
+    if (cudaRuntimeGetVersion(&runtimeVersion) == cudaSuccess) {
+        return runtimeVersion;
+    }
+
+    return 0;
+}
+
 extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 {
 	cudaError_t err;

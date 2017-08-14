@@ -29,6 +29,7 @@
 #include "Cpu.h"
 #include "log/Log.h"
 #include "net/Url.h"
+#include "nvidia/cryptonight.h"
 #include "Options.h"
 #include "Summary.h"
 #include "version.h"
@@ -49,9 +50,9 @@ static void print_versions()
     buf[0] = '\0';
 #   endif
 
-
-    Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mVERSIONS:     \x1B[01;36mXMRig/%s\x1B[01;37m libuv/%s%s" : " * VERSIONS:     XMRig/%s libuv/%s%s",
-                   APP_VERSION, uv_version_string(), buf);
+    const int cudaVersion = cuda_get_runtime_version();
+    Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mVERSIONS:     \x1B[01;36mXMRig/%s\x1B[01;37m libuv/%s CUDA/%d.%d%s" : " * VERSIONS:     XMRig/%s libuv/%s CUDA/%d.%d%s",
+                   APP_VERSION, uv_version_string(), cudaVersion / 1000, cudaVersion % 100, buf);
 }
 
 

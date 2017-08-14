@@ -120,7 +120,7 @@ void Workers::setJob(const Job &job)
 void Workers::start(const std::vector<GpuThread*> &threads)
 {
     const size_t count = threads.size();
-    m_hashrate = new Hashrate(count);
+    m_hashrate = new Hashrate((int) count);
 
     uv_mutex_init(&m_mutex);
     uv_rwlock_init(&m_rwlock);
@@ -133,7 +133,7 @@ void Workers::start(const std::vector<GpuThread*> &threads)
     uv_timer_start(&m_timer, Workers::onTick, 500, 500);
 
     for (size_t i = 0; i < count; ++i) {
-        Handle *handle = new Handle(i, threads[i], count);
+        Handle *handle = new Handle((int) i, threads[i], (int) count);
         m_workers.push_back(handle);
         handle->start(Workers::onReady);
     }

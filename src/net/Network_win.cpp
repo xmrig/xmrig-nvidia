@@ -27,6 +27,7 @@
 
 
 #include "net/Network.h"
+#include "nvidia/cryptonight.h"
 #include "version.h"
 
 
@@ -51,15 +52,16 @@ static inline OSVERSIONINFOEX winOsVersion()
 char *Network::userAgent()
 {
     const auto osver = winOsVersion();
-    const size_t max = 128;
+    const size_t max = 160;
+    const int cudaVersion = cuda_get_runtime_version();
 
-    char *buf = static_cast<char*>(malloc(max));
+    char *buf = new char[128];
     int length = snprintf(buf, max, "%s/%s (Windows NT %lu.%lu", APP_NAME, APP_VERSION, osver.dwMajorVersion, osver.dwMinorVersion);
 
 #   if defined(__x86_64__) || defined(_M_AMD64)
-    length += snprintf(buf + length, max - length, "; Win64; x64) libuv/%s", uv_version_string());
+    length += snprintf(buf + length, max - length, "; Win64; x64) libuv/%s CUDA/%d.%d", uv_version_string(), cudaVersion / 1000, cudaVersion % 100);
 #   else
-    length += snprintf(buf + length, max - length, ") libuv/%s", uv_version_string());
+    length += snprintf(buf + length, max - length, ") libuv/%s CUDA/%d.%d", uv_version_string(), cudaVersion / 1000, cudaVersion % 100);
 #   endif
 
 #   ifdef __GNUC__

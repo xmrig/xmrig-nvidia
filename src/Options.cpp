@@ -37,6 +37,7 @@
 #include "Cpu.h"
 #include "donate.h"
 #include "net/Url.h"
+#include "nvidia/cryptonight.h"
 #include "Options.h"
 #include "version.h"
 #include "workers/GpuThread.h"
@@ -53,7 +54,6 @@ Options *Options::m_self = nullptr;
 static char const usage[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
 Options:\n\
-  -a, --algo=ALGO       cryptonight (default) or cryptonight-lite\n\
   -o, --url=URL         URL of mining server\n\
   -O, --userpass=U:P    username:password pair for mining server\n\
   -u, --user=USERNAME   username for mining server\n\
@@ -71,7 +71,6 @@ Options:\n\
   -S, --syslog          use system log for output messages\n"
 # endif
 "\
-      --safe            safe adjust threads and av settings for current CPU\n\
       --nicehash        enable nicehash support\n\
       --print-time=N    print hashrate report every N seconds\n\
   -h, --help            display this help and exit\n\
@@ -599,6 +598,9 @@ void Options::showVersion()
 
     printf("\nlibuv/%s\n", uv_version_string());
     printf("libjansson/%s\n", JANSSON_VERSION);
+
+    const int cudaVersion = cuda_get_runtime_version();
+    printf("CUDA/%d.%d\n", cudaVersion / 1000, cudaVersion % 100);
 }
 
 
