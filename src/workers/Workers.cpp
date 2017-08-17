@@ -62,6 +62,7 @@ struct JobBaton
     uv_work_t request;
     std::vector<Job> jobs;
     std::vector<JobResult> results;
+    int errors = 0;
 
     JobBaton() {
         request.data = this;
@@ -196,6 +197,9 @@ void Workers::onResult(uv_async_t *handle)
                 if (CryptoNight::hash(job, result, ctx)) {
                     baton->results.push_back(result);
                 }
+                else {
+                    baton->errors++;
+                }
             }
 
             _mm_free(ctx);
@@ -205,6 +209,10 @@ void Workers::onResult(uv_async_t *handle)
 
             for (const JobResult &result : baton->results) {
                 m_listener->onJobResult(result);
+            }
+
+            if (baton->errors > 0 && !baton->jobs.empty()) {
+                LOG_ERR("GPU #%d COMPUTE ERROR", baton->jobs[0].threadId());
             }
 
             delete baton;

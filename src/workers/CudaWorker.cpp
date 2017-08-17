@@ -100,8 +100,9 @@ void CudaWorker::start()
 
 bool CudaWorker::resume(const Job &job)
 {
-    if (m_job.poolId() == -1 && job.poolId() >= 0 && memcmp(job.id(), m_paused.id(), 64) == 0) {
-        m_job = m_paused;
+    if (m_job.poolId() == -1 && job.poolId() >= 0 && memcmp(job.id(), m_pausedJob.id(), 64) == 0) {
+        m_job   = m_pausedJob;
+        m_nonce = m_pausedNonce;
         return true;
     }
 
@@ -124,6 +125,7 @@ void CudaWorker::consumeJob()
     }
 
     m_job = std::move(job);
+    m_job.setThreadId(m_id);
 
     if (m_job.isNicehash()) {
         m_nonce = (*m_job.nonce() & 0xff000000U) + (0xffffffU / m_threads * m_id);
@@ -137,7 +139,8 @@ void CudaWorker::consumeJob()
 void CudaWorker::save(const Job &job)
 {
     if (job.poolId() == -1 && m_job.poolId() >= 0) {
-        m_paused = m_job;
+        m_pausedJob   = m_job;
+        m_pausedNonce = m_nonce;
     }
 }
 

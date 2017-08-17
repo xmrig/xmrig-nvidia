@@ -45,11 +45,13 @@ public:
     inline const uint32_t *nonce() const   { return reinterpret_cast<const uint32_t*>(m_blob + 39); }
     inline const uint8_t *blob() const     { return m_blob; }
     inline int poolId() const              { return m_poolId; }
+    inline int threadId() const            { return m_threadId; }
     inline size_t size() const             { return m_size; }
     inline uint32_t *nonce()               { return reinterpret_cast<uint32_t*>(m_blob + 39); }
     inline uint32_t diff() const           { return (uint32_t) m_diff; }
     inline uint64_t target() const         { return m_target; }
     inline void setNicehash(bool nicehash) { m_nicehash = nicehash; }
+    inline void setThreadId(int threadId)  { m_threadId = threadId; }
 
 #   ifdef XMRIG_PROXY_PROJECT
     inline char *rawBlob()                 { return m_rawBlob; }
@@ -66,6 +68,7 @@ public:
 private:
     bool m_nicehash;
     int m_poolId;
+    int m_threadId;
     VAR_ALIGN(16, char m_id[64]);
     VAR_ALIGN(16, uint8_t m_blob[84]); // Max blob size is 84 (75 fixed + 9 variable), aligned to 96. https://github.com/xmrig/xmrig/issues/1 Thanks fireice-uk.
     size_t m_size;

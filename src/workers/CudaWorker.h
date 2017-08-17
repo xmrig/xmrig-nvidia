@@ -56,11 +56,12 @@ private:
     const int m_id;
     const int m_threads;
     Job m_job;
-    Job m_paused;
+    Job m_pausedJob;
     nvid_ctx m_ctx;
     std::atomic<uint64_t> m_hashCount;
     std::atomic<uint64_t> m_timestamp;
     uint32_t m_nonce;
+    uint32_t m_pausedNonce;
     uint64_t m_count;
     uint64_t m_sequence;
 };
