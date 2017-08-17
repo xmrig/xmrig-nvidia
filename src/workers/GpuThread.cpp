@@ -34,6 +34,7 @@ GpuThread::GpuThread() :
     m_blocks(0),
     m_bsleep(0),
     m_id(0),
+    m_smx(0),
     m_threads(0)
 {
     memset(m_arch, 0, sizeof(m_arch));
@@ -46,6 +47,7 @@ GpuThread::GpuThread(const nvid_ctx &ctx) :
     m_blocks(ctx.device_blocks),
     m_bsleep(ctx.device_bsleep),
     m_id(ctx.device_id),
+    m_smx(ctx.device_mpcount),
     m_threads(ctx.device_threads)
 {
     memcpy(m_arch, ctx.device_arch, sizeof(m_arch));
@@ -83,6 +85,7 @@ bool GpuThread::init()
     m_name    = strdup(ctx.device_name);
     m_threads = ctx.device_threads;
     m_blocks  = ctx.device_blocks;
+    m_smx     = ctx.device_mpcount;
     
     return true;
 }

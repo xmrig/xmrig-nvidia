@@ -102,7 +102,7 @@ static void print_pools()
 static void print_gpu()
 {
     for (const GpuThread *thread : Options::i()->threads()) {
-        Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mGPU #%d:       \x1B[22;32m%s \x1B[01;30mt:%d b:%d f:%d s:%d arch:%d%d" : " * GPU #%d:       %s t:%d b:%d f:%d s:%d arch:%d%d",
+        Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mGPU #%d:       \x1B[22;32m%s \x1B[01;37m%dx%d \x1B[01;30mf:%d s:%d arch:%d%d smx:%d" : " * GPU #%d:       %s %dx%d f:%d s:%d arch:%d%d smx:%d",
             thread->id(),
             thread->name(),
             thread->threads(),
@@ -110,7 +110,8 @@ static void print_gpu()
             thread->bfactor(),
             thread->bsleep(),
             thread->arch()[0],
-            thread->arch()[1]
+            thread->arch()[1],
+            thread->smx()
         );
     }
 }

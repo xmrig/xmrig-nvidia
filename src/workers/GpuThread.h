@@ -47,6 +47,7 @@ public:
     inline int blocks() const       { return m_blocks; }
     inline int bsleep() const       { return m_bsleep; }
     inline int id() const           { return m_id; }
+    inline int smx() const          { return m_smx; }
     inline int threads() const      { return m_threads; }
 
     inline void setBFactor(int bfactor) { m_bfactor = bfactor; }
@@ -63,6 +64,7 @@ private:
     int m_blocks;
     int m_bsleep;
     int m_id;
+    int m_smx;
     int m_threads;
 };
 

@@ -261,6 +261,7 @@ extern "C" int cuda_get_devicecount()
     return 0;
 }
 
+
 extern "C" int cuda_get_runtime_version()
 {
     int runtimeVersion = 0;
@@ -270,6 +271,40 @@ extern "C" int cuda_get_runtime_version()
 
     return 0;
 }
+
+
+static int cuda_get_sp_cores(cudaDeviceProp *props)
+{
+    const int mp = props->multiProcessorCount;
+
+    switch (props->major) {
+    case 2: // Fermi
+        if (props->minor > 0) {
+            return mp * 48;
+        }
+
+        return mp * 32;
+
+    case 3: // Kepler
+        return mp * 192;
+
+    case 5: // Maxwell
+        return mp * 128;
+
+    case 6: // Pascal
+        if (props->minor == 0) {
+            return mp * 64;
+        }
+
+        return mp * 128;
+
+    default:
+        break;
+    }
+
+    return 128;
+}
+
 
 extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 {
@@ -329,7 +364,8 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		 * `cryptonight_core_gpu_phase1` and `cryptonight_core_gpu_phase3` starts
 		 * `8 * ctx->device_threads` threads per block
 		 */
-		ctx->device_threads = 64;
+		ctx->device_threads = cuda_get_sp_cores(&props) / ctx->device_blocks;
+
 		if(props.major < 6)
 		{
 			// try to stay under 950 threads ( 1900MiB memory per for hashes )
