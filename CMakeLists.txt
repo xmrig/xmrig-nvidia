@@ -26,18 +26,19 @@ set(HEADERS
     src/net/Job.h
     src/net/JobResult.h
     src/net/Network.h
-    src/net/SubmitResult.h
-    src/net/Url.h
     src/net/strategies/DonateStrategy.h
     src/net/strategies/FailoverStrategy.h
     src/net/strategies/SinglePoolStrategy.h
+    src/net/SubmitResult.h
+    src/net/Url.h
     src/Options.h
+    src/Platform.h
     src/Summary.h
     src/version.h
     src/workers/CudaWorker.h
+    src/workers/GpuThread.h
     src/workers/Handle.h
     src/workers/Hashrate.h
-    src/workers/GpuThread.h
     src/workers/Workers.h
    )
 
@@ -70,6 +71,7 @@ set(SOURCES
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/Url.cpp
     src/Options.cpp
+    src/Platform.cpp
     src/Summary.cpp
     src/workers/CudaWorker.cpp
     src/workers/GpuThread.cpp
@@ -95,7 +97,7 @@ if (WIN32)
         res/app.rc
         src/App_win.cpp
         src/Cpu_win.cpp
-        src/net/Network_win.cpp
+        src/Platform_win.cpp
         )
 
     add_definitions(/DWIN32)
@@ -104,18 +106,19 @@ elseif (APPLE)
     set(SOURCES_OS
         src/App_unix.cpp
         src/Cpu_mac.cpp
-        src/net/Network_mac.cpp
+        src/Platform_mac.cpp
         )
 else()
     set(SOURCES_OS
         src/App_unix.cpp
         src/Cpu_unix.cpp
-        src/net/Network_unix.cpp
+        src/Platform_unix.cpp
         )
 
     set(EXTRA_LIBS pthread)
 endif()
 
+add_definitions(/DXMRIG_NVIDIA_PROJECT)
 add_definitions(/DUNICODE)
 add_definitions(/DXMRIG_NO_LIBCPUID)
 #add_definitions(/DAPP_DEBUG)

@@ -35,6 +35,7 @@
 #include "log/Log.h"
 #include "net/Network.h"
 #include "Options.h"
+#include "Platform.h"
 #include "Summary.h"
 #include "version.h"
 #include "workers/Workers.h"
@@ -79,6 +80,8 @@ App::App(int argc, char **argv) :
     }
 #   endif
 
+    Platform::init(m_options->userAgent());
+
     m_network = new Network(m_options);
 
     uv_signal_init(uv_default_loop(), &m_signal);
@@ -120,8 +123,10 @@ int App::exec()
     uv_loop_close(uv_default_loop());
     uv_tty_reset_mode();
 
-    free(m_network);
-    free(m_options);
+    delete m_network;
+
+    Options::release();
+    Platform::release();
 
     return r;
 }

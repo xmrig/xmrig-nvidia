@@ -60,15 +60,20 @@ public:
     inline bool isAutoConf() const                        { return m_autoConf; }
     inline bool syslog() const                            { return m_syslog; }
     inline const char *logFile() const                    { return m_logFile; }
+    inline const char *userAgent() const                  { return m_userAgent; }
     inline const std::vector<GpuThread*> &threads() const { return m_threads; }
     inline const std::vector<Url*> &pools() const         { return m_pools; }
     inline int algo() const                               { return m_algo; }
     inline int algoVariant() const                        { return m_algoVariant; }
     inline int donateLevel() const                        { return m_donateLevel; }
+    inline int maxGpuThreads() const                      { return m_maxGpuThreads; }
     inline int printTime() const                          { return m_printTime; }
     inline int retries() const                            { return m_retries; }
     inline int retryPause() const                         { return m_retryPause; }
 
+    inline static void release()                          { delete m_self; }
+
+    bool save();
     const char *algoName() const;
 
 private:
@@ -96,10 +101,13 @@ private:
     bool m_colors;
     bool m_ready;
     bool m_syslog;
+    char *m_configName;
     char *m_logFile;
+    char *m_userAgent;
     int m_algo;
     int m_algoVariant;
     int m_donateLevel;
+    int m_maxGpuThreads;
     int m_maxGpuUsage;
     int m_printTime;
     int m_retries;

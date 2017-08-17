@@ -39,6 +39,7 @@
 #include "net/Url.h"
 #include "nvidia/cryptonight.h"
 #include "Options.h"
+#include "Platform.h"
 #include "version.h"
 #include "workers/GpuThread.h"
 
@@ -63,6 +64,7 @@ Options:\n\
   -R, --retry-pause=N   time to pause between retries (default: 5)\n\
       --no-color        disable colored output\n\
       --donate-level=N  donate level, default 5%% (5 minutes in 100 minutes)\n\
+      --user-agent      set custom user-agent string for pool\n\
   -B, --background      run the miner in the background\n\
   -c, --config=FILE     load a JSON-format configuration file\n\
   -l, --log-file=FILE   log all output to a file\n"
@@ -82,40 +84,44 @@ static char const short_options[] = "a:c:khBp:Px:r:R:s:T:o:u:O:Vl:S";
 
 
 static struct option const options[] = {
-    { "algo",          1, nullptr, 'a'  },
-    { "background",    0, nullptr, 'B'  },
-    { "config",        1, nullptr, 'c'  },
-    { "donate-level",  1, nullptr, 1003 },
-    { "help",          0, nullptr, 'h'  },
-    { "keepalive",     0, nullptr ,'k'  },
-    { "log-file",      1, nullptr, 'l'  },
-    { "max-gpu-usage", 1, nullptr, 1004 },
-    { "nicehash",      0, nullptr, 1006 },
-    { "no-color",      0, nullptr, 1002 },
-    { "pass",          1, nullptr, 'p'  },
-    { "print-time",    1, nullptr, 1007 },
-    { "retries",       1, nullptr, 'r'  },
-    { "retry-pause",   1, nullptr, 'R'  },
-    { "syslog",        0, nullptr, 'S'  },
-    { "url",           1, nullptr, 'o'  },
-    { "user",          1, nullptr, 'u'  },
-    { "userpass",      1, nullptr, 'O'  },
-    { "version",       0, nullptr, 'V'  },
+    { "algo",            1, nullptr, 'a'  },
+    { "background",      0, nullptr, 'B'  },
+    { "config",          1, nullptr, 'c'  },
+    { "donate-level",    1, nullptr, 1003 },
+    { "help",            0, nullptr, 'h'  },
+    { "keepalive",       0, nullptr ,'k'  },
+    { "log-file",        1, nullptr, 'l'  },
+    { "max-gpu-threads", 1, nullptr, 1200 },
+    { "max-gpu-usage",   1, nullptr, 1004 },
+    { "nicehash",        0, nullptr, 1006 },
+    { "no-color",        0, nullptr, 1002 },
+    { "pass",            1, nullptr, 'p'  },
+    { "print-time",      1, nullptr, 1007 },
+    { "retries",         1, nullptr, 'r'  },
+    { "retry-pause",     1, nullptr, 'R'  },
+    { "syslog",          0, nullptr, 'S'  },
+    { "url",             1, nullptr, 'o'  },
+    { "user",            1, nullptr, 'u'  },
+    { "user-agent",      1, nullptr, 1008 },
+    { "userpass",        1, nullptr, 'O'  },
+    { "version",         0, nullptr, 'V'  },
     { 0, 0, 0, 0 }
 };
 
 
 static struct option const config_options[] = {
-    { "algo",          1, nullptr, 'a'  },
-    { "background",    0, nullptr, 'B'  },
-    { "donate-level",  1, nullptr, 1003 },
-    { "log-file",      1, nullptr, 'l'  },
-    { "max-gpu-usage", 1, nullptr, 1004 },
-    { "print-time",    1, nullptr, 1007 },
-    { "retries",       1, nullptr, 'r'  },
-    { "retry-pause",   1, nullptr, 'R'  },
-    { "syslog",        0, nullptr, 'S'  },
-    { "colors",        0, nullptr, 2000 },
+    { "algo",            1, nullptr, 'a' },
+    { "background",      0, nullptr, 'B' },
+    { "colors",          0, nullptr, 2000 },
+    { "donate-level",    1, nullptr, 1003 },
+    { "log-file",        1, nullptr, 'l' },
+    { "max-gpu-threads", 1, nullptr, 1200 },
+    { "max-gpu-usage",   1, nullptr, 1004 },
+    { "print-time",      1, nullptr, 1007 },
+    { "retries",         1, nullptr, 'r' },
+    { "retry-pause",     1, nullptr, 'R' },
+    { "syslog",          0, nullptr, 'S' },
+    { "user-agent",      1, nullptr, 1008 },
     { 0, 0, 0, 0 }
 };
 
@@ -149,34 +155,6 @@ static const char *algo_names[] = {
 };
 
 
-static char *defaultConfigName()
-{
-    size_t size = 512;
-    char *buf = new char[size];
-
-    if (uv_exepath(buf, &size) < 0) {
-        delete [] buf;
-        return nullptr;
-    }
-
-    if (size < 500) {
-#       ifdef WIN32
-        char *p = strrchr(buf, '\\');
-#       else
-        char *p = strrchr(buf, '/');
-#       endif
-
-        if (p) {
-            strcpy(p + 1, "config.json");
-            return buf;
-        }
-    }
-
-    delete [] buf;
-    return nullptr;
-}
-
-
 Options *Options::parse(int argc, char **argv)
 {
     Options *options = new Options(argc, argv);
@@ -187,6 +165,12 @@ Options *Options::parse(int argc, char **argv)
 
     delete options;
     return nullptr;
+}
+
+
+bool Options::save()
+{
+    return false;
 }
 
 
@@ -202,10 +186,13 @@ Options::Options(int argc, char **argv) :
     m_colors(true),
     m_ready(false),
     m_syslog(false),
+    m_configName(nullptr),
     m_logFile(nullptr),
+    m_userAgent(nullptr),
     m_algo(0),
     m_algoVariant(0),
     m_donateLevel(kDonateLevel),
+    m_maxGpuThreads(0),
     m_maxGpuUsage(100),
     m_printTime(60),
     m_retries(5),
@@ -233,9 +220,7 @@ Options::Options(int argc, char **argv) :
     }
 
     if (!m_pools[0]->isValid()) {
-        char *fileName = defaultConfigName();
-        parseConfig(fileName);
-        delete [] fileName;
+        parseConfig(Platform::defaultConfigName());
     }
 
     if (!m_pools[0]->isValid()) {
@@ -314,15 +299,18 @@ bool Options::parseArg(int key, const char *arg)
     case 1003: /* --donate-level */
     case 1004: /* --max-gpu-usage */
     case 1007: /* --print-time */
+    case 1200: /* --max-gpu-threads */
         return parseArg(key, strtol(arg, nullptr, 10));
 
     case 'B':  /* --background */
     case 'k':  /* --keepalive */
     case 'S':  /* --syslog */
-    case 1002: /* --no-color */
     case 1005: /* --safe */
     case 1006: /* --nicehash */
         return parseBoolean(key, true);
+
+    case 1002: /* --no-color */
+        return parseBoolean(key, false);
 
     case 'V': /* --version */
         showVersion();
@@ -334,6 +322,11 @@ bool Options::parseArg(int key, const char *arg)
 
     case 'c': /* --config */
         parseConfig(arg);
+        break;
+
+    case 1008: /* --user-agent */
+        free(m_userAgent);
+        m_userAgent = strdup(arg);
         break;
 
     default:
@@ -402,6 +395,10 @@ bool Options::parseArg(int key, uint64_t arg)
         m_printTime = (int) arg;
         break;
 
+    case 1200: /* --max-gpu-threads */
+        m_maxGpuThreads = (int) arg;
+        break;
+
     default:
         break;
     }
@@ -461,8 +458,20 @@ Url *Options::parseUrl(const char *arg) const
 
 void Options::parseConfig(const char *fileName)
 {
+    uv_fs_t req;
+    const int fd = uv_fs_open(uv_default_loop(), &req, fileName, O_RDONLY, 0644, nullptr);
+    if (fd < 0) {
+        fprintf(stderr, "unable to open %s: %s\n", fileName, uv_strerror(fd));
+        return;
+    }
+
+    uv_fs_req_cleanup(&req);
+
     json_error_t err;
-    json_t *config = json_load_file(fileName, 0, &err);
+    json_t *config = json_loadfd(fd, 0, &err);
+
+    uv_fs_close(uv_default_loop(), &req, fd, nullptr);
+    uv_fs_req_cleanup(&req);
 
     if (!json_is_object(config)) {
         if (config) {
@@ -479,6 +488,8 @@ void Options::parseConfig(const char *fileName)
 
         return;
     }
+
+    m_configName = strdup(fileName);
 
     for (size_t i = 0; i < ARRAY_SIZE(config_options); i++) {
         parseJSON(&config_options[i], config);
