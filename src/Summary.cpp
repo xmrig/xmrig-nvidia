@@ -140,24 +140,9 @@ static bool print_extra()
         return true;
     }
 
-    Log::i()->text("\nThe configuration for `threads` in your config file is unspecified.");
-    Log::i()->text("The miner evaluates your system and prints a suggestion for the section `threads` to the terminal.");
-    Log::i()->text("The values are not optimal, please try to tweak the values based on the suggestion.");
-    Log::i()->text("Please copy past the block within the asterisks to your config.");
-    Log::i()->text("\n**************** Copy&Paste ****************\n");
-    Log::i()->text("\"threads\" : [");
-
-    size_t i = 0;
-    for (const GpuThread *thread : threads)
-    {
-        i++;
-        Log::i()->text("    { \"index\": %d, \"threads\": %d, \"blocks\": %d, \"bfactor\": %d, \"bsleep\": %d }%s",
-            thread->id(), thread->threads(), thread->blocks(), thread->bfactor(), thread->bsleep(), (i == threads.size() ? "" : ",")
-            );
+    if (Options::i()->save()) {
+        Log::i()->text("Initial configuration saved to: %s", Options::i()->configName());
     }
-
-    Log::i()->text("],");
-    Log::i()->text("\n**************** Copy&Paste ****************\n");
 
     return true;
 }

@@ -170,7 +170,68 @@ Options *Options::parse(int argc, char **argv)
 
 bool Options::save()
 {
-    return false;
+    if (m_configName == nullptr) {
+        return false;
+    }
+
+    uv_fs_t req;
+    const int fd = uv_fs_open(uv_default_loop(), &req, m_configName, O_WRONLY, 0644, nullptr);
+    if (fd < 0) {
+        return false;
+    }
+
+    uv_fs_req_cleanup(&req);
+
+    json_t *options = json_object();
+    json_object_set(options, "background",   json_boolean(m_background));
+    json_object_set(options, "colors",       json_boolean(m_colors));
+    json_object_set(options, "donate-level", json_integer(m_donateLevel));
+    json_object_set(options, "log-file",     m_logFile ? json_string(m_logFile) : json_null());
+    json_object_set(options, "print-time",   json_integer(m_printTime));
+    json_object_set(options, "retries",      json_integer(m_retries));
+    json_object_set(options, "retry-pause",  json_integer(m_retryPause));
+
+#   ifdef HAVE_SYSLOG_H
+    json_object_set(options, "syslog", json_boolean(m_syslog));
+#   endif
+
+    json_t *threads = json_array();
+    for (const GpuThread *thread : m_threads) {
+        json_t *obj = json_object();
+        json_object_set(obj, "index",   json_integer(thread->id()));
+        json_object_set(obj, "threads", json_integer(thread->threads()));
+        json_object_set(obj, "blocks",  json_integer(thread->blocks()));
+        json_object_set(obj, "bfactor", json_integer(thread->bfactor()));
+        json_object_set(obj, "bsleep",  json_integer(thread->bsleep()));
+
+        json_array_append(threads, obj);
+    }
+
+    json_object_set(options, "threads", threads);
+
+    json_t *pools = json_array();
+    char tmp[256];
+
+    for (const Url *url : m_pools) {
+        json_t *obj = json_object();
+
+        snprintf(tmp, sizeof(tmp) - 1, "%s:%d", url->host(), url->port());
+        json_object_set(obj, "url",       json_string(tmp));
+        json_object_set(obj, "user",      json_string(url->user()));
+        json_object_set(obj, "pass",      json_string(url->password()));
+        json_object_set(obj, "keepalive", json_boolean(url->isKeepAlive()));
+        json_object_set(obj, "nicehash",  json_boolean(url->isNicehash()));
+
+        json_array_append(pools, obj);
+    }
+
+    json_object_set(options, "pools", pools);
+
+    json_dumpfd(options, fd, JSON_INDENT(4));
+    uv_fs_close(uv_default_loop(), &req, fd, nullptr);
+    uv_fs_req_cleanup(&req);
+
+    return true;
 }
 
 

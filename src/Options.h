@@ -59,6 +59,7 @@ public:
     inline bool colors() const                            { return m_colors; }
     inline bool isAutoConf() const                        { return m_autoConf; }
     inline bool syslog() const                            { return m_syslog; }
+    inline const char *configName() const                 { return m_configName; }
     inline const char *logFile() const                    { return m_logFile; }
     inline const char *userAgent() const                  { return m_userAgent; }
     inline const std::vector<GpuThread*> &threads() const { return m_threads; }
