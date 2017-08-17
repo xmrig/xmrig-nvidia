@@ -233,6 +233,10 @@ Options::Options(int argc, char **argv) :
     if (m_threads.empty()) {
         m_autoConf = true;
         GpuThread::autoConf(m_threads);
+
+        for (GpuThread *thread : m_threads) {
+            thread->limit(m_maxGpuUsage, m_maxGpuThreads);
+        }
     }
 
     m_ready = true;

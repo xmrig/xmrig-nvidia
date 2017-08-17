@@ -38,6 +38,7 @@ public:
     ~GpuThread();
 
     bool init();
+    void limit(int maxUsage, int maxThreads);
 
     static void autoConf(std::vector<GpuThread*> &threads);
 

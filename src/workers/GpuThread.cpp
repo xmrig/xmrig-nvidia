@@ -91,6 +91,22 @@ bool GpuThread::init()
 }
 
 
+void GpuThread::limit(int maxUsage, int maxThreads)
+{
+    if (maxThreads > 0) {
+        if (m_threads > maxThreads) {
+            m_threads = maxThreads;
+        }
+
+        return;
+    }
+
+    if (maxUsage < 100) {
+        m_threads = (int) m_threads / 100.0 * maxUsage;
+    }
+}
+
+
 void GpuThread::autoConf(std::vector<GpuThread*> &threads)
 {
     const int count = cuda_get_devicecount();
