@@ -25,7 +25,60 @@ GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used
 
 ## Usage
 
-### Options
+### Command line options
+```
+  -o, --url=URL         URL of mining server
+  -O, --userpass=U:P    username:password pair for mining server
+  -u, --user=USERNAME   username for mining server
+  -p, --pass=PASSWORD   password for mining server
+  -k, --keepalive       send keepalived for prevent timeout (need pool support)
+  -r, --retries=N       number of times to retry before switch to backup server (default: 5)
+  -R, --retry-pause=N   time to pause between retries (default: 5)
+      --no-color        disable colored output
+      --donate-level=N  donate level, default 5% (5 minutes in 100 minutes)
+      --user-agent      set custom user-agent string for pool
+  -B, --background      run the miner in the background
+  -c, --config=FILE     load a JSON-format configuration file
+  -l, --log-file=FILE   log all output to a file
+      --nicehash        enable nicehash support
+      --print-time=N    print hashrate report every N seconds
+  -h, --help            display this help and exit
+  -V, --version         output version information and exit
+```
+
+### Config file.
+GPU configuration now possible only via config file. Sample config:
+```json
+{
+    "background": false,
+    "colors": true,
+    "donate-level": 5,
+    "log-file": null,
+    "print-time": 60,
+    "retries": 5,
+    "retry-pause": 5,
+    "syslog": false,
+    "threads": [
+        {
+            "index": 0,
+            "threads": 42,
+            "blocks": 18,
+            "bfactor": 6,
+            "bsleep": 25
+        }
+    ],
+    "pools": [
+        {
+            "url": "pool.minemonero.pro:5555",
+            "user": "",
+            "pass": "x",
+            "keepalive": true,
+            "nicehash": false
+        }
+    ]
+}
+```
+If `threads` option not specified the miner will try automatically create optimal configuration for your GPUs.
 
 ## Donations
 Default donation 5% (5 minutes in 100 minutes) can be reduced to 1% via command line option `--donate-level`.
