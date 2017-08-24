@@ -107,6 +107,8 @@ private:
     char *m_userAgent;
     int m_algo;
     int m_algoVariant;
+    int m_bfactor;
+    int m_bsleep;
     int m_donateLevel;
     int m_maxGpuThreads;
     int m_maxGpuUsage;
