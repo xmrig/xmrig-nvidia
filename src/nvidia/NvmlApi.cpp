@@ -36,6 +36,11 @@ bool NvmlApi::m_available = false;
 
 static nvmlReturn_t(*pNvmlInit)(void) = nullptr;
 static nvmlReturn_t(*pNvmlShutdown)(void) = nullptr;
+static nvmlReturn_t(*pNvmlDeviceGetHandleByIndex)(unsigned int index, nvmlDevice_t *device) = nullptr;
+static nvmlReturn_t(*pNvmlDeviceGetTemperature)(nvmlDevice_t device, nvmlTemperatureSensors_t sensorType, unsigned int* temp) = nullptr;
+static nvmlReturn_t(*pNvmlDeviceGetPowerUsage)(nvmlDevice_t device, unsigned int* power) = nullptr;
+static nvmlReturn_t(*pNvmlDeviceGetFanSpeed)(nvmlDevice_t device, unsigned int* speed) = nullptr;
+static nvmlReturn_t(*pNvmlDeviceGetClockInfo)(nvmlDevice_t device, nvmlClockType_t type, unsigned int* clock) = nullptr;
 
 
 bool NvmlApi::init()
@@ -57,6 +62,11 @@ bool NvmlApi::init()
     }
 
     uv_dlsym(&nvmlLib, "nvmlShutdown", reinterpret_cast<void**>(&pNvmlShutdown));
+    uv_dlsym(&nvmlLib, "nvmlDeviceGetHandleByIndex_v2", reinterpret_cast<void**>(&pNvmlDeviceGetHandleByIndex));
+    uv_dlsym(&nvmlLib, "nvmlDeviceGetTemperature", reinterpret_cast<void**>(&pNvmlDeviceGetTemperature));
+    uv_dlsym(&nvmlLib, "nvmlDeviceGetPowerUsage", reinterpret_cast<void**>(&pNvmlDeviceGetPowerUsage));
+    uv_dlsym(&nvmlLib, "nvmlDeviceGetFanSpeed", reinterpret_cast<void**>(&pNvmlDeviceGetFanSpeed));
+    uv_dlsym(&nvmlLib, "nvmlDeviceGetClockInfo", reinterpret_cast<void**>(&pNvmlDeviceGetClockInfo));
 
     m_available = pNvmlInit() == NVML_SUCCESS;
 
@@ -67,7 +77,7 @@ bool NvmlApi::init()
 
 void NvmlApi::release()
 {
-    if (isAvailable() && !pNvmlShutdown) {
+    if (!isAvailable() && !pNvmlShutdown) {
         return;
     }
 
@@ -77,20 +87,33 @@ void NvmlApi::release()
 }
 
 
-/*void NvmlApi::test()
+bool NvmlApi::health(int id, Health &health)
 {
+    if (!isAvailable()) {
+        return false;
+    }
+
     nvmlDevice_t device;
-
-    nvmlReturn_t result = nvmlDeviceGetHandleByIndex(0, &device);
-    if (NVML_SUCCESS != result)
-    { 
-	printf("Failed to get handle for device %i: %s\n", 0, nvmlErrorString(result));
+    if (pNvmlDeviceGetHandleByIndex && pNvmlDeviceGetHandleByIndex(id, &device) != NVML_SUCCESS) {
+        return false;
     }
 
-    unsigned int temp;
-    result = nvmlDeviceGetTemperature(device, NVML_TEMPERATURE_GPU, &temp);
-    if (NVML_SUCCESS != result) {
-        printf("Failed to get temperature of device %i: %s\n", 0, nvmlErrorString(result));
+    if (pNvmlDeviceGetTemperature) {
+        pNvmlDeviceGetTemperature(device, NVML_TEMPERATURE_GPU, &health.temperature);
     }
-    printf("%d\n", temp);
-}*/
+
+    if (pNvmlDeviceGetPowerUsage) {
+        pNvmlDeviceGetPowerUsage(device, &health.power);
+    }
+
+    if (pNvmlDeviceGetFanSpeed) {
+        pNvmlDeviceGetFanSpeed(device, &health.fanSpeed);
+    }
+
+    if (pNvmlDeviceGetClockInfo) {
+        pNvmlDeviceGetClockInfo(device, NVML_CLOCK_SM, &health.clock);
+        pNvmlDeviceGetClockInfo(device, NVML_CLOCK_MEM, &health.memClock);
+    }
+
+    return false;
+}

@@ -21,26 +21,30 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NVML_H__
-#define __NVML_H__
+#ifndef __HEALTH_H__
+#define __HEALTH_H__
 
 
-#include "nvidia/Health.h"
+#include <stdint.h>
 
 
-class NvmlApi
+class Health
 {
 public:
-    static bool init();
-    static void release();
+    Health() :
+        temperature(0),
+        power(0),
+        fanSpeed(0),
+        clock(0),
+        memClock(0)
+    {}
 
-    static bool health(int id, Health &health);
-
-    static inline bool isAvailable() { return m_available; }
-
-private:
-    static bool m_available;
+    uint32_t temperature;
+    uint32_t power;
+    uint32_t fanSpeed;
+    uint32_t clock;
+    uint32_t memClock;
 };
 
 
-#endif /* __NVML_H__ */
+#endif /* __HEALTH_H__ */

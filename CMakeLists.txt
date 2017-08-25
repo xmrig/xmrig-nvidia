@@ -70,6 +70,8 @@ set(SOURCES
     src/net/strategies/FailoverStrategy.cpp
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/Url.cpp
+    src/nvidia/Health.h
+    src/nvidia/NvmlApi.h
     src/Options.cpp
     src/Platform.cpp
     src/Summary.cpp
@@ -139,17 +141,11 @@ find_package(NVML)
 if (NVML_FOUND)
     include_directories(${NVML_INCLUDE_DIR})
 
-    set(SOURCES_NVML
-        src/nvidia/NvmlApi.h
-        src/nvidia/NvmlApi.cpp
-        )
+    set(SOURCES_NVML src/nvidia/NvmlApi.cpp)
 else()
     add_definitions(/DXMRIG_NO_NVML)
 
-    set(SOURCES_NVML
-        src/nvidia/NvmlApi.h
-        src/nvidia/NvmlApi_stub.cpp
-        )
+    set(SOURCES_NVML src/nvidia/NvmlApi_stub.cpp)
 endif()
 
 CHECK_INCLUDE_FILE (syslog.h HAVE_SYSLOG_H)
