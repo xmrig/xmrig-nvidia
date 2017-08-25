@@ -102,9 +102,11 @@ static void print_pools()
 static void print_gpu()
 {
     for (const GpuThread *thread : Options::i()->threads()) {
-        Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mGPU #%d:       \x1B[22;32m%s \x1B[01;37m%dx%d \x1B[01;30mf:%d s:%d arch:%d%d smx:%d" : " * GPU #%d:       %s %dx%d f:%d s:%d arch:%d%d smx:%d",
+        Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mGPU #%d:       \x1B[22;32m%s @ %d/%d MHz \x1B[01;30m%dx%d %dx%d arch:%d%d SMX:%d" : " * GPU #%d:       %s @ %d/%d MHz %dx%d %dx%d arch:%d%d SMX:%d",
             thread->id(),
             thread->name(),
+            thread->clockRate() / 1000,
+            thread->memoryClockRate() / 1000,
             thread->threads(),
             thread->blocks(),
             thread->bfactor(),
