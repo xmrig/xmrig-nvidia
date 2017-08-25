@@ -129,13 +129,13 @@ else()
   endif()
 endif()
 
-find_library(NVML_LIBRARY NAMES ${NVML_NAMES} PATHS ${NVML_LIB_PATHS} )
+#find_library(NVML_LIBRARY NAMES ${NVML_NAMES} PATHS ${NVML_LIB_PATHS} )
 
 find_path(NVML_INCLUDE_DIR nvml.h PATHS ${NVML_INC_PATHS})
 
 # handle the QUIETLY and REQUIRED arguments and set NVML_FOUND to TRUE if
 # all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(NVML DEFAULT_MSG NVML_LIBRARY NVML_INCLUDE_DIR)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(NVML DEFAULT_MSG "" NVML_INCLUDE_DIR)
 
-mark_as_advanced(NVML_LIBRARY NVML_INCLUDE_DIR)
+mark_as_advanced(NVML_INCLUDE_DIR)
