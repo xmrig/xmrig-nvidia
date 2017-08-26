@@ -58,15 +58,6 @@ Hashrate::Hashrate(int threads) :
         memset(m_counts[0], 0, sizeof(uint64_t) * kBucketSize);
         memset(m_timestamps[0], 0, sizeof(uint64_t) * kBucketSize);
     }
-
-    const int printTime = Options::i()->printTime();
-
-    if (printTime > 0) {
-        uv_timer_init(uv_default_loop(), &m_timer);
-        m_timer.data = this;
-
-       uv_timer_start(&m_timer, Hashrate::onReport, (printTime + 4) * 1000, printTime * 1000);
-    }
 }
 
 
@@ -161,9 +152,24 @@ void Hashrate::print()
 }
 
 
+void Hashrate::print(size_t threadId)
+{
+    char num1[8];
+    char num2[8];
+    char num3[8];
+    char num4[8];
+
+    LOG_INFO(Options::i()->colors() ? "\x1B[01;37mGPU %d\x1B[0m 10s/60s/15m \x1B[01;36m%s\x1B[0m \x1B[22;36m%s %s \x1B[01;36mH/s" : "speed 10s/60s/15m %s %s %s H/s",
+        (int) threadId,
+        format(calc(threadId, 10000), num1, sizeof(num1)),
+        format(calc(threadId, 60000), num2, sizeof(num2)),
+        format(calc(threadId, 900000), num3, sizeof(num3))
+    );
+}
+
+
 void Hashrate::stop()
 {
-    uv_timer_stop(&m_timer);
 }
 
 
@@ -173,10 +179,4 @@ void Hashrate::updateHighest()
    if (std::isnormal(highest) && highest > m_highest) {
        m_highest = highest;
    }
-}
-
-
-void Hashrate::onReport(uv_timer_t *handle)
-{
-    static_cast<Hashrate*>(handle->data)->print();
 }
