@@ -157,7 +157,6 @@ void Hashrate::print(size_t threadId)
     char num1[8];
     char num2[8];
     char num3[8];
-    char num4[8];
 
     LOG_INFO(Options::i()->colors() ? "\x1B[01;37mGPU %d\x1B[0m 10s/60s/15m \x1B[01;36m%s\x1B[0m \x1B[22;36m%s %s \x1B[01;36mH/s" : "speed 10s/60s/15m %s %s %s H/s",
         (int) threadId,
