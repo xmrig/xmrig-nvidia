@@ -102,9 +102,11 @@ static void print_pools()
 static void print_gpu()
 {
     for (const GpuThread *thread : Options::i()->threads()) {
-        Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mGPU #%d:       \x1B[22;32m%s \x1B[01;37m%dx%d \x1B[01;30mf:%d s:%d arch:%d%d smx:%d" : " * GPU #%d:       %s %dx%d f:%d s:%d arch:%d%d smx:%d",
+        Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mGPU #%d:       \x1B[22;32m%s @ %d/%d MHz \x1B[01;30m%dx%d %dx%d arch:%d%d SMX:%d" : " * GPU #%d:       %s @ %d/%d MHz %dx%d %dx%d arch:%d%d SMX:%d",
             thread->id(),
             thread->name(),
+            thread->clockRate() / 1000,
+            thread->memoryClockRate() / 1000,
             thread->threads(),
             thread->blocks(),
             thread->bfactor(),
@@ -120,10 +122,10 @@ static void print_gpu()
 static void print_commands()
 {
     if (Options::i()->colors()) {
-        Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, \x1B[01;35mp\x1B[01;37mause, \x1B[01;35mr\x1B[01;37mesume");
+        Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, h\x1B[01;35me\x1B[01;37malth, \x1B[01;35mp\x1B[01;37mause, \x1B[01;35mr\x1B[01;37mesume");
     }
     else {
-        Log::i()->text(" * COMMANDS:     'h' hashrate, 'p' pause, 'r' resume");
+        Log::i()->text(" * COMMANDS:     'h' hashrate, 'e' health, 'p' pause, 'r' resume");
     }
 }
 

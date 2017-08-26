@@ -38,6 +38,7 @@
 #include "donate.h"
 #include "net/Url.h"
 #include "nvidia/cryptonight.h"
+#include "nvidia/NvmlApi.h"
 #include "Options.h"
 #include "Platform.h"
 #include "version.h"
@@ -278,6 +279,8 @@ Options::Options(int argc, char **argv) :
     m_bsleep  = 100;
 #   endif
 
+    NvmlApi::init();
+
     m_pools.push_back(new Url());
 
     int key;
@@ -324,6 +327,7 @@ Options::Options(int argc, char **argv) :
 
 Options::~Options()
 {
+    NvmlApi::release();
 }
 
 

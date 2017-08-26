@@ -21,37 +21,30 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HASHRATE_H__
-#define __HASHRATE_H__
+#ifndef __HEALTH_H__
+#define __HEALTH_H__
 
 
 #include <stdint.h>
 
 
-class Hashrate
+class Health
 {
 public:
-    Hashrate(int threads);
-    double calc(size_t ms) const;
-    double calc(size_t threadId, size_t ms) const;
-    void add(size_t threadId, uint64_t count, uint64_t timestamp);
-    void print();
-    void print(size_t threadId);
-    void stop();
-    void updateHighest();
+    Health() :
+        temperature(0),
+        power(0),
+        fanSpeed(0),
+        clock(0),
+        memClock(0)
+    {}
 
-    inline double highest() const { return m_highest; }
-
-private:
-    constexpr static size_t kBucketSize = 2 << 11;
-    constexpr static size_t kBucketMask = kBucketSize - 1;
-
-    double m_highest;
-    int m_threads;
-    uint32_t* m_top;
-    uint64_t** m_counts;
-    uint64_t** m_timestamps;
+    uint32_t temperature;
+    uint32_t power;
+    uint32_t fanSpeed;
+    uint32_t clock;
+    uint32_t memClock;
 };
 
 
-#endif /* __HASHRATE_H__ */
+#endif /* __HEALTH_H__ */

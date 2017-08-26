@@ -30,15 +30,16 @@
 #endif
 
 
+#include "crypto/CryptoNight.h"
 #include "interfaces/IJobResultListener.h"
+#include "log/Log.h"
+#include "nvidia/NvmlApi.h"
 #include "Options.h"
 #include "workers/CudaWorker.h"
+#include "workers/GpuThread.h"
 #include "workers/Handle.h"
 #include "workers/Hashrate.h"
 #include "workers/Workers.h"
-#include "crypto/CryptoNight.h"
-
-#include "log/Log.h"
 
 
 bool Workers::m_active = false;
@@ -54,6 +55,7 @@ uint64_t Workers::m_ticks = 0;
 uv_async_t Workers::m_async;
 uv_mutex_t Workers::m_mutex;
 uv_rwlock_t Workers::m_rwlock;
+uv_timer_t Workers::m_reportTimer;
 uv_timer_t Workers::m_timer;
 
 
@@ -82,7 +84,37 @@ Job Workers::job()
 
 void Workers::printHashrate(bool detail)
 {
+    if (detail) {
+       for (const GpuThread *thread : Options::i()->threads()) {
+            m_hashrate->print(thread->id());
+        }
+    }
+
     m_hashrate->print();
+}
+
+
+void Workers::printHealth()
+{
+    if (!NvmlApi::isAvailable()) {
+        LOG_ERR("NVML GPU monitoring is not available");
+        return;
+    }
+
+    Health health;
+    for (const GpuThread *thread : Options::i()->threads()) {
+        NvmlApi::health(thread->id(), health);
+
+        if (Options::i()->colors()) {
+            const uint32_t temp = health.temperature;
+
+            LOG_INFO("\x1B[00;35mGPU #%d: \x1B[01m%u\x1B[00;35m/\x1B[01m%u MHz\x1B[00;35m \x1B[01m%uW\x1B[00;35m %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
+                thread->id(), health.clock, health.memClock, health.power / 1000, (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
+        }
+        else {
+            LOG_INFO(" * GPU #%d: %u/%u MHz %uW %uC FAN %u%%", thread->id(), health.clock, health.memClock, health.power / 1000, health.temperature, health.fanSpeed);
+        }
+    }
 }
 
 
@@ -138,11 +170,21 @@ void Workers::start(const std::vector<GpuThread*> &threads)
         m_workers.push_back(handle);
         handle->start(Workers::onReady);
     }
+
+    const int printTime = Options::i()->printTime();
+    if (printTime > 0) {
+        uv_timer_init(uv_default_loop(), &m_reportTimer);
+        uv_timer_start(&m_reportTimer, Workers::onReport, (printTime + 4) * 1000, printTime * 1000);
+    }
 }
 
 
 void Workers::stop()
 {
+    if (Options::i()->printTime() > 0) {
+        uv_timer_stop(&m_reportTimer);
+    }
+
     uv_timer_stop(&m_timer);
     m_hashrate->stop();
 
@@ -218,6 +260,16 @@ void Workers::onResult(uv_async_t *handle)
             delete baton;
         }
     );
+}
+
+
+void Workers::onReport(uv_timer_t *handle)
+{
+    m_hashrate->print();
+
+    if (NvmlApi::isAvailable()) {
+        printHealth();
+    }
 }
 
 

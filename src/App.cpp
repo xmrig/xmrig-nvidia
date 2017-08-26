@@ -154,6 +154,11 @@ void App::onConsoleCommand(char command)
         }
         break;
 
+    case 'E':
+    case 'e':
+        Workers::printHealth();
+        break;
+
     case 3:
         LOG_WARN("Ctrl+C received, exiting");
         close();
