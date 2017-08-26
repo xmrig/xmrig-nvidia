@@ -275,8 +275,8 @@ Options::Options(int argc, char **argv) :
     m_threads(0)
 {
 #   ifdef _WIN32
-    m_bfactor = 11;
-    m_bsleep  = 100;
+    m_bfactor = 6;
+    m_bsleep  = 25;
 #   endif
 
     NvmlApi::init();
