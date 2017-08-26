@@ -30,6 +30,7 @@
 
 
 static uv_lib_t nvmlLib;
+static char nvmlVerion[80] = { 0 };
 
 
 bool NvmlApi::m_available = false;
@@ -41,6 +42,7 @@ static nvmlReturn_t(*pNvmlDeviceGetTemperature)(nvmlDevice_t device, nvmlTempera
 static nvmlReturn_t(*pNvmlDeviceGetPowerUsage)(nvmlDevice_t device, unsigned int* power) = nullptr;
 static nvmlReturn_t(*pNvmlDeviceGetFanSpeed)(nvmlDevice_t device, unsigned int* speed) = nullptr;
 static nvmlReturn_t(*pNvmlDeviceGetClockInfo)(nvmlDevice_t device, nvmlClockType_t type, unsigned int* clock) = nullptr;
+static nvmlReturn_t(*pNvmlSystemGetNVMLVersion)(char *version, unsigned int length) = nullptr;
 
 
 bool NvmlApi::init()
@@ -67,10 +69,14 @@ bool NvmlApi::init()
     uv_dlsym(&nvmlLib, "nvmlDeviceGetPowerUsage", reinterpret_cast<void**>(&pNvmlDeviceGetPowerUsage));
     uv_dlsym(&nvmlLib, "nvmlDeviceGetFanSpeed", reinterpret_cast<void**>(&pNvmlDeviceGetFanSpeed));
     uv_dlsym(&nvmlLib, "nvmlDeviceGetClockInfo", reinterpret_cast<void**>(&pNvmlDeviceGetClockInfo));
+    uv_dlsym(&nvmlLib, "nvmlSystemGetNVMLVersion", reinterpret_cast<void**>(&pNvmlSystemGetNVMLVersion));
 
     m_available = pNvmlInit() == NVML_SUCCESS;
 
-    printf("OK %d\n", m_available);
+    if (pNvmlSystemGetNVMLVersion) {
+        pNvmlSystemGetNVMLVersion(nvmlVerion, sizeof(nvmlVerion));
+    }
+
     return m_available;
 }
 
@@ -82,8 +88,6 @@ void NvmlApi::release()
     }
 
     pNvmlShutdown();
-
-    printf("release\n");
 }
 
 
@@ -116,4 +120,10 @@ bool NvmlApi::health(int id, Health &health)
     }
 
     return false;
+}
+
+
+const char *NvmlApi::version()
+{
+    return nvmlVerion;
 }

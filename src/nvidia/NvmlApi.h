@@ -35,6 +35,7 @@ public:
     static void release();
 
     static bool health(int id, Health &health);
+    static const char *version();
 
     static inline bool isAvailable() { return m_available; }
 

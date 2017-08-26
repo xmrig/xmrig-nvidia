@@ -280,10 +280,6 @@ Options::Options(int argc, char **argv) :
 #   endif
 
     NvmlApi::init();
-    Health h;
-    NvmlApi::health(0, h);
-
-    printf("%uC %uW %u%% %u %u\n", h.temperature, h.power / 1000, h.fanSpeed, h.clock, h.memClock);
 
     m_pools.push_back(new Url());
 

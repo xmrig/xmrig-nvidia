@@ -122,10 +122,10 @@ static void print_gpu()
 static void print_commands()
 {
     if (Options::i()->colors()) {
-        Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, \x1B[01;35mp\x1B[01;37mause, \x1B[01;35mr\x1B[01;37mesume");
+        Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, h\x1B[01;35me\x1B[01;37malth, \x1B[01;35mp\x1B[01;37mause, \x1B[01;35mr\x1B[01;37mesume");
     }
     else {
-        Log::i()->text(" * COMMANDS:     'h' hashrate, 'p' pause, 'r' resume");
+        Log::i()->text(" * COMMANDS:     'h' hashrate, 'e' health, 'p' pause, 'r' resume");
     }
 }
 

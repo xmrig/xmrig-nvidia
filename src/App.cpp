@@ -34,10 +34,12 @@
 #include "log/FileLog.h"
 #include "log/Log.h"
 #include "net/Network.h"
+#include "nvidia/NvmlApi.h"
 #include "Options.h"
 #include "Platform.h"
 #include "Summary.h"
 #include "version.h"
+#include "workers/GpuThread.h"
 #include "workers/Workers.h"
 
 
@@ -154,6 +156,11 @@ void App::onConsoleCommand(char command)
         }
         break;
 
+    case 'E':
+    case 'e':
+        printHealth();
+        break;
+
     case 3:
         LOG_WARN("Ctrl+C received, exiting");
         close();
@@ -171,6 +178,34 @@ void App::close()
     Workers::stop();
 
     uv_stop(uv_default_loop());
+}
+
+
+void App::printHealth()
+{
+    if (!NvmlApi::isAvailable()) {
+        LOG_ERR("NVML GPU monitoring is not available");
+        return;
+    }
+
+    Log::i()->text(" ---");
+
+    Health health;
+    for (const GpuThread *thread : m_options->threads()) {
+        NvmlApi::health(thread->id(), health);
+
+        if (m_options->colors()) {
+            const uint32_t temp = health.temperature;
+
+            Log::i()->text("\x1B[01;32m * \x1B[00;35mGPU #%d: \x1B[01m%s\x1B[00;35m @ \x1B[01m%u\x1B[00;35m/\x1B[01m%u MHz\x1B[00;35m \x1B[01m%uW\x1B[00;35m %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
+                thread->id(), thread->name(), health.clock, health.memClock, health.power / 1000, (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
+        }
+        else {
+            Log::i()->text(" * GPU #%d: %s @ %u/%u MHz %uW %uC FAN %u%%", thread->id(), thread->name(), health.clock, health.memClock, health.power / 1000, health.temperature, health.fanSpeed);
+        }
+    }
+
+    Log::i()->text(" ---");
 }
 
 
