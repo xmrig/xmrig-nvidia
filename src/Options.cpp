@@ -195,6 +195,7 @@ bool Options::save()
     uv_fs_req_cleanup(&req);
 
     json_t *options = json_object();
+    json_object_set(options, "algo",         json_string(m_algo == ALGO_CRYPTONIGHT ? "cryptonight" : "cryptonight-lite"));
     json_object_set(options, "background",   json_boolean(m_background));
     json_object_set(options, "colors",       json_boolean(m_colors));
     json_object_set(options, "donate-level", json_integer(m_donateLevel));
