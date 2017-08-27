@@ -22,7 +22,7 @@
  */
 
 
-#include "workers/NvmlApi.h"
+#include "nvidia/NvmlApi.h"
 
 
 bool NvmlApi::m_available = false;
@@ -36,4 +36,16 @@ bool NvmlApi::init()
 
 void NvmlApi::release()
 {
+}
+
+
+bool NvmlApi::health(int id, Health &health)
+{
+    return false;
+}
+
+
+const char *NvmlApi::version()
+{
+    return nullptr;
 }
