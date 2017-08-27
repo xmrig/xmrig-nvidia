@@ -24,11 +24,16 @@
 
 #ifdef _MSC_VER
 #   include <intrin.h>
-
-#   define bit_AES  (1 << 25)
-#   define bit_BMI2 (1 << 8)
 #else
 #   include <cpuid.h>
+#endif
+
+#ifndef bit_AES
+#   define bit_AES (1 << 25)
+#endif
+
+#ifndef bit_BMI2
+#   define bit_BMI2 (1 << 8)
 #endif
 
 #include <string.h>
