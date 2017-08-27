@@ -174,7 +174,8 @@ extern "C" void cryptonight_extra_cpu_set_data( nvid_ctx* ctx, const void *data,
 	exit_if_cudaerror( ctx->device_id, __FUNCTION__, __LINE__ );
 }
 
-extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
+template<size_t MEM>
+int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 {
 	cudaError_t err;
 	err = cudaSetDevice(ctx->device_id);
@@ -189,7 +190,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
-	cudaMalloc(&ctx->d_long_state, (size_t)MEMORY * wsize);
+	cudaMalloc(&ctx->d_long_state, MEM * wsize);
 	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
 	cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize);
 	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
@@ -361,3 +362,17 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 
 	return 1;
 }
+
+
+extern "C" int cryptonight_gpu_init(nvid_ctx* ctx)
+{
+    return cryptonight_extra_cpu_init<MEMORY>(ctx);
+}
+
+
+#ifndef XMRIG_NO_AEON
+extern "C" int cryptonight_gpu_init_lite(nvid_ctx* ctx)
+{
+    return cryptonight_extra_cpu_init<MEMORY_LITE>(ctx);
+}
+#endif

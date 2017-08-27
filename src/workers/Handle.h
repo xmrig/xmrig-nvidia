@@ -36,10 +36,11 @@ class GpuThread;
 class Handle
 {
 public:
-    Handle(int threadId, GpuThread *thread, int threads);
+    Handle(int threadId, GpuThread *thread, int threads, bool lite);
     void join();
     void start(void (*callback) (void *));
 
+    inline bool isLite() const                { return m_lite; }
     inline const GpuThread *gpuThread() const { return m_gpuThread; }
     inline int threadId() const               { return m_threadId; }
     inline int threads() const                { return m_threads; }
@@ -47,6 +48,7 @@ public:
     inline void setWorker(IWorker *worker)    { m_worker = worker; }
 
 private:
+    bool m_lite;
     const int m_threadId;
     const GpuThread *m_gpuThread;
     const int m_threads;
