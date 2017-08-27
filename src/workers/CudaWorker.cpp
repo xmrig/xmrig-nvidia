@@ -33,6 +33,7 @@
 
 
 CudaWorker::CudaWorker(Handle *handle) :
+    m_lite(handle->isLite()),
     m_id(handle->threadId()),
     m_threads(handle->threads()),
     m_hashCount(0),
@@ -52,7 +53,7 @@ CudaWorker::CudaWorker(Handle *handle) :
 
 void CudaWorker::start()
 {
-    if (cuda_get_deviceinfo(&m_ctx) != 1 || cryptonight_gpu_init(&m_ctx) != 1) {
+    if (cuda_get_deviceinfo(&m_ctx) != 1 || (m_lite ? cryptonight_gpu_init_lite(&m_ctx) : cryptonight_gpu_init(&m_ctx)) != 1) {
         printf("Setup failed for GPU %d. Exitting.\n", (int) m_id);
         return;
     }
@@ -78,7 +79,14 @@ void CudaWorker::start()
             uint32_t foundCount;
 
             cryptonight_extra_cpu_prepare(&m_ctx, m_nonce);
-            cryptonight_gpu_hash(&m_ctx);
+
+            if (m_lite) {
+                cryptonight_gpu_hash_lite(&m_ctx);
+            }
+            else {
+                cryptonight_gpu_hash(&m_ctx);
+            }
+
             cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce);
 
             for (size_t i = 0; i < foundCount; i++) {

@@ -1,4 +1,5 @@
 {
+    "algo": "cryptonight",
     "background": false,
     "colors": true,
     "donate-level": 5,

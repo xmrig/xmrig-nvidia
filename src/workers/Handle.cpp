@@ -25,7 +25,8 @@
 #include "workers/Handle.h"
 
 
-Handle::Handle(int threadId, GpuThread *thread, int threads) :
+Handle::Handle(int threadId, GpuThread *thread, int threads, bool lite) :
+    m_lite(lite),
     m_threadId(threadId),
     m_gpuThread(thread),
     m_threads(threads),
