@@ -21,40 +21,19 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HANDLE_H__
-#define __HANDLE_H__
+
+#include "workers/NvmlApi.h"
 
 
-#include <stdint.h>
-#include <uv.h>
+bool NvmlApi::m_available = false;
 
 
-class IWorker;
-class GpuThread;
-
-
-class Handle
+bool NvmlApi::init()
 {
-public:
-    Handle(int threadId, GpuThread *thread, int threads, bool lite);
-    void join();
-    void start(void (*callback) (void *));
-
-    inline bool isLite() const                { return m_lite; }
-    inline const GpuThread *gpuThread() const { return m_gpuThread; }
-    inline int threadId() const               { return m_threadId; }
-    inline int threads() const                { return m_threads; }
-    inline IWorker *worker() const            { return m_worker; }
-    inline void setWorker(IWorker *worker)    { m_worker = worker; }
-
-private:
-    bool m_lite;
-    const int m_threadId;
-    const GpuThread *m_gpuThread;
-    const int m_threads;
-    IWorker *m_worker;
-    uv_thread_t m_thread;
-};
+    return false;
+}
 
 
-#endif /* __HANDLE_H__ */
+void NvmlApi::release()
+{
+}

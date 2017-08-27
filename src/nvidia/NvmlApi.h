@@ -21,40 +21,27 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HANDLE_H__
-#define __HANDLE_H__
+#ifndef __NVML_H__
+#define __NVML_H__
 
 
-#include <stdint.h>
-#include <uv.h>
+#include "nvidia/Health.h"
 
 
-class IWorker;
-class GpuThread;
-
-
-class Handle
+class NvmlApi
 {
 public:
-    Handle(int threadId, GpuThread *thread, int threads, bool lite);
-    void join();
-    void start(void (*callback) (void *));
+    static bool init();
+    static void release();
 
-    inline bool isLite() const                { return m_lite; }
-    inline const GpuThread *gpuThread() const { return m_gpuThread; }
-    inline int threadId() const               { return m_threadId; }
-    inline int threads() const                { return m_threads; }
-    inline IWorker *worker() const            { return m_worker; }
-    inline void setWorker(IWorker *worker)    { m_worker = worker; }
+    static bool health(int id, Health &health);
+    static const char *version();
+
+    static inline bool isAvailable() { return m_available; }
 
 private:
-    bool m_lite;
-    const int m_threadId;
-    const GpuThread *m_gpuThread;
-    const int m_threads;
-    IWorker *m_worker;
-    uv_thread_t m_thread;
+    static bool m_available;
 };
 
 
-#endif /* __HANDLE_H__ */
+#endif /* __NVML_H__ */

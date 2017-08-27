@@ -171,10 +171,11 @@ extern "C" void cryptonight_extra_cpu_set_data( nvid_ctx* ctx, const void *data,
 {
 	ctx->inputlen = len;
 	cudaMemcpy( ctx->d_input, data, len, cudaMemcpyHostToDevice );
-	exit_if_cudaerror( ctx->device_id, __FILE__, __LINE__ );
+	exit_if_cudaerror( ctx->device_id, __FUNCTION__, __LINE__ );
 }
 
-extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
+template<size_t MEM>
+int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 {
 	cudaError_t err;
 	err = cudaSetDevice(ctx->device_id);
@@ -189,26 +190,26 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
-	cudaMalloc(&ctx->d_long_state, (size_t)MEMORY * wsize);
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__);
+	cudaMalloc(&ctx->d_long_state, MEM * wsize);
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
 	cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__);
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
 	cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__);
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
 	cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__);
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
 	cudaMalloc(&ctx->d_ctx_text, 32 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__);
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
 	cudaMalloc(&ctx->d_ctx_a, 4 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__);
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
 	cudaMalloc(&ctx->d_ctx_b, 4 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__);
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
 	cudaMalloc(&ctx->d_input, 21 * sizeof (uint32_t ) );
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__);
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
 	cudaMalloc(&ctx->d_result_count, sizeof (uint32_t ) );
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__ );
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
 	cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t ) );
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__ );
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
 	return 1;
 }
 
@@ -223,7 +224,7 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce
 	cryptonight_extra_gpu_prepare<<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
 		ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2 );
 
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__ );
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
 }
 
 extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce)
@@ -235,17 +236,17 @@ extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, 
 	dim3 block( threadsperblock );
 
 	cudaMemset( ctx->d_result_nonce, 0xFF, 10 * sizeof (uint32_t ) );
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__ );
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
 	cudaMemset( ctx->d_result_count, 0, sizeof (uint32_t ) );
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__ );
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
 
 	cryptonight_extra_gpu_final<<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state );
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__ );
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
 
 	cudaMemcpy( rescount, ctx->d_result_count, sizeof (uint32_t ), cudaMemcpyDeviceToHost );
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__ );
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
 	cudaMemcpy( resnonce, ctx->d_result_nonce, 10 * sizeof (uint32_t ), cudaMemcpyDeviceToHost );
-	exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__ );
+	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
 
 	for(int i=0; i < *rescount; i++)
 		resnonce[i] += startNonce;
@@ -306,7 +307,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	err = cudaGetDeviceProperties(&props, ctx->device_id);
 	if(err != cudaSuccess)
 	{
-		printf("\nGPU %d: %s\n%s line %d\n", ctx->device_id, cudaGetErrorString(err), __FILE__, __LINE__);
+		printf("\nGPU %d: %s\n%s line %d\n", ctx->device_id, cudaGetErrorString(err), __FUNCTION__, __LINE__);
 		return 0;
 	}
 
@@ -314,6 +315,8 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	ctx->device_mpcount = props.multiProcessorCount;
 	ctx->device_arch[0] = props.major;
 	ctx->device_arch[1] = props.minor;
+    ctx->device_clockRate = props.clockRate;
+    ctx->device_memoryClockRate = props.memoryClockRate;
 
 	// set all evice option those marked as auto (-1) to a valid value
 	if(ctx->device_blocks == -1)
@@ -348,7 +351,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			size_t freeMemory = 0;
 			size_t totalMemory = 0;
 			cudaMemGetInfo(&freeMemory, &totalMemory);
-			exit_if_cudaerror(ctx->device_id, __FILE__, __LINE__ );
+			exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
 			freeMemory = (freeMemory * size_t(85)) / 100;
 			if( freeMemory > (size_t(ctx->device_blocks) * size_t(ctx->device_threads) * size_t(2u * 1024u * 1024u)) )
 				break;
@@ -359,3 +362,17 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 
 	return 1;
 }
+
+
+extern "C" int cryptonight_gpu_init(nvid_ctx* ctx)
+{
+    return cryptonight_extra_cpu_init<MEMORY>(ctx);
+}
+
+
+#ifndef XMRIG_NO_AEON
+extern "C" int cryptonight_gpu_init_lite(nvid_ctx* ctx)
+{
+    return cryptonight_extra_cpu_init<MEMORY_LITE>(ctx);
+}
+#endif

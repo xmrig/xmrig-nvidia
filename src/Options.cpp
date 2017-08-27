@@ -38,6 +38,7 @@
 #include "donate.h"
 #include "net/Url.h"
 #include "nvidia/cryptonight.h"
+#include "nvidia/NvmlApi.h"
 #include "Options.h"
 #include "Platform.h"
 #include "version.h"
@@ -54,29 +55,36 @@ Options *Options::m_self = nullptr;
 
 static char const usage[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
+\n\
 Options:\n\
-  -o, --url=URL         URL of mining server\n\
-  -O, --userpass=U:P    username:password pair for mining server\n\
-  -u, --user=USERNAME   username for mining server\n\
-  -p, --pass=PASSWORD   password for mining server\n\
-  -k, --keepalive       send keepalived for prevent timeout (need pool support)\n\
-  -r, --retries=N       number of times to retry before switch to backup server (default: 5)\n\
-  -R, --retry-pause=N   time to pause between retries (default: 5)\n\
-      --no-color        disable colored output\n\
-      --donate-level=N  donate level, default 5%% (5 minutes in 100 minutes)\n\
-      --user-agent      set custom user-agent string for pool\n\
-  -B, --background      run the miner in the background\n\
-  -c, --config=FILE     load a JSON-format configuration file\n\
-  -l, --log-file=FILE   log all output to a file\n"
+  -o, --url=URL           URL of mining server\n\
+  -O, --userpass=U:P      username:password pair for mining server\n\
+  -u, --user=USERNAME     username for mining server\n\
+  -p, --pass=PASSWORD     password for mining server\n\
+  -k, --keepalive         send keepalived for prevent timeout (need pool support)\n\
+  -r, --retries=N         number of times to retry before switch to backup server (default: 5)\n\
+  -R, --retry-pause=N     time to pause between retries (default: 5)\n\
+      --no-color          disable colored output\n\
+      --donate-level=N    donate level, default 5%% (5 minutes in 100 minutes)\n\
+      --user-agent        set custom user-agent string for pool\n\
+  -B, --background        run the miner in the background\n\
+  -c, --config=FILE       load a JSON-format configuration file\n\
+  -l, --log-file=FILE     log all output to a file\n"
 # ifdef HAVE_SYSLOG_H
 "\
-  -S, --syslog          use system log for output messages\n"
+  -S, --syslog            use system log for output messages\n"
 # endif
 "\
-      --nicehash        enable nicehash support\n\
-      --print-time=N    print hashrate report every N seconds\n\
-  -h, --help            display this help and exit\n\
-  -V, --version         output version information and exit\n\
+      --nicehash          enable nicehash support\n\
+      --print-time=N      print hashrate report every N seconds\n\
+  -h, --help              display this help and exit\n\
+  -V, --version           output version information and exit\n\
+\n\
+Auto-configuration specific options:\n\
+      --bfactor=[0-12]    run CryptoNight core kernel in smaller pieces\n\
+                          from 0 (ui freeze) to 12 (smooth), Windows default is 6\n\
+      --bsleep=N          insert a delay of N microseconds between kernel launches\n\
+      --max-gpu-threads=N limit maximum count of GPU threads\n\
 ";
 
 
@@ -84,27 +92,29 @@ static char const short_options[] = "a:c:khBp:Px:r:R:s:T:o:u:O:Vl:S";
 
 
 static struct option const options[] = {
-    { "algo",            1, nullptr, 'a'  },
-    { "background",      0, nullptr, 'B'  },
-    { "config",          1, nullptr, 'c'  },
+    { "algo",            1, nullptr, 'a' },
+    { "background",      0, nullptr, 'B' },
+    { "bfactor",         1, nullptr, 1201 },
+    { "bsleep",          1, nullptr, 1202 },
+    { "config",          1, nullptr, 'c' },
     { "donate-level",    1, nullptr, 1003 },
-    { "help",            0, nullptr, 'h'  },
-    { "keepalive",       0, nullptr ,'k'  },
-    { "log-file",        1, nullptr, 'l'  },
+    { "help",            0, nullptr, 'h' },
+    { "keepalive",       0, nullptr ,'k' },
+    { "log-file",        1, nullptr, 'l' },
     { "max-gpu-threads", 1, nullptr, 1200 },
     { "max-gpu-usage",   1, nullptr, 1004 },
     { "nicehash",        0, nullptr, 1006 },
     { "no-color",        0, nullptr, 1002 },
-    { "pass",            1, nullptr, 'p'  },
+    { "pass",            1, nullptr, 'p' },
     { "print-time",      1, nullptr, 1007 },
-    { "retries",         1, nullptr, 'r'  },
-    { "retry-pause",     1, nullptr, 'R'  },
-    { "syslog",          0, nullptr, 'S'  },
-    { "url",             1, nullptr, 'o'  },
-    { "user",            1, nullptr, 'u'  },
+    { "retries",         1, nullptr, 'r' },
+    { "retry-pause",     1, nullptr, 'R' },
+    { "syslog",          0, nullptr, 'S' },
+    { "url",             1, nullptr, 'o' },
+    { "user",            1, nullptr, 'u' },
     { "user-agent",      1, nullptr, 1008 },
-    { "userpass",        1, nullptr, 'O'  },
-    { "version",         0, nullptr, 'V'  },
+    { "userpass",        1, nullptr, 'O' },
+    { "version",         0, nullptr, 'V' },
     { 0, 0, 0, 0 }
 };
 
@@ -112,6 +122,8 @@ static struct option const options[] = {
 static struct option const config_options[] = {
     { "algo",            1, nullptr, 'a' },
     { "background",      0, nullptr, 'B' },
+    { "bfactor",         1, nullptr, 1201 },
+    { "bsleep",          1, nullptr, 1202 },
     { "colors",          0, nullptr, 2000 },
     { "donate-level",    1, nullptr, 1003 },
     { "log-file",        1, nullptr, 'l' },
@@ -252,6 +264,8 @@ Options::Options(int argc, char **argv) :
     m_userAgent(nullptr),
     m_algo(0),
     m_algoVariant(0),
+    m_bfactor(0),
+    m_bsleep(0),
     m_donateLevel(kDonateLevel),
     m_maxGpuThreads(0),
     m_maxGpuUsage(100),
@@ -260,6 +274,13 @@ Options::Options(int argc, char **argv) :
     m_retryPause(5),
     m_threads(0)
 {
+#   ifdef _WIN32
+    m_bfactor = 6;
+    m_bsleep  = 25;
+#   endif
+
+    NvmlApi::init();
+
     m_pools.push_back(new Url());
 
     int key;
@@ -293,7 +314,7 @@ Options::Options(int argc, char **argv) :
 
     if (m_threads.empty()) {
         m_autoConf = true;
-        GpuThread::autoConf(m_threads);
+        GpuThread::autoConf(m_threads, m_bfactor, m_bsleep);
 
         for (GpuThread *thread : m_threads) {
             thread->limit(m_maxGpuUsage, m_maxGpuThreads);
@@ -306,6 +327,7 @@ Options::Options(int argc, char **argv) :
 
 Options::~Options()
 {
+    NvmlApi::release();
 }
 
 
@@ -365,6 +387,8 @@ bool Options::parseArg(int key, const char *arg)
     case 1004: /* --max-gpu-usage */
     case 1007: /* --print-time */
     case 1200: /* --max-gpu-threads */
+    case 1201: /* --bfactor */
+    case 1202: /* --bsleep */
         return parseArg(key, strtol(arg, nullptr, 10));
 
     case 'B':  /* --background */
@@ -462,6 +486,14 @@ bool Options::parseArg(int key, uint64_t arg)
 
     case 1200: /* --max-gpu-threads */
         m_maxGpuThreads = (int) arg;
+        break;
+
+    case 1201: /* --bfactor */
+        m_bfactor = (int) arg;
+        break;
+
+    case 1202: /* --bsleep */
+        m_bsleep = (int) arg;
         break;
 
     default:

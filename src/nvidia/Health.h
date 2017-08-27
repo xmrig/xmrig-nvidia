@@ -21,40 +21,30 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HANDLE_H__
-#define __HANDLE_H__
+#ifndef __HEALTH_H__
+#define __HEALTH_H__
 
 
 #include <stdint.h>
-#include <uv.h>
 
 
-class IWorker;
-class GpuThread;
-
-
-class Handle
+class Health
 {
 public:
-    Handle(int threadId, GpuThread *thread, int threads, bool lite);
-    void join();
-    void start(void (*callback) (void *));
+    Health() :
+        temperature(0),
+        power(0),
+        fanSpeed(0),
+        clock(0),
+        memClock(0)
+    {}
 
-    inline bool isLite() const                { return m_lite; }
-    inline const GpuThread *gpuThread() const { return m_gpuThread; }
-    inline int threadId() const               { return m_threadId; }
-    inline int threads() const                { return m_threads; }
-    inline IWorker *worker() const            { return m_worker; }
-    inline void setWorker(IWorker *worker)    { m_worker = worker; }
-
-private:
-    bool m_lite;
-    const int m_threadId;
-    const GpuThread *m_gpuThread;
-    const int m_threads;
-    IWorker *m_worker;
-    uv_thread_t m_thread;
+    uint32_t temperature;
+    uint32_t power;
+    uint32_t fanSpeed;
+    uint32_t clock;
+    uint32_t memClock;
 };
 
 
-#endif /* __HANDLE_H__ */
+#endif /* __HEALTH_H__ */

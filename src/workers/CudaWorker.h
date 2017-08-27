@@ -53,6 +53,7 @@ private:
     void save(const Job &job);
     void storeStats();
 
+    bool m_lite;
     const int m_id;
     const int m_threads;
     Job m_job;

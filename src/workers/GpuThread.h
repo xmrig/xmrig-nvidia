@@ -40,18 +40,20 @@ public:
     bool init();
     void limit(int maxUsage, int maxThreads);
 
-    static void autoConf(std::vector<GpuThread*> &threads);
+    static void autoConf(std::vector<GpuThread*> &threads, int bfactor, int bsleep);
 
-    inline const char *name() const { return m_name; }
-    inline const int *arch() const  { return m_arch; }
-    inline int bfactor() const      { return m_bfactor; }
-    inline int blocks() const       { return m_blocks; }
-    inline int bsleep() const       { return m_bsleep; }
-    inline int id() const           { return m_id; }
-    inline int smx() const          { return m_smx; }
-    inline int threads() const      { return m_threads; }
+    inline const char *name() const    { return m_name; }
+    inline const int *arch() const     { return m_arch; }
+    inline int bfactor() const         { return m_bfactor; }
+    inline int blocks() const          { return m_blocks; }
+    inline int bsleep() const          { return m_bsleep; }
+    inline int clockRate() const       { return m_clockRate; } 
+    inline int id() const              { return m_id; }
+    inline int memoryClockRate() const { return m_memoryClockRate; }
+    inline int smx() const             { return m_smx; }
+    inline int threads() const         { return m_threads; }
 
-    inline void setBFactor(int bfactor) { m_bfactor = bfactor; }
+    inline void setBFactor(int bfactor) { if (bfactor >= 0 && bfactor <= 12) { m_bfactor = bfactor; } }
     inline void setBlocks(int blocks)   { m_blocks = blocks; }
     inline void setBSleep(int bsleep)   { m_bsleep = bsleep; }
     inline void setId(int id)           { m_id = id; }
@@ -64,7 +66,9 @@ private:
     int m_bfactor;
     int m_blocks;
     int m_bsleep;
+    int m_clockRate;
     int m_id;
+    int m_memoryClockRate;
     int m_smx;
     int m_threads;
 };

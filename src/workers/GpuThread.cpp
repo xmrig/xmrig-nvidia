@@ -33,7 +33,9 @@ GpuThread::GpuThread() :
     m_bfactor(0),
     m_blocks(0),
     m_bsleep(0),
+    m_clockRate(0),
     m_id(0),
+    m_memoryClockRate(0),
     m_smx(0),
     m_threads(0)
 {
@@ -46,7 +48,9 @@ GpuThread::GpuThread(const nvid_ctx &ctx) :
     m_bfactor(ctx.device_bfactor),
     m_blocks(ctx.device_blocks),
     m_bsleep(ctx.device_bsleep),
+    m_clockRate(ctx.device_clockRate),
     m_id(ctx.device_id),
+    m_memoryClockRate(ctx.device_memoryClockRate),
     m_smx(ctx.device_mpcount),
     m_threads(ctx.device_threads)
 {
@@ -86,6 +90,9 @@ bool GpuThread::init()
     m_threads = ctx.device_threads;
     m_blocks  = ctx.device_blocks;
     m_smx     = ctx.device_mpcount;
+
+    m_clockRate = ctx.device_clockRate;
+    m_memoryClockRate = ctx.device_memoryClockRate;
     
     return true;
 }
@@ -107,7 +114,7 @@ void GpuThread::limit(int maxUsage, int maxThreads)
 }
 
 
-void GpuThread::autoConf(std::vector<GpuThread*> &threads)
+void GpuThread::autoConf(std::vector<GpuThread*> &threads, int bfactor, int bsleep)
 {
     const int count = cuda_get_devicecount();
     if (count == 0) {
@@ -119,14 +126,8 @@ void GpuThread::autoConf(std::vector<GpuThread*> &threads)
         ctx.device_id      = i;
         ctx.device_blocks  = -1;
         ctx.device_threads = -1;
-
-#       ifndef _WIN32
-        ctx.device_bfactor = 0;
-        ctx.device_bsleep = 0;
-#       else
-        ctx.device_bfactor = 6;
-        ctx.device_bsleep = 25;
-#       endif
+        ctx.device_bfactor = bfactor;
+        ctx.device_bsleep  = bsleep;
 
         if (cuda_get_deviceinfo(&ctx) != 1) {
             continue;

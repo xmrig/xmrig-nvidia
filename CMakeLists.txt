@@ -70,6 +70,8 @@ set(SOURCES
     src/net/strategies/FailoverStrategy.cpp
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/Url.cpp
+    src/nvidia/Health.h
+    src/nvidia/NvmlApi.h
     src/Options.cpp
     src/Platform.cpp
     src/Summary.cpp
@@ -131,15 +133,28 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-
 include(cmake/flags.cmake)
 include(cmake/CUDA.cmake)
 
+find_package(NVML)
+if (NVML_FOUND)
+    include_directories(${NVML_INCLUDE_DIR})
+
+    set(SOURCES_NVML src/nvidia/NvmlApi.cpp)
+else()
+    add_definitions(/DXMRIG_NO_NVML)
+
+    set(SOURCES_NVML src/nvidia/NvmlApi_stub.cpp)
+endif()
 
 CHECK_INCLUDE_FILE (syslog.h HAVE_SYSLOG_H)
 if (HAVE_SYSLOG_H)
     add_definitions(/DHAVE_SYSLOG_H)
     set(SOURCES_SYSLOG src/log/SysLog.h src/log/SysLog.cpp)
+endif()
+
+if (NOT WITH_AEON)
+    add_definitions(/DXMRIG_NO_AEON)
 endif()
 
 include_directories(src)
@@ -149,5 +164,5 @@ include_directories(${UV_INCLUDE_DIR})
 
 add_subdirectory(src/3rdparty/jansson)
 
-add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_CPUID} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG})
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG})
 target_link_libraries(${PROJECT_NAME} xmrig-cuda jansson ${UV_LIBRARIES} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})
