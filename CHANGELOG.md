@@ -1,4 +1,4 @@
-# v2.3.1
+# v2.3.0
 - [#5](https://github.com/xmrig/xmrig-nvidia/issues/5) Added AEON (cryptonight-lite) support.
 - Added GPU health monitoring: clocks, power, temperature and fan speed via NVML API.
 - Added options `bfactor`, `bsleep` and `max-gpu-threads` for change auto configuration result.
