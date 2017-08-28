@@ -16,9 +16,12 @@ GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used
 * [Contacts](#contacts)
 
 ## Features
+* High performance.
 * Official Windows support.
 * Support for backup (failover) mining server.
-* keepalived support.
+* CryptoNight-Lite support for AEON.
+* Automatic GPU configuration.
+* GPU health monitoring (clocks, power, temperature, fan speed) 
 * Nicehash support.
 * It's open source software.
 
