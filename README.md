@@ -5,7 +5,7 @@ GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used
 
 * This is the NVIDIA GPU mining version, there is also a [CPU version](https://github.com/xmrig/xmrig).
 
-<img src="http://i.imgur.com/dKDeaA0.png" width="593" >
+<img src="https://i.imgur.com/wRCZ3IJ.png" width="620" >
 
 #### Table of contents
 * [Features](#features)
