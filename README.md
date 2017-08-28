@@ -34,23 +34,30 @@ GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used
 
 ### Command line options
 ```
-  -o, --url=URL         URL of mining server
-  -O, --userpass=U:P    username:password pair for mining server
-  -u, --user=USERNAME   username for mining server
-  -p, --pass=PASSWORD   password for mining server
-  -k, --keepalive       send keepalived for prevent timeout (need pool support)
-  -r, --retries=N       number of times to retry before switch to backup server (default: 5)
-  -R, --retry-pause=N   time to pause between retries (default: 5)
-      --no-color        disable colored output
-      --donate-level=N  donate level, default 5% (5 minutes in 100 minutes)
-      --user-agent      set custom user-agent string for pool
-  -B, --background      run the miner in the background
-  -c, --config=FILE     load a JSON-format configuration file
-  -l, --log-file=FILE   log all output to a file
-      --nicehash        enable nicehash support
-      --print-time=N    print hashrate report every N seconds
-  -h, --help            display this help and exit
-  -V, --version         output version information and exit
+  -a, --algo=ALGO         cryptonight (default) or cryptonight-lite
+  -o, --url=URL           URL of mining server
+  -O, --userpass=U:P      username:password pair for mining server
+  -u, --user=USERNAME     username for mining server
+  -p, --pass=PASSWORD     password for mining server
+  -k, --keepalive         send keepalived for prevent timeout (need pool support)
+  -r, --retries=N         number of times to retry before switch to backup server (default: 5)
+  -R, --retry-pause=N     time to pause between retries (default: 5)
+      --no-color          disable colored output
+      --donate-level=N    donate level, default 5% (5 minutes in 100 minutes)
+      --user-agent        set custom user-agent string for pool
+  -B, --background        run the miner in the background
+  -c, --config=FILE       load a JSON-format configuration file
+  -l, --log-file=FILE     log all output to a file
+      --nicehash          enable nicehash support
+      --print-time=N      print hashrate report every N seconds
+  -h, --help              display this help and exit
+  -V, --version           output version information and exit
+
+Auto-configuration specific options:
+      --bfactor=[0-12]    run CryptoNight core kernel in smaller pieces
+                          from 0 (ui freeze) to 12 (smooth), Windows default is 6
+      --bsleep=N          insert a delay of N microseconds between kernel launches
+      --max-gpu-threads=N limit maximum count of GPU threads
 ```
 
 ### Config file.
