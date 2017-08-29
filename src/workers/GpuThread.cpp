@@ -34,9 +34,10 @@ GpuThread::GpuThread() :
     m_blocks(0),
     m_bsleep(0),
     m_clockRate(0),
-    m_id(0),
+    m_index(0),
     m_memoryClockRate(0),
     m_smx(0),
+    m_threadId(0),
     m_threads(0)
 {
     memset(m_arch, 0, sizeof(m_arch));
@@ -49,9 +50,10 @@ GpuThread::GpuThread(const nvid_ctx &ctx) :
     m_blocks(ctx.device_blocks),
     m_bsleep(ctx.device_bsleep),
     m_clockRate(ctx.device_clockRate),
-    m_id(ctx.device_id),
+    m_index(ctx.device_id),
     m_memoryClockRate(ctx.device_memoryClockRate),
     m_smx(ctx.device_mpcount),
+    m_threadId(0),
     m_threads(ctx.device_threads)
 {
     memcpy(m_arch, ctx.device_arch, sizeof(m_arch));
@@ -66,7 +68,7 @@ GpuThread::~GpuThread()
 
 bool GpuThread::init()
 {
-    if (m_id < 0 || m_blocks < -1 || m_threads < -1 || m_bfactor < 0 || m_bsleep < 0) {
+    if (m_index < 0 || m_blocks < -1 || m_threads < -1 || m_bfactor < 0 || m_bsleep < 0) {
         return false;
     }
 
@@ -75,7 +77,7 @@ bool GpuThread::init()
     }
 
     nvid_ctx ctx;
-    ctx.device_id      = m_id;
+    ctx.device_id      = m_index;
     ctx.device_blocks  = m_blocks;
     ctx.device_threads = m_threads;
     ctx.device_bfactor = m_bfactor;

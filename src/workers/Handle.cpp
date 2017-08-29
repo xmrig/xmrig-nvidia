@@ -23,6 +23,7 @@
 
 
 #include "workers/Handle.h"
+#include "workers/GpuThread.h"
 
 
 Handle::Handle(int threadId, GpuThread *thread, int threads, bool lite) :
@@ -32,6 +33,7 @@ Handle::Handle(int threadId, GpuThread *thread, int threads, bool lite) :
     m_threads(threads),
     m_worker(nullptr)
 {
+    thread->setThreadId(threadId);
 }
 
 

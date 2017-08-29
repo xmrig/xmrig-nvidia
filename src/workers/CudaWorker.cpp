@@ -43,7 +43,7 @@ CudaWorker::CudaWorker(Handle *handle) :
 {
     const GpuThread *thread = handle->gpuThread();
 
-    m_ctx.device_id      = thread->id();
+    m_ctx.device_id      = thread->index();
     m_ctx.device_blocks  = thread->blocks();
     m_ctx.device_threads = thread->threads();
     m_ctx.device_bfactor = thread->bfactor();

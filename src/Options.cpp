@@ -212,7 +212,7 @@ bool Options::save()
     json_t *threads = json_array();
     for (const GpuThread *thread : m_threads) {
         json_t *obj = json_object();
-        json_object_set(obj, "index",   json_integer(thread->id()));
+        json_object_set(obj, "index",   json_integer(thread->index()));
         json_object_set(obj, "threads", json_integer(thread->threads()));
         json_object_set(obj, "blocks",  json_integer(thread->blocks()));
         json_object_set(obj, "bfactor", json_integer(thread->bfactor()));
@@ -651,7 +651,7 @@ void Options::parseJSON(const struct option *option, json_t *object)
 void Options::parseThread(json_t *object)
 {
     GpuThread *thread = new GpuThread();
-    thread->setId((int) json_integer_value(json_object_get(object, "index")));
+    thread->setIndex((int) json_integer_value(json_object_get(object, "index")));
     thread->setThreads((int) json_integer_value(json_object_get(object, "threads")));
     thread->setBlocks((int) json_integer_value(json_object_get(object, "blocks")));
     thread->setBFactor((int) json_integer_value(json_object_get(object, "bfactor")));
