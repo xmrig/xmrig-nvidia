@@ -119,5 +119,9 @@ bool CryptoNight::selfTest(int algo) {
 
     _mm_free(ctx);
 
+#   ifdef XMRIG_NO_AEON
+    return memcmp(output, test_output0, 32) == 0;
+#   else
     return memcmp(output, algo == Options::ALGO_CRYPTONIGHT_LITE ? test_output1 : test_output0, 32) == 0;
+#   endif
 }
