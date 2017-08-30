@@ -1,3 +1,7 @@
+# v2.3.1
+- [#7](https://github.com/xmrig/xmrig-nvidia/issues/7) Fixed crash when try see hashrate reports in some configurations.
+- [#8](https://github.com/xmrig/xmrig-nvidia/issues/8) Fixed build without AEON support.
+
 # v2.3.0
 - [#5](https://github.com/xmrig/xmrig-nvidia/issues/5) Added AEON (cryptonight-lite) support.
 - Added GPU health monitoring: clocks, power, temperature and fan speed via NVML API.
