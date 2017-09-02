@@ -123,6 +123,7 @@ endif()
 add_definitions(/DXMRIG_NVIDIA_PROJECT)
 add_definitions(/DUNICODE)
 add_definitions(/DXMRIG_NO_LIBCPUID)
+add_definitions(/D__STDC_FORMAT_MACROS)
 #add_definitions(/DAPP_DEBUG)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")

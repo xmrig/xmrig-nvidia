@@ -86,7 +86,7 @@ void Workers::printHashrate(bool detail)
 {
     if (detail) {
        for (const GpuThread *thread : Options::i()->threads()) {
-            m_hashrate->print(thread->id());
+            m_hashrate->print(thread->threadId(), thread->index());
         }
     }
 
@@ -103,16 +103,28 @@ void Workers::printHealth()
 
     Health health;
     for (const GpuThread *thread : Options::i()->threads()) {
-        NvmlApi::health(thread->id(), health);
+        NvmlApi::health(thread->index(), health);
+
+        const uint32_t temp = health.temperature;
+
+        if (health.clock && health.power) {
+            if (Options::i()->colors()) {
+                LOG_INFO("\x1B[00;35mGPU #%d: \x1B[01m%u\x1B[00;35m/\x1B[01m%u MHz\x1B[00;35m \x1B[01m%uW\x1B[00;35m %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
+                    thread->index(), health.clock, health.memClock, health.power / 1000, (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
+            }
+            else {
+                LOG_INFO(" * GPU #%d: %u/%u MHz %uW %uC FAN %u%%", thread->index(), health.clock, health.memClock, health.power / 1000, health.temperature, health.fanSpeed);
+            }
+
+            continue;
+        }
 
         if (Options::i()->colors()) {
-            const uint32_t temp = health.temperature;
-
-            LOG_INFO("\x1B[00;35mGPU #%d: \x1B[01m%u\x1B[00;35m/\x1B[01m%u MHz\x1B[00;35m \x1B[01m%uW\x1B[00;35m %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
-                thread->id(), health.clock, health.memClock, health.power / 1000, (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
+            LOG_INFO("\x1B[00;35mGPU #%d: %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
+                thread->index(), (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
         }
         else {
-            LOG_INFO(" * GPU #%d: %u/%u MHz %uW %uC FAN %u%%", thread->id(), health.clock, health.memClock, health.power / 1000, health.temperature, health.fanSpeed);
+            LOG_INFO(" * GPU #%d: %uC FAN %u%%", thread->index(), health.temperature, health.fanSpeed);
         }
     }
 }

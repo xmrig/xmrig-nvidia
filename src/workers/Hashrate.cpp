@@ -152,14 +152,14 @@ void Hashrate::print()
 }
 
 
-void Hashrate::print(size_t threadId)
+void Hashrate::print(size_t threadId, int gpuId)
 {
     char num1[8];
     char num2[8];
     char num3[8];
 
     LOG_INFO(Options::i()->colors() ? "\x1B[01;37mGPU %d\x1B[0m 10s/60s/15m \x1B[01;36m%s\x1B[0m \x1B[22;36m%s %s \x1B[01;36mH/s" : "speed 10s/60s/15m %s %s %s H/s",
-        (int) threadId,
+        gpuId,
         format(calc(threadId, 10000), num1, sizeof(num1)),
         format(calc(threadId, 60000), num2, sizeof(num2)),
         format(calc(threadId, 900000), num3, sizeof(num3))

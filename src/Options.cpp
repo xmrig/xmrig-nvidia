@@ -57,6 +57,7 @@ static char const usage[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
 \n\
 Options:\n\
+  -a, --algo=ALGO         cryptonight (default) or cryptonight-lite\n\
   -o, --url=URL           URL of mining server\n\
   -O, --userpass=U:P      username:password pair for mining server\n\
   -u, --user=USERNAME     username for mining server\n\
@@ -195,6 +196,7 @@ bool Options::save()
     uv_fs_req_cleanup(&req);
 
     json_t *options = json_object();
+    json_object_set(options, "algo",         json_string(algoName()));
     json_object_set(options, "background",   json_boolean(m_background));
     json_object_set(options, "colors",       json_boolean(m_colors));
     json_object_set(options, "donate-level", json_integer(m_donateLevel));
@@ -210,7 +212,7 @@ bool Options::save()
     json_t *threads = json_array();
     for (const GpuThread *thread : m_threads) {
         json_t *obj = json_object();
-        json_object_set(obj, "index",   json_integer(thread->id()));
+        json_object_set(obj, "index",   json_integer(thread->index()));
         json_object_set(obj, "threads", json_integer(thread->threads()));
         json_object_set(obj, "blocks",  json_integer(thread->blocks()));
         json_object_set(obj, "bfactor", json_integer(thread->bfactor()));
@@ -649,7 +651,7 @@ void Options::parseJSON(const struct option *option, json_t *object)
 void Options::parseThread(json_t *object)
 {
     GpuThread *thread = new GpuThread();
-    thread->setId((int) json_integer_value(json_object_get(object, "index")));
+    thread->setIndex((int) json_integer_value(json_object_get(object, "index")));
     thread->setThreads((int) json_integer_value(json_object_get(object, "threads")));
     thread->setBlocks((int) json_integer_value(json_object_get(object, "blocks")));
     thread->setBFactor((int) json_integer_value(json_object_get(object, "bfactor")));

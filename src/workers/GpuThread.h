@@ -42,22 +42,24 @@ public:
 
     static void autoConf(std::vector<GpuThread*> &threads, int bfactor, int bsleep);
 
-    inline const char *name() const    { return m_name; }
-    inline const int *arch() const     { return m_arch; }
-    inline int bfactor() const         { return m_bfactor; }
-    inline int blocks() const          { return m_blocks; }
-    inline int bsleep() const          { return m_bsleep; }
-    inline int clockRate() const       { return m_clockRate; } 
-    inline int id() const              { return m_id; }
-    inline int memoryClockRate() const { return m_memoryClockRate; }
-    inline int smx() const             { return m_smx; }
-    inline int threads() const         { return m_threads; }
+    inline const char *name() const       { return m_name; }
+    inline const int *arch() const        { return m_arch; }
+    inline int bfactor() const            { return m_bfactor; }
+    inline int blocks() const             { return m_blocks; }
+    inline int bsleep() const             { return m_bsleep; }
+    inline int clockRate() const          { return m_clockRate; } 
+    inline int index() const              { return m_index; }
+    inline int memoryClockRate() const    { return m_memoryClockRate; }
+    inline int smx() const                { return m_smx; }
+    inline int threadId() const           { return m_threadId; }
+    inline int threads() const            { return m_threads; }
 
-    inline void setBFactor(int bfactor) { if (bfactor >= 0 && bfactor <= 12) { m_bfactor = bfactor; } }
-    inline void setBlocks(int blocks)   { m_blocks = blocks; }
-    inline void setBSleep(int bsleep)   { m_bsleep = bsleep; }
-    inline void setId(int id)           { m_id = id; }
-    inline void setThreads(int threads) { m_threads = threads; }
+    inline void setBFactor(int bfactor)   { if (bfactor >= 0 && bfactor <= 12) { m_bfactor = bfactor; } }
+    inline void setBlocks(int blocks)     { m_blocks = blocks; }
+    inline void setBSleep(int bsleep)     { m_bsleep = bsleep; }
+    inline void setIndex(int index)       { m_index = index; }
+    inline void setThreadId(int threadId) { m_threadId = threadId; }
+    inline void setThreads(int threads)   { m_threads = threads; }
 
 private:
     bool m_affinity;
@@ -67,9 +69,10 @@ private:
     int m_blocks;
     int m_bsleep;
     int m_clockRate;
-    int m_id;
+    int m_index;
     int m_memoryClockRate;
     int m_smx;
+    int m_threadId;
     int m_threads;
 };
 
