@@ -71,6 +71,18 @@ const char *Api::get(const char *url, size_t *size, int *status)
 }
 
 
+void Api::setHealth(const std::vector<Health> &health)
+{
+    if (!m_state) {
+        return;
+    }
+
+    uv_mutex_lock(&m_mutex);
+    m_state->setHealth(health);
+    uv_mutex_unlock(&m_mutex);
+}
+
+
 void Api::tick(const Hashrate *hashrate)
 {
     if (!m_state) {

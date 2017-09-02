@@ -29,7 +29,6 @@
 
 GpuThread::GpuThread() :
     m_affinity(false),
-    m_name(nullptr),
     m_bfactor(0),
     m_blocks(0),
     m_bsleep(0),
@@ -41,6 +40,7 @@ GpuThread::GpuThread() :
     m_threads(0)
 {
     memset(m_arch, 0, sizeof(m_arch));
+    memset(m_name, 0, sizeof(m_name));
 }
 
 
@@ -57,7 +57,7 @@ GpuThread::GpuThread(const nvid_ctx &ctx) :
     m_threads(ctx.device_threads)
 {
     memcpy(m_arch, ctx.device_arch, sizeof(m_arch));
-    m_name = strdup(ctx.device_name);
+    strncpy(m_name, ctx.device_name, sizeof(m_name) - 1);
 }
 
 
@@ -88,7 +88,8 @@ bool GpuThread::init()
     }
 
     memcpy(m_arch, ctx.device_arch, sizeof(m_arch));
-    m_name    = strdup(ctx.device_name);
+    strncpy(m_name, ctx.device_name, sizeof(m_name) - 1);
+
     m_threads = ctx.device_threads;
     m_blocks  = ctx.device_blocks;
     m_smx     = ctx.device_mpcount;

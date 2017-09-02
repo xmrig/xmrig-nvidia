@@ -25,7 +25,11 @@
 #define __API_H__
 
 
+#include <vector>
 #include <uv.h>
+
+
+#include "nvidia/Health.h"
 
 
 class ApiState;
@@ -40,6 +44,7 @@ public:
     static void release();
 
     static const char *get(const char *url, size_t *size, int *status);
+    static void setHealth(const std::vector<Health> &health);
     static void tick(const Hashrate *hashrate);
     static void tick(const NetworkState &results);
 

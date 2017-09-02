@@ -63,7 +63,7 @@ public:
 
 private:
     bool m_affinity;
-    char *m_name;
+    char m_name[256];
     int m_arch[2];
     int m_bfactor;
     int m_blocks;

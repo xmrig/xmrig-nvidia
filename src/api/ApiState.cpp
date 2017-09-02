@@ -73,6 +73,11 @@ ApiState::ApiState()
     }
 
     genId();
+
+    for (const GpuThread *thread : Options::i()->threads()) {
+        m_gpuThreads.push_back(*thread);
+        m_health.push_back(Health());
+    }
 }
 
 
@@ -89,10 +94,17 @@ const char *ApiState::get(const char *url, size_t *size) const
     getIdentify(reply);
     getMiner(reply);
     getHashrate(reply);
+    getHealth(reply);
     getResults(reply);
     getConnection(reply);
 
     return finalize(reply, size);
+}
+
+
+void ApiState::setHealth(const std::vector<Health> &health)
+{
+    m_health = health;
 }
 
 
@@ -192,6 +204,25 @@ void ApiState::getHashrate(json_t *reply) const
 
     for (int i = 0; i < 3; ++i) {
         json_array_append(total, json_real(normalize(m_totalHashrate[i])));
+    }
+}
+
+
+void ApiState::getHealth(json_t *reply) const
+{
+    json_t *health = json_array();
+    json_object_set(reply, "health", health);
+
+    for (size_t i = 0; i < m_gpuThreads.size(); i++) {
+        json_t *record = json_object();
+        json_array_append(health, record);
+
+        json_object_set(record, "name",      json_string(m_gpuThreads[i].name()));
+        json_object_set(record, "clock",     json_integer(m_health[i].clock));
+        json_object_set(record, "mem_clock", json_integer(m_health[i].memClock));
+        json_object_set(record, "power",     json_integer(m_health[i].power / 1000));
+        json_object_set(record, "temp",      json_integer(m_health[i].temperature));
+        json_object_set(record, "fan",       json_integer(m_health[i].fanSpeed));
     }
 }
 

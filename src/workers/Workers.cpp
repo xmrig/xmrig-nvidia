@@ -302,5 +302,16 @@ void Workers::onTick(uv_timer_t *handle)
 
 #   ifndef XMRIG_NO_API
     Api::tick(m_hashrate);
+
+    if ((m_ticks++ & 0x4) == 0) {
+        std::vector<Health> records;
+        Health health;
+        for (const GpuThread *thread : Options::i()->threads()) {
+            NvmlApi::health(thread->index(), health);
+            records.push_back(health);
+        }
+
+        Api::setHealth(records);
+    }
 #   endif
 }
