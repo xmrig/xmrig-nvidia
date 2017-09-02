@@ -1,14 +1,17 @@
 cmake_minimum_required(VERSION 3.0)
 project(xmrig-nvidia)
 
-option(WITH_AEON "CryptoNight-Lite support" ON)
-
+option(WITH_AEON  "CryptoNight-Lite support" ON)
+option(WITH_HTTPD "HTTP REST API" ON)
 
 include (CheckIncludeFile)
 
 
 set(HEADERS
     src/3rdparty/align.h
+    src/api/Api.h
+    src/api/ApiState.h
+    src/api/NetworkState.h
     src/App.h
     src/Console.h
     src/Cpu.h
@@ -57,6 +60,9 @@ set(HEADERS_CRYPTO
    )
 
 set(SOURCES
+    src/api/Api.cpp
+    src/api/ApiState.cpp
+    src/api/NetworkState.cpp
     src/App.cpp
     src/Console.cpp
     src/Cpu_stub.cpp
@@ -69,6 +75,7 @@ set(SOURCES
     src/net/strategies/DonateStrategy.cpp
     src/net/strategies/FailoverStrategy.cpp
     src/net/strategies/SinglePoolStrategy.cpp
+    src/net/SubmitResult.cpp
     src/net/Url.cpp
     src/nvidia/Health.h
     src/nvidia/NvmlApi.h
@@ -158,6 +165,16 @@ if (NOT WITH_AEON)
     add_definitions(/DXMRIG_NO_AEON)
 endif()
 
+find_package(MHD)
+if (WITH_HTTPD AND MHD_FOUND)
+    include_directories(${MHD_INCLUDE_DIRS})
+
+    set(HTTPD_SOURCES src/api/Httpd.h src/api/Httpd.cpp)
+else()
+    add_definitions(/DXMRIG_NO_HTTPD)
+    add_definitions(/DXMRIG_NO_API)
+endif()
+
 include_directories(src)
 include_directories(src/3rdparty)
 include_directories(src/3rdparty/jansson)
@@ -165,5 +182,5 @@ include_directories(${UV_INCLUDE_DIR})
 
 add_subdirectory(src/3rdparty/jansson)
 
-add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG})
-target_link_libraries(${PROJECT_NAME} xmrig-cuda jansson ${UV_LIBRARIES} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${HTTPD_SOURCES})
+target_link_libraries(${PROJECT_NAME} xmrig-cuda jansson ${UV_LIBRARIES} ${MHD_LIBRARY} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})

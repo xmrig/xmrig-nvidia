@@ -31,6 +31,12 @@
 class Hashrate
 {
 public:
+    enum Intervals {
+        ShortInterval  = 10000,
+        MediumInterval = 60000,
+        LargeInterval  = 900000
+    };
+
     Hashrate(int threads);
     double calc(size_t ms) const;
     double calc(size_t threadId, size_t ms) const;

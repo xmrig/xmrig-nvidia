@@ -21,29 +21,33 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ISTRATEGYLISTENER_H__
-#define __ISTRATEGYLISTENER_H__
+#ifndef __HTTPD_H__
+#define __HTTPD_H__
 
 
-#include <stdint.h>
+#include <uv.h>
 
 
-class Client;
-class IStrategy;
-class Job;
-class SubmitResult;
+struct MHD_Connection;
+struct MHD_Daemon;
+struct MHD_Response;
 
 
-class IStrategyListener
+class Httpd
 {
 public:
-    virtual ~IStrategyListener() {}
+    Httpd(int port, const char *accessToken);
+    bool start();
 
-    virtual void onActive(Client *client)                                                        = 0;
-    virtual void onJob(Client *client, const Job &job)                                           = 0;
-    virtual void onPause(IStrategy *strategy)                                                    = 0;
-    virtual void onResultAccepted(Client *client, const SubmitResult &result, const char *error) = 0;
+private:
+    int auth(const char *header);
+
+    static int done(MHD_Connection *connection, int status, MHD_Response *rsp);
+    static int handler(void *cls, MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls);
+
+    const char *m_accessToken;
+    const int m_port;
+    MHD_Daemon *m_daemon;
 };
 
-
-#endif // __ISTRATEGYLISTENER_H__
+#endif /* __HTTPD_H__ */

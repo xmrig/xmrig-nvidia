@@ -21,29 +21,75 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ISTRATEGYLISTENER_H__
-#define __ISTRATEGYLISTENER_H__
+#include <string.h>
 
 
-#include <stdint.h>
+#include "api/Api.h"
+#include "api/ApiState.h"
 
 
-class Client;
-class IStrategy;
-class Job;
-class SubmitResult;
+ApiState *Api::m_state = nullptr;
+char Api::m_buf[4096];
+uv_mutex_t Api::m_mutex;
 
 
-class IStrategyListener
+bool Api::start()
 {
-public:
-    virtual ~IStrategyListener() {}
+    uv_mutex_init(&m_mutex);
+    m_state = new ApiState();
 
-    virtual void onActive(Client *client)                                                        = 0;
-    virtual void onJob(Client *client, const Job &job)                                           = 0;
-    virtual void onPause(IStrategy *strategy)                                                    = 0;
-    virtual void onResultAccepted(Client *client, const SubmitResult &result, const char *error) = 0;
-};
+    return true;
+}
 
 
-#endif // __ISTRATEGYLISTENER_H__
+void Api::release()
+{
+    delete m_state;
+}
+
+
+const char *Api::get(const char *url, size_t *size, int *status)
+{
+    if (!m_state) {
+        *size = 0;
+        return nullptr;
+    }
+
+    uv_mutex_lock(&m_mutex);
+
+    const char *buf = m_state->get(url, size);
+    if (*size) {
+        memcpy(m_buf, buf, *size);
+    }
+    else {
+        *status = 500;
+    }
+
+    uv_mutex_unlock(&m_mutex);
+
+    return m_buf;
+}
+
+
+void Api::tick(const Hashrate *hashrate)
+{
+    if (!m_state) {
+        return;
+    }
+
+    uv_mutex_lock(&m_mutex);
+    m_state->tick(hashrate);
+    uv_mutex_unlock(&m_mutex);
+}
+
+
+void Api::tick(const NetworkState &network)
+{
+    if (!m_state) {
+        return;
+    }
+
+    uv_mutex_lock(&m_mutex);
+    m_state->tick(network);
+    uv_mutex_unlock(&m_mutex);
+}

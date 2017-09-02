@@ -116,6 +116,9 @@ static struct option const options[] = {
     { "user-agent",      1, nullptr, 1008 },
     { "userpass",        1, nullptr, 'O' },
     { "version",         0, nullptr, 'V' },
+    { "api-port",         1, nullptr, 4000 },
+    { "api-access-token", 1, nullptr, 4001 },
+    { "api-worker-id",    1, nullptr, 4002 },
     { 0, 0, 0, 0 }
 };
 
@@ -156,6 +159,14 @@ static struct option const thread_options[] = {
     { "blocks",        1, nullptr, 3002 },
     { "bfactor",       1, nullptr, 3003 },
     { "bsleep",        1, nullptr, 3004 },
+    { 0, 0, 0, 0 }
+};
+
+
+static struct option const api_options[] = {
+    { "port",          1, nullptr, 4000 },
+    { "access-token",  1, nullptr, 4001 },
+    { "worker-id",     1, nullptr, 4002 },
     { 0, 0, 0, 0 }
 };
 
@@ -261,6 +272,8 @@ Options::Options(int argc, char **argv) :
     m_colors(true),
     m_ready(false),
     m_syslog(false),
+    m_apiToken(nullptr),
+    m_apiWorkerId(nullptr),
     m_configName(nullptr),
     m_logFile(nullptr),
     m_userAgent(nullptr),
@@ -268,6 +281,7 @@ Options::Options(int argc, char **argv) :
     m_algoVariant(0),
     m_bfactor(0),
     m_bsleep(0),
+    m_apiPort(0),
     m_donateLevel(kDonateLevel),
     m_maxGpuThreads(0),
     m_maxGpuUsage(100),
@@ -381,6 +395,16 @@ bool Options::parseArg(int key, const char *arg)
         m_colors = false;
         break;
 
+    case 4001: /* --access-token */
+        free(m_apiToken);
+        m_apiToken = strdup(arg);
+        break;
+
+    case 4002: /* --worker-id */
+        free(m_apiWorkerId);
+        m_apiWorkerId = strdup(arg);
+        break;
+
     case 'r':  /* --retries */
     case 'R':  /* --retry-pause */
     case 't':  /* --threads */
@@ -391,6 +415,7 @@ bool Options::parseArg(int key, const char *arg)
     case 1200: /* --max-gpu-threads */
     case 1201: /* --bfactor */
     case 1202: /* --bsleep */
+    case 4000: /* --api-port */
         return parseArg(key, strtol(arg, nullptr, 10));
 
     case 'B':  /* --background */
@@ -496,6 +521,12 @@ bool Options::parseArg(int key, uint64_t arg)
 
     case 1202: /* --bsleep */
         m_bsleep = (int) arg;
+        break;
+
+    case 4000: /* --api-port */
+        if (arg <= 65536) {
+            m_apiPort = (int)arg;
+        }
         break;
 
     default:
@@ -620,6 +651,12 @@ void Options::parseConfig(const char *fileName)
         }
     }
 
+    json_t *api = json_object_get(config, "api");
+    if (json_is_object(api)) {
+        for (size_t i = 0; i < ARRAY_SIZE(api_options); i++) {
+            parseJSON(&api_options[i], api);
+        }
+    }
 
     json_decref(config);
 }

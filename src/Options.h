@@ -59,6 +59,8 @@ public:
     inline bool colors() const                            { return m_colors; }
     inline bool isAutoConf() const                        { return m_autoConf; }
     inline bool syslog() const                            { return m_syslog; }
+    inline const char *apiToken() const                   { return m_apiToken; }
+    inline const char *apiWorkerId() const                { return m_apiWorkerId; }
     inline const char *configName() const                 { return m_configName; }
     inline const char *logFile() const                    { return m_logFile; }
     inline const char *userAgent() const                  { return m_userAgent; }
@@ -66,6 +68,7 @@ public:
     inline const std::vector<Url*> &pools() const         { return m_pools; }
     inline int algo() const                               { return m_algo; }
     inline int algoVariant() const                        { return m_algoVariant; }
+    inline int apiPort() const                            { return m_apiPort; }
     inline int donateLevel() const                        { return m_donateLevel; }
     inline int maxGpuThreads() const                      { return m_maxGpuThreads; }
     inline int printTime() const                          { return m_printTime; }
@@ -102,11 +105,14 @@ private:
     bool m_colors;
     bool m_ready;
     bool m_syslog;
+    char *m_apiToken;
+    char *m_apiWorkerId;
     char *m_configName;
     char *m_logFile;
     char *m_userAgent;
     int m_algo;
     int m_algoVariant;
+    int m_apiPort;
     int m_bfactor;
     int m_bsleep;
     int m_donateLevel;

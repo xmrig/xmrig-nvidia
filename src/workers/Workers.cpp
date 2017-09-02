@@ -30,6 +30,7 @@
 #endif
 
 
+#include "api/Api.h"
 #include "crypto/CryptoNight.h"
 #include "interfaces/IJobResultListener.h"
 #include "log/Log.h"
@@ -298,4 +299,8 @@ void Workers::onTick(uv_timer_t *handle)
     if ((m_ticks++ & 0xF) == 0)  {
         m_hashrate->updateHighest();
     }
+
+#   ifndef XMRIG_NO_API
+    Api::tick(m_hashrate);
+#   endif
 }

@@ -21,29 +21,32 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ISTRATEGYLISTENER_H__
-#define __ISTRATEGYLISTENER_H__
+#ifndef __API_H__
+#define __API_H__
 
 
-#include <stdint.h>
+#include <uv.h>
 
 
-class Client;
-class IStrategy;
-class Job;
-class SubmitResult;
+class ApiState;
+class Hashrate;
+class NetworkState;
 
 
-class IStrategyListener
+class Api
 {
 public:
-    virtual ~IStrategyListener() {}
+    static bool start();
+    static void release();
 
-    virtual void onActive(Client *client)                                                        = 0;
-    virtual void onJob(Client *client, const Job &job)                                           = 0;
-    virtual void onPause(IStrategy *strategy)                                                    = 0;
-    virtual void onResultAccepted(Client *client, const SubmitResult &result, const char *error) = 0;
+    static const char *get(const char *url, size_t *size, int *status);
+    static void tick(const Hashrate *hashrate);
+    static void tick(const NetworkState &results);
+
+private:
+    static ApiState *m_state;
+    static char m_buf[4096];
+    static uv_mutex_t m_mutex;
 };
 
-
-#endif // __ISTRATEGYLISTENER_H__
+#endif /* __API_H__ */

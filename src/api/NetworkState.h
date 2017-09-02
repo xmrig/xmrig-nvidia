@@ -21,29 +21,41 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ISTRATEGYLISTENER_H__
-#define __ISTRATEGYLISTENER_H__
+#ifndef __NETWORKSTATE_H__
+#define __NETWORKSTATE_H__
 
 
-#include <stdint.h>
+#include <array>
+#include <vector>
 
 
-class Client;
-class IStrategy;
-class Job;
 class SubmitResult;
 
 
-class IStrategyListener
+class NetworkState
 {
 public:
-    virtual ~IStrategyListener() {}
+    NetworkState();
 
-    virtual void onActive(Client *client)                                                        = 0;
-    virtual void onJob(Client *client, const Job &job)                                           = 0;
-    virtual void onPause(IStrategy *strategy)                                                    = 0;
-    virtual void onResultAccepted(Client *client, const SubmitResult &result, const char *error) = 0;
+    int connectionTime() const;
+    uint32_t avgTime() const;
+    uint32_t latency() const;
+    void add(const SubmitResult &result, const char *error);
+    void setPool(const char *host, int port, const char *ip);
+    void stop();
+
+    char pool[256];
+    std::array<uint64_t, 10> topDiff { { } };
+    uint32_t diff;
+    uint64_t accepted;
+    uint64_t failures;
+    uint64_t rejected;
+    uint64_t total;
+
+private:
+    bool m_active;
+    std::vector<uint16_t> m_latency;
+    uint64_t m_connectionTime;
 };
 
-
-#endif // __ISTRATEGYLISTENER_H__
+#endif /* __NETWORKSTATE_H__ */

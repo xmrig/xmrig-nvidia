@@ -21,29 +21,44 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ISTRATEGYLISTENER_H__
-#define __ISTRATEGYLISTENER_H__
+#ifndef __APISTATE_H__
+#define __APISTATE_H__
 
 
-#include <stdint.h>
+#include "api/NetworkState.h"
+#include "jansson.h"
 
 
-class Client;
-class IStrategy;
-class Job;
-class SubmitResult;
+class Hashrate;
 
 
-class IStrategyListener
+class ApiState
 {
 public:
-    virtual ~IStrategyListener() {}
+    ApiState();
+    ~ApiState();
 
-    virtual void onActive(Client *client)                                                        = 0;
-    virtual void onJob(Client *client, const Job &job)                                           = 0;
-    virtual void onPause(IStrategy *strategy)                                                    = 0;
-    virtual void onResultAccepted(Client *client, const SubmitResult &result, const char *error) = 0;
+    const char *get(const char *url, size_t *size) const;
+    void tick(const Hashrate *hashrate);
+    void tick(const NetworkState &results);
+
+private:
+    const char *finalize(json_t *reply, size_t *size) const;
+    void genId();
+    void getConnection(json_t *reply) const;
+    void getHashrate(json_t *reply) const;
+    void getIdentify(json_t *reply) const;
+    void getMiner(json_t *reply) const;
+    void getResults(json_t *reply) const;
+
+    char m_id[17];
+    char m_workerId[128];
+    double *m_hashrate;
+    double m_highestHashrate;
+    double m_totalHashrate[3];
+    int m_threads;
+    mutable char m_buf[4096];
+    NetworkState m_network;
 };
 
-
-#endif // __ISTRATEGYLISTENER_H__
+#endif /* __APISTATE_H__ */

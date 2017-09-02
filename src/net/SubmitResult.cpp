@@ -21,29 +21,24 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ISTRATEGYLISTENER_H__
-#define __ISTRATEGYLISTENER_H__
+
+#include <uv.h>
 
 
-#include <stdint.h>
+#include "net/SubmitResult.h"
 
 
-class Client;
-class IStrategy;
-class Job;
-class SubmitResult;
-
-
-class IStrategyListener
+SubmitResult::SubmitResult(int64_t seq, uint32_t diff, uint64_t actualDiff) :
+    seq(seq),
+    diff(diff),
+    actualDiff(actualDiff),
+    elapsed(0)
 {
-public:
-    virtual ~IStrategyListener() {}
-
-    virtual void onActive(Client *client)                                                        = 0;
-    virtual void onJob(Client *client, const Job &job)                                           = 0;
-    virtual void onPause(IStrategy *strategy)                                                    = 0;
-    virtual void onResultAccepted(Client *client, const SubmitResult &result, const char *error) = 0;
-};
+    start = uv_hrtime();
+}
 
 
-#endif // __ISTRATEGYLISTENER_H__
+void SubmitResult::done()
+{
+    elapsed = (uv_hrtime() - start) / 1000000;
+}
