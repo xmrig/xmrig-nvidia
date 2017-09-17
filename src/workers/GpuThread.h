@@ -50,6 +50,10 @@ public:
     inline int clockRate() const          { return m_clockRate; } 
     inline int index() const              { return m_index; }
     inline int memoryClockRate() const    { return m_memoryClockRate; }
+    inline int nvmlId() const             { return m_nvmlId; }
+    inline int pciBusID() const           { return m_pciBusID; }
+    inline int pciDeviceID() const        { return m_pciDeviceID; }
+    inline int pciDomainID() const        { return m_pciDomainID; }
     inline int smx() const                { return m_smx; }
     inline int threadId() const           { return m_threadId; }
     inline int threads() const            { return m_threads; }
@@ -58,6 +62,7 @@ public:
     inline void setBlocks(int blocks)     { m_blocks = blocks; }
     inline void setBSleep(int bsleep)     { m_bsleep = bsleep; }
     inline void setIndex(int index)       { m_index = index; }
+    inline void setNvmlId(int id)         { m_nvmlId = id; }
     inline void setThreadId(int threadId) { m_threadId = threadId; }
     inline void setThreads(int threads)   { m_threads = threads; }
 
@@ -71,6 +76,10 @@ private:
     int m_clockRate;
     int m_index;
     int m_memoryClockRate;
+    int m_nvmlId;
+    int m_pciBusID;
+    int m_pciDeviceID;
+    int m_pciDomainID;
     int m_smx;
     int m_threadId;
     int m_threads;

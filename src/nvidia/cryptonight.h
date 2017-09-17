@@ -13,6 +13,9 @@ typedef struct {
 	int device_bsleep;
     int device_clockRate;
     int device_memoryClockRate;
+    int device_pciBusID;
+    int device_pciDeviceID;
+    int device_pciDomainID;
 
 	uint32_t *d_input;
 	uint32_t inputlen;

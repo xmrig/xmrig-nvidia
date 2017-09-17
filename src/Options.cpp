@@ -337,6 +337,7 @@ Options::Options(int argc, char **argv) :
         }
     }
 
+    NvmlApi::bind(m_threads);
     m_ready = true;
 }
 

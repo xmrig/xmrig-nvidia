@@ -25,7 +25,13 @@
 #define __NVML_H__
 
 
+#include <vector>
+
+
 #include "nvidia/Health.h"
+
+
+class GpuThread;
 
 
 class NvmlApi
@@ -36,6 +42,7 @@ public:
 
     static bool health(int id, Health &health);
     static const char *version();
+    static void bind(const std::vector<GpuThread*> &threads);
 
     static inline bool isAvailable() { return m_available; }
 

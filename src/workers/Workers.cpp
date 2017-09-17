@@ -104,7 +104,9 @@ void Workers::printHealth()
 
     Health health;
     for (const GpuThread *thread : Options::i()->threads()) {
-        NvmlApi::health(thread->index(), health);
+        if (!NvmlApi::health(thread->nvmlId(), health)) {
+            continue;
+        }
 
         const uint32_t temp = health.temperature;
 
@@ -307,7 +309,7 @@ void Workers::onTick(uv_timer_t *handle)
         std::vector<Health> records;
         Health health;
         for (const GpuThread *thread : Options::i()->threads()) {
-            NvmlApi::health(thread->index(), health);
+            NvmlApi::health(thread->nvmlId(), health);
             records.push_back(health);
         }
 

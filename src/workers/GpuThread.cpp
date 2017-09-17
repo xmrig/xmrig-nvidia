@@ -35,6 +35,10 @@ GpuThread::GpuThread() :
     m_clockRate(0),
     m_index(0),
     m_memoryClockRate(0),
+    m_nvmlId(-1),
+    m_pciBusID(0),
+    m_pciDeviceID(0),
+    m_pciDomainID(0),
     m_smx(0),
     m_threadId(0),
     m_threads(0)
@@ -52,6 +56,10 @@ GpuThread::GpuThread(const nvid_ctx &ctx) :
     m_clockRate(ctx.device_clockRate),
     m_index(ctx.device_id),
     m_memoryClockRate(ctx.device_memoryClockRate),
+    m_nvmlId(-1),
+    m_pciBusID(ctx.device_pciBusID),
+    m_pciDeviceID(ctx.device_pciDeviceID),
+    m_pciDomainID(ctx.device_pciDomainID),
     m_smx(ctx.device_mpcount),
     m_threadId(0),
     m_threads(ctx.device_threads)
@@ -94,9 +102,12 @@ bool GpuThread::init()
     m_blocks  = ctx.device_blocks;
     m_smx     = ctx.device_mpcount;
 
-    m_clockRate = ctx.device_clockRate;
+    m_clockRate       = ctx.device_clockRate;
     m_memoryClockRate = ctx.device_memoryClockRate;
-    
+    m_pciBusID        = ctx.device_pciBusID;
+    m_pciDeviceID     = ctx.device_pciDeviceID;
+    m_pciDomainID     = ctx.device_pciDomainID;
+
     return true;
 }
 

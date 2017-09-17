@@ -317,6 +317,9 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	ctx->device_arch[1] = props.minor;
     ctx->device_clockRate = props.clockRate;
     ctx->device_memoryClockRate = props.memoryClockRate;
+    ctx->device_pciBusID = props.pciBusID;
+    ctx->device_pciDeviceID = props.pciDeviceID;
+    ctx->device_pciDomainID = props.pciDomainID;
 
 	// set all evice option those marked as auto (-1) to a valid value
 	if(ctx->device_blocks == -1)
