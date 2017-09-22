@@ -102,6 +102,8 @@ bool NvmlApi::health(int id, Health &health)
         return false;
     }
 
+    health.reset();
+
     nvmlDevice_t device;
     if (pNvmlDeviceGetHandleByIndex && pNvmlDeviceGetHandleByIndex(id, &device) != NVML_SUCCESS) {
         return false;
