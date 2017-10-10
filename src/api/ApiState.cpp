@@ -59,7 +59,7 @@ static inline double normalize(double d)
 
 ApiState::ApiState()
 {
-    m_threads  = Options::i()->threads().size();
+    m_threads  = (int) Options::i()->threads().size();
     m_hashrate = new double[m_threads * 3]();
 
     memset(m_totalHashrate, 0, sizeof(m_totalHashrate));

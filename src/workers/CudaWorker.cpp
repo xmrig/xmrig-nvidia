@@ -119,7 +119,7 @@ void CudaWorker::start()
 
 bool CudaWorker::resume(const Job &job)
 {
-    if (m_job.poolId() == -1 && job.poolId() >= 0 && memcmp(job.id(), m_pausedJob.id(), 64) == 0) {
+    if (m_job.poolId() == -1 && job.poolId() >= 0 && job.id() == m_pausedJob.id()) {
         m_job   = m_pausedJob;
         m_nonce = m_pausedNonce;
         return true;

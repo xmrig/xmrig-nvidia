@@ -27,6 +27,7 @@ set(HEADERS
     src/log/Log.h
     src/net/Client.h
     src/net/Job.h
+    src/net/JobId.h
     src/net/JobResult.h
     src/net/Network.h
     src/net/strategies/DonateStrategy.h
@@ -131,6 +132,7 @@ add_definitions(/DXMRIG_NVIDIA_PROJECT)
 add_definitions(/DUNICODE)
 add_definitions(/DXMRIG_NO_LIBCPUID)
 add_definitions(/D__STDC_FORMAT_MACROS)
+add_definitions(/DRAPIDJSON_SSE2)
 #add_definitions(/DAPP_DEBUG)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
