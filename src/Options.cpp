@@ -308,7 +308,7 @@ Options::Options(int argc, char **argv) :
     m_bsleep(0),
     m_apiPort(0),
     m_donateLevel(kDonateLevel),
-    m_maxGpuThreads(0),
+    m_maxGpuThreads(64),
     m_maxGpuUsage(100),
     m_printTime(60),
     m_retries(5),

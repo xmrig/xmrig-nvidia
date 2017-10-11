@@ -313,10 +313,9 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx)
 
 	for ( int i = 0; i < partcountOneThree; i++ )
 	{
-		cryptonight_core_gpu_phase1<ITERATIONS, OFFSET><<< grid, block8 >>>( ctx->device_blocks*ctx->device_threads,
-			bfactorOneThree, i,
-			ctx->d_long_state, ctx->d_ctx_state, ctx->d_ctx_key1 );
-		exit_if_cudaerror( ctx->device_id, __FUNCTION__, __LINE__ );
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase1<ITERATIONS, OFFSET><<< grid, block8 >>>(ctx->device_blocks*ctx->device_threads,
+            bfactorOneThree, i,
+            ctx->d_long_state, ctx->d_ctx_state, ctx->d_ctx_key1));
 
 		if ( partcount > 1 && ctx->device_bsleep > 0) compat_usleep( ctx->device_bsleep );
 	}
@@ -324,7 +323,7 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx)
 
 	for ( int i = 0; i < partcount; i++ )
 	{
-        cryptonight_core_gpu_phase2<ITERATIONS, OFFSET, MASK><<<
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase2<ITERATIONS, OFFSET, MASK><<<
             grid,
             block4,
             block4.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
@@ -335,19 +334,17 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx)
             ctx->d_long_state,
             ctx->d_ctx_a,
             ctx->d_ctx_b
-        );
-		exit_if_cudaerror( ctx->device_id, __FUNCTION__, __LINE__ );
+        ));
 
 		if ( partcount > 1 && ctx->device_bsleep > 0) compat_usleep( ctx->device_bsleep );
 	}
 
 	for ( int i = 0; i < partcountOneThree; i++ )
 	{
-		cryptonight_core_gpu_phase3<ITERATIONS, OFFSET><<< grid, block8 >>>( ctx->device_blocks*ctx->device_threads,
-			bfactorOneThree, i,
-			ctx->d_long_state,
-			ctx->d_ctx_state, ctx->d_ctx_key2 );
-		exit_if_cudaerror( ctx->device_id, __FUNCTION__, __LINE__ );
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ITERATIONS, OFFSET><<< grid, block8 >>>(ctx->device_blocks*ctx->device_threads,
+            bfactorOneThree, i,
+            ctx->d_long_state,
+            ctx->d_ctx_state, ctx->d_ctx_key2));
 	}
 }
 

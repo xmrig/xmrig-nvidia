@@ -17,6 +17,10 @@ if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
     add_definitions(/D_GNU_SOURCE)
 
+    if (${CMAKE_VERSION} VERSION_LESS "3.1.0")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    endif()
+
     #set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -gdwarf-2")
 
 elseif (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
