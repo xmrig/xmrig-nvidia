@@ -179,10 +179,7 @@ endif()
 
 include_directories(src)
 include_directories(src/3rdparty)
-include_directories(src/3rdparty/jansson)
 include_directories(${UV_INCLUDE_DIR})
 
-add_subdirectory(src/3rdparty/jansson)
-
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${HTTPD_SOURCES})
-target_link_libraries(${PROJECT_NAME} xmrig-cuda jansson ${UV_LIBRARIES} ${MHD_LIBRARY} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})
+target_link_libraries(${PROJECT_NAME} xmrig-cuda ${UV_LIBRARIES} ${MHD_LIBRARY} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})

@@ -61,35 +61,38 @@ static char const usage[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
 \n\
 Options:\n\
-  -a, --algo=ALGO         cryptonight (default) or cryptonight-lite\n\
-  -o, --url=URL           URL of mining server\n\
-  -O, --userpass=U:P      username:password pair for mining server\n\
-  -u, --user=USERNAME     username for mining server\n\
-  -p, --pass=PASSWORD     password for mining server\n\
-  -k, --keepalive         send keepalived for prevent timeout (need pool support)\n\
-  -r, --retries=N         number of times to retry before switch to backup server (default: 5)\n\
-  -R, --retry-pause=N     time to pause between retries (default: 5)\n\
-      --no-color          disable colored output\n\
-      --donate-level=N    donate level, default 5%% (5 minutes in 100 minutes)\n\
-      --user-agent        set custom user-agent string for pool\n\
-  -B, --background        run the miner in the background\n\
-  -c, --config=FILE       load a JSON-format configuration file\n\
-  -l, --log-file=FILE     log all output to a file\n"
+  -a, --algo=ALGO          cryptonight (default) or cryptonight-lite\n\
+  -o, --url=URL            URL of mining server\n\
+  -O, --userpass=U:P       username:password pair for mining server\n\
+  -u, --user=USERNAME      username for mining server\n\
+  -p, --pass=PASSWORD      password for mining server\n\
+  -k, --keepalive          send keepalived for prevent timeout (need pool support)\n\
+  -r, --retries=N          number of times to retry before switch to backup server (default: 5)\n\
+  -R, --retry-pause=N      time to pause between retries (default: 5)\n\
+      --no-color           disable colored output\n\
+      --donate-level=N     donate level, default 5%% (5 minutes in 100 minutes)\n\
+      --user-agent         set custom user-agent string for pool\n\
+  -B, --background         run the miner in the background\n\
+  -c, --config=FILE        load a JSON-format configuration file\n\
+  -l, --log-file=FILE      log all output to a file\n"
 # ifdef HAVE_SYSLOG_H
 "\
-  -S, --syslog            use system log for output messages\n"
+  -S, --syslog             use system log for output messages\n"
 # endif
 "\
-      --nicehash          enable nicehash support\n\
-      --print-time=N      print hashrate report every N seconds\n\
-  -h, --help              display this help and exit\n\
-  -V, --version           output version information and exit\n\
+      --nicehash           enable nicehash support\n\
+      --print-time=N       print hashrate report every N seconds\n\
+      --api-port=N         port for the miner API\n\
+      --api-access-token=T access token for API\n\
+      --api-worker-id=ID   custom worker-id for API\n\
+  -h, --help               display this help and exit\n\
+  -V, --version            output version information and exit\n\
 \n\
 Auto-configuration specific options:\n\
-      --bfactor=[0-12]    run CryptoNight core kernel in smaller pieces\n\
-                          from 0 (ui freeze) to 12 (smooth), Windows default is 6\n\
-      --bsleep=N          insert a delay of N microseconds between kernel launches\n\
-      --max-gpu-threads=N limit maximum count of GPU threads\n\
+      --bfactor=[0-12]     run CryptoNight core kernel in smaller pieces\n\
+                           from 0 (ui freeze) to 12 (smooth), Windows default is 6\n\
+      --bsleep=N           insert a delay of N microseconds between kernel launches\n\
+      --max-gpu-threads=N  limit maximum count of GPU threads\n\
 ";
 
 
@@ -97,29 +100,29 @@ static char const short_options[] = "a:c:khBp:Px:r:R:s:T:o:u:O:Vl:S";
 
 
 static struct option const options[] = {
-    { "algo",            1, nullptr, 'a' },
-    { "background",      0, nullptr, 'B' },
-    { "bfactor",         1, nullptr, 1201 },
-    { "bsleep",          1, nullptr, 1202 },
-    { "config",          1, nullptr, 'c' },
-    { "donate-level",    1, nullptr, 1003 },
-    { "help",            0, nullptr, 'h' },
-    { "keepalive",       0, nullptr ,'k' },
-    { "log-file",        1, nullptr, 'l' },
-    { "max-gpu-threads", 1, nullptr, 1200 },
-    { "max-gpu-usage",   1, nullptr, 1004 },
-    { "nicehash",        0, nullptr, 1006 },
-    { "no-color",        0, nullptr, 1002 },
-    { "pass",            1, nullptr, 'p' },
-    { "print-time",      1, nullptr, 1007 },
-    { "retries",         1, nullptr, 'r' },
-    { "retry-pause",     1, nullptr, 'R' },
-    { "syslog",          0, nullptr, 'S' },
-    { "url",             1, nullptr, 'o' },
-    { "user",            1, nullptr, 'u' },
-    { "user-agent",      1, nullptr, 1008 },
-    { "userpass",        1, nullptr, 'O' },
-    { "version",         0, nullptr, 'V' },
+    { "algo",             1, nullptr, 'a' },
+    { "background",       0, nullptr, 'B' },
+    { "bfactor",          1, nullptr, 1201 },
+    { "bsleep",           1, nullptr, 1202 },
+    { "config",           1, nullptr, 'c' },
+    { "donate-level",     1, nullptr, 1003 },
+    { "help",             0, nullptr, 'h' },
+    { "keepalive",        0, nullptr ,'k' },
+    { "log-file",         1, nullptr, 'l' },
+    { "max-gpu-threads",  1, nullptr, 1200 },
+    { "max-gpu-usage",    1, nullptr, 1004 },
+    { "nicehash",         0, nullptr, 1006 },
+    { "no-color",         0, nullptr, 1002 },
+    { "pass",             1, nullptr, 'p' },
+    { "print-time",       1, nullptr, 1007 },
+    { "retries",          1, nullptr, 'r' },
+    { "retry-pause",      1, nullptr, 'R' },
+    { "syslog",           0, nullptr, 'S' },
+    { "url",              1, nullptr, 'o' },
+    { "user",             1, nullptr, 'u' },
+    { "user-agent",       1, nullptr, 1008 },
+    { "userpass",         1, nullptr, 'O' },
+    { "version",          0, nullptr, 'V' },
     { "api-port",         1, nullptr, 4000 },
     { "api-access-token", 1, nullptr, 4001 },
     { "api-worker-id",    1, nullptr, 4002 },
@@ -357,6 +360,10 @@ Options::Options(int argc, char **argv) :
         for (GpuThread *thread : m_threads) {
             thread->limit(m_maxGpuUsage, m_maxGpuThreads);
         }
+    }
+
+    for (Url *url : m_pools) {
+        url->applyExceptions();
     }
 
     NvmlApi::bind(m_threads);
