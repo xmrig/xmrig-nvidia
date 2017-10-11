@@ -22,7 +22,6 @@
  */
 
 
-#include <jansson.h>
 #include <string.h>
 #include <uv.h>
 
@@ -41,6 +40,11 @@
 #include "nvidia/NvmlApi.h"
 #include "Options.h"
 #include "Platform.h"
+#include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/filewritestream.h"
+#include "rapidjson/prettywriter.h"
 #include "version.h"
 #include "workers/GpuThread.h"
 
@@ -57,35 +61,38 @@ static char const usage[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
 \n\
 Options:\n\
-  -a, --algo=ALGO         cryptonight (default) or cryptonight-lite\n\
-  -o, --url=URL           URL of mining server\n\
-  -O, --userpass=U:P      username:password pair for mining server\n\
-  -u, --user=USERNAME     username for mining server\n\
-  -p, --pass=PASSWORD     password for mining server\n\
-  -k, --keepalive         send keepalived for prevent timeout (need pool support)\n\
-  -r, --retries=N         number of times to retry before switch to backup server (default: 5)\n\
-  -R, --retry-pause=N     time to pause between retries (default: 5)\n\
-      --no-color          disable colored output\n\
-      --donate-level=N    donate level, default 5%% (5 minutes in 100 minutes)\n\
-      --user-agent        set custom user-agent string for pool\n\
-  -B, --background        run the miner in the background\n\
-  -c, --config=FILE       load a JSON-format configuration file\n\
-  -l, --log-file=FILE     log all output to a file\n"
+  -a, --algo=ALGO          cryptonight (default) or cryptonight-lite\n\
+  -o, --url=URL            URL of mining server\n\
+  -O, --userpass=U:P       username:password pair for mining server\n\
+  -u, --user=USERNAME      username for mining server\n\
+  -p, --pass=PASSWORD      password for mining server\n\
+  -k, --keepalive          send keepalived for prevent timeout (need pool support)\n\
+  -r, --retries=N          number of times to retry before switch to backup server (default: 5)\n\
+  -R, --retry-pause=N      time to pause between retries (default: 5)\n\
+      --no-color           disable colored output\n\
+      --donate-level=N     donate level, default 5%% (5 minutes in 100 minutes)\n\
+      --user-agent         set custom user-agent string for pool\n\
+  -B, --background         run the miner in the background\n\
+  -c, --config=FILE        load a JSON-format configuration file\n\
+  -l, --log-file=FILE      log all output to a file\n"
 # ifdef HAVE_SYSLOG_H
 "\
-  -S, --syslog            use system log for output messages\n"
+  -S, --syslog             use system log for output messages\n"
 # endif
 "\
-      --nicehash          enable nicehash support\n\
-      --print-time=N      print hashrate report every N seconds\n\
-  -h, --help              display this help and exit\n\
-  -V, --version           output version information and exit\n\
+      --nicehash           enable nicehash support\n\
+      --print-time=N       print hashrate report every N seconds\n\
+      --api-port=N         port for the miner API\n\
+      --api-access-token=T access token for API\n\
+      --api-worker-id=ID   custom worker-id for API\n\
+  -h, --help               display this help and exit\n\
+  -V, --version            output version information and exit\n\
 \n\
 Auto-configuration specific options:\n\
-      --bfactor=[0-12]    run CryptoNight core kernel in smaller pieces\n\
-                          from 0 (ui freeze) to 12 (smooth), Windows default is 6\n\
-      --bsleep=N          insert a delay of N microseconds between kernel launches\n\
-      --max-gpu-threads=N limit maximum count of GPU threads\n\
+      --bfactor=[0-12]     run CryptoNight core kernel in smaller pieces\n\
+                           from 0 (ui freeze) to 12 (smooth), Windows default is 6\n\
+      --bsleep=N           insert a delay of N microseconds between kernel launches\n\
+      --max-gpu-threads=N  limit maximum count of GPU threads\n\
 ";
 
 
@@ -93,29 +100,29 @@ static char const short_options[] = "a:c:khBp:Px:r:R:s:T:o:u:O:Vl:S";
 
 
 static struct option const options[] = {
-    { "algo",            1, nullptr, 'a' },
-    { "background",      0, nullptr, 'B' },
-    { "bfactor",         1, nullptr, 1201 },
-    { "bsleep",          1, nullptr, 1202 },
-    { "config",          1, nullptr, 'c' },
-    { "donate-level",    1, nullptr, 1003 },
-    { "help",            0, nullptr, 'h' },
-    { "keepalive",       0, nullptr ,'k' },
-    { "log-file",        1, nullptr, 'l' },
-    { "max-gpu-threads", 1, nullptr, 1200 },
-    { "max-gpu-usage",   1, nullptr, 1004 },
-    { "nicehash",        0, nullptr, 1006 },
-    { "no-color",        0, nullptr, 1002 },
-    { "pass",            1, nullptr, 'p' },
-    { "print-time",      1, nullptr, 1007 },
-    { "retries",         1, nullptr, 'r' },
-    { "retry-pause",     1, nullptr, 'R' },
-    { "syslog",          0, nullptr, 'S' },
-    { "url",             1, nullptr, 'o' },
-    { "user",            1, nullptr, 'u' },
-    { "user-agent",      1, nullptr, 1008 },
-    { "userpass",        1, nullptr, 'O' },
-    { "version",         0, nullptr, 'V' },
+    { "algo",             1, nullptr, 'a' },
+    { "background",       0, nullptr, 'B' },
+    { "bfactor",          1, nullptr, 1201 },
+    { "bsleep",           1, nullptr, 1202 },
+    { "config",           1, nullptr, 'c' },
+    { "donate-level",     1, nullptr, 1003 },
+    { "help",             0, nullptr, 'h' },
+    { "keepalive",        0, nullptr ,'k' },
+    { "log-file",         1, nullptr, 'l' },
+    { "max-gpu-threads",  1, nullptr, 1200 },
+    { "max-gpu-usage",    1, nullptr, 1004 },
+    { "nicehash",         0, nullptr, 1006 },
+    { "no-color",         0, nullptr, 1002 },
+    { "pass",             1, nullptr, 'p' },
+    { "print-time",       1, nullptr, 1007 },
+    { "retries",          1, nullptr, 'r' },
+    { "retry-pause",      1, nullptr, 'R' },
+    { "syslog",           0, nullptr, 'S' },
+    { "url",              1, nullptr, 'o' },
+    { "user",             1, nullptr, 'u' },
+    { "user-agent",       1, nullptr, 1008 },
+    { "userpass",         1, nullptr, 'O' },
+    { "version",          0, nullptr, 'V' },
     { "api-port",         1, nullptr, 4000 },
     { "api-access-token", 1, nullptr, 4001 },
     { "api-worker-id",    1, nullptr, 4002 },
@@ -199,60 +206,78 @@ bool Options::save()
     }
 
     uv_fs_t req;
-    const int fd = uv_fs_open(uv_default_loop(), &req, m_configName, O_WRONLY, 0644, nullptr);
+    const int fd = uv_fs_open(uv_default_loop(), &req, m_configName, O_WRONLY | O_CREAT | O_TRUNC, 0644, nullptr);
     if (fd < 0) {
         return false;
     }
 
     uv_fs_req_cleanup(&req);
 
-    json_t *options = json_object();
-    json_object_set(options, "algo",         json_string(algoName()));
-    json_object_set(options, "background",   json_boolean(m_background));
-    json_object_set(options, "colors",       json_boolean(m_colors));
-    json_object_set(options, "donate-level", json_integer(m_donateLevel));
-    json_object_set(options, "log-file",     m_logFile ? json_string(m_logFile) : json_null());
-    json_object_set(options, "print-time",   json_integer(m_printTime));
-    json_object_set(options, "retries",      json_integer(m_retries));
-    json_object_set(options, "retry-pause",  json_integer(m_retryPause));
+    rapidjson::Document doc;
+    doc.SetObject();
+
+    auto &allocator = doc.GetAllocator();
+
+    doc.AddMember("algo",         rapidjson::StringRef(algoName()), allocator);
+    doc.AddMember("background",   m_background, allocator);
+    doc.AddMember("colors",       m_colors, allocator);
+    doc.AddMember("donate-level", m_donateLevel, allocator);
+    doc.AddMember("log-file",     m_logFile ? rapidjson::Value(rapidjson::StringRef(algoName())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
+    doc.AddMember("print-time",   m_printTime, allocator);
+    doc.AddMember("retries",      m_retries, allocator);
+    doc.AddMember("retry-pause",  m_retryPause, allocator);
 
 #   ifdef HAVE_SYSLOG_H
-    json_object_set(options, "syslog", json_boolean(m_syslog));
+    doc.AddMember("syslog", m_syslog, allocator);
 #   endif
 
-    json_t *threads = json_array();
+    rapidjson::Value threads(rapidjson::kArrayType);
     for (const GpuThread *thread : m_threads) {
-        json_t *obj = json_object();
-        json_object_set(obj, "index",   json_integer(thread->index()));
-        json_object_set(obj, "threads", json_integer(thread->threads()));
-        json_object_set(obj, "blocks",  json_integer(thread->blocks()));
-        json_object_set(obj, "bfactor", json_integer(thread->bfactor()));
-        json_object_set(obj, "bsleep",  json_integer(thread->bsleep()));
+        rapidjson::Value obj(rapidjson::kObjectType);
 
-        json_array_append(threads, obj);
+        obj.AddMember("index",   thread->index(), allocator);
+        obj.AddMember("threads", thread->threads(), allocator);
+        obj.AddMember("blocks",  thread->blocks(), allocator);
+        obj.AddMember("bfactor", thread->bfactor(), allocator);
+        obj.AddMember("bsleep",  thread->bsleep(), allocator);
+
+        threads.PushBack(obj, allocator);
     }
 
-    json_object_set(options, "threads", threads);
-
-    json_t *pools = json_array();
+    rapidjson::Value pools(rapidjson::kArrayType);
     char tmp[256];
 
     for (const Url *url : m_pools) {
-        json_t *obj = json_object();
-
+        rapidjson::Value obj(rapidjson::kObjectType);
         snprintf(tmp, sizeof(tmp) - 1, "%s:%d", url->host(), url->port());
-        json_object_set(obj, "url",       json_string(tmp));
-        json_object_set(obj, "user",      json_string(url->user()));
-        json_object_set(obj, "pass",      json_string(url->password()));
-        json_object_set(obj, "keepalive", json_boolean(url->isKeepAlive()));
-        json_object_set(obj, "nicehash",  json_boolean(url->isNicehash()));
 
-        json_array_append(pools, obj);
+        obj.AddMember("url",       rapidjson::StringRef(tmp), allocator);
+        obj.AddMember("user",      rapidjson::StringRef(url->user()), allocator);
+        obj.AddMember("pass",      rapidjson::StringRef(url->password()), allocator);
+        obj.AddMember("keepalive", url->isKeepAlive(), allocator);
+        obj.AddMember("nicehash",  url->isNicehash(), allocator);
+
+        pools.PushBack(obj, allocator);
     }
 
-    json_object_set(options, "pools", pools);
+    rapidjson::Value api(rapidjson::kObjectType);
+    api.AddMember("port",         m_apiPort, allocator);
+    api.AddMember("access-token", m_apiToken ? rapidjson::Value(rapidjson::StringRef(m_apiToken)).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
+    api.AddMember("worker-id",    m_apiWorkerId ? rapidjson::Value(rapidjson::StringRef(m_apiWorkerId)).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
 
-    json_dumpfd(options, fd, JSON_INDENT(4));
+    doc.AddMember("threads", threads, allocator);
+    doc.AddMember("pools",   pools, allocator);
+    doc.AddMember("api",     api, allocator);
+
+    FILE *fp = fdopen(fd, "w");
+
+    char buf[4096];
+    rapidjson::FileWriteStream os(fp, buf, sizeof(buf));
+    rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+    doc.Accept(writer);
+
+    fclose(fp);
+
     uv_fs_close(uv_default_loop(), &req, fd, nullptr);
     uv_fs_req_cleanup(&req);
 
@@ -337,6 +362,10 @@ Options::Options(int argc, char **argv) :
         }
     }
 
+    for (Url *url : m_pools) {
+        url->applyExceptions();
+    }
+
     NvmlApi::bind(m_threads);
     m_ready = true;
 }
@@ -345,6 +374,35 @@ Options::Options(int argc, char **argv) :
 Options::~Options()
 {
     NvmlApi::release();
+}
+
+
+bool Options::getJSON(const char *fileName, rapidjson::Document &doc)
+{
+    uv_fs_t req;
+    const int fd = uv_fs_open(uv_default_loop(), &req, fileName, O_RDONLY, 0644, nullptr);
+    if (fd < 0) {
+        fprintf(stderr, "unable to open %s: %s\n", fileName, uv_strerror(fd));
+        return false;
+    }
+
+    uv_fs_req_cleanup(&req);
+
+    FILE *fp = fdopen(fd, "rb");
+    char buf[8192];
+    rapidjson::FileReadStream is(fp, buf, sizeof(buf));
+
+    doc.ParseStream(is);
+
+    uv_fs_close(uv_default_loop(), &req, fd, nullptr);
+    uv_fs_req_cleanup(&req);
+
+    if (doc.HasParseError()) {
+        printf("%s:%d: %s\n", fileName, (int)doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
+        return false;
+    }
+
+    return doc.IsObject();
 }
 
 
@@ -589,111 +647,78 @@ Url *Options::parseUrl(const char *arg) const
 
 void Options::parseConfig(const char *fileName)
 {
-    uv_fs_t req;
-    const int fd = uv_fs_open(uv_default_loop(), &req, fileName, O_RDONLY, 0644, nullptr);
-    if (fd < 0) {
-        fprintf(stderr, "unable to open %s: %s\n", fileName, uv_strerror(fd));
-        return;
-    }
-
-    uv_fs_req_cleanup(&req);
-
-    json_error_t err;
-    json_t *config = json_loadfd(fd, 0, &err);
-
-    uv_fs_close(uv_default_loop(), &req, fd, nullptr);
-    uv_fs_req_cleanup(&req);
-
-    if (!json_is_object(config)) {
-        if (config) {
-            json_decref(config);
-            return;
-        }
-
-        if (err.line < 0) {
-            fprintf(stderr, "%s\n", err.text);
-        }
-        else {
-            fprintf(stderr, "%s:%d: %s\n", fileName, err.line, err.text);
-        }
-
+    rapidjson::Document doc;
+    if (!getJSON(fileName, doc)) {
         return;
     }
 
     m_configName = strdup(fileName);
 
     for (size_t i = 0; i < ARRAY_SIZE(config_options); i++) {
-        parseJSON(&config_options[i], config);
+        parseJSON(&config_options[i], doc);
     }
 
-    json_t *pools = json_object_get(config, "pools");
-    if (json_is_array(pools)) {
-        size_t index;
-        json_t *value;
+    const rapidjson::Value &pools = doc["pools"];
+    if (pools.IsArray()) {
+        for (const rapidjson::Value &value : pools.GetArray()) {
+            if (!value.IsObject()) {
+                continue;
+            }
 
-        json_array_foreach(pools, index, value) {
-            if (json_is_object(value)) {
-                for (size_t i = 0; i < ARRAY_SIZE(pool_options); i++) {
-                    parseJSON(&pool_options[i], value);
-                }
+            for (size_t i = 0; i < ARRAY_SIZE(pool_options); i++) {
+                parseJSON(&pool_options[i], value);
             }
         }
     }
 
-    json_t *threads = json_object_get(config, "threads");
-    if (json_is_array(threads)) {
-        size_t index;
-        json_t *value;
-
-        json_array_foreach(threads, index, value) {
-            if (json_is_object(value)) {
-                parseThread(value);
+    const rapidjson::Value &threads = doc["threads"];
+    if (pools.IsArray()) {
+        for (const rapidjson::Value &value : threads.GetArray()) {
+            if (!value.IsObject()) {
+                continue;
             }
+
+            parseThread(value);
         }
     }
 
-    json_t *api = json_object_get(config, "api");
-    if (json_is_object(api)) {
+    const rapidjson::Value &api = doc["api"];
+    if (api.IsObject()) {
         for (size_t i = 0; i < ARRAY_SIZE(api_options); i++) {
             parseJSON(&api_options[i], api);
         }
     }
-
-    json_decref(config);
 }
 
 
-void Options::parseJSON(const struct option *option, json_t *object)
+void Options::parseJSON(const struct option *option, const rapidjson::Value &object)
 {
-    if (!option->name) {
+    if (!option->name || !object.HasMember(option->name)) {
         return;
     }
 
-    json_t *val = json_object_get(object, option->name);
-    if (!val) {
-        return;
-    }
+    const rapidjson::Value &value = object[option->name];
 
-    if (option->has_arg && json_is_string(val)) {
-        parseArg(option->val, json_string_value(val));
+    if (option->has_arg && value.IsString()) {
+        parseArg(option->val, value.GetString());
     }
-    else if (option->has_arg && json_is_integer(val)) {
-        parseArg(option->val, json_integer_value(val));
+    else if (option->has_arg && value.IsUint64()) {
+        parseArg(option->val, value.GetUint64());
     }
-    else if (!option->has_arg && json_is_boolean(val)) {
-        parseBoolean(option->val, json_is_true(val));
+    else if (!option->has_arg && value.IsBool()) {
+        parseBoolean(option->val, value.IsTrue());
     }
 }
 
 
-void Options::parseThread(json_t *object)
+void Options::parseThread(const rapidjson::Value &object)
 {
     GpuThread *thread = new GpuThread();
-    thread->setIndex((int) json_integer_value(json_object_get(object, "index")));
-    thread->setThreads((int) json_integer_value(json_object_get(object, "threads")));
-    thread->setBlocks((int) json_integer_value(json_object_get(object, "blocks")));
-    thread->setBFactor((int) json_integer_value(json_object_get(object, "bfactor")));
-    thread->setBSleep((int) json_integer_value(json_object_get(object, "bsleep")));
+    thread->setIndex(object["index"].GetInt());
+    thread->setThreads(object["threads"].GetInt());
+    thread->setBlocks(object["blocks"].GetInt());
+    thread->setBFactor(object["bfactor"].GetInt());
+    thread->setBSleep(object["bsleep"].GetInt());
 
     if (thread->init()) {
         m_threads.push_back(thread);
@@ -745,7 +770,6 @@ void Options::showVersion()
     "\n");
 
     printf("\nlibuv/%s\n", uv_version_string());
-    printf("libjansson/%s\n", JANSSON_VERSION);
 
     const int cudaVersion = cuda_get_runtime_version();
     printf("CUDA/%d.%d\n", cudaVersion / 1000, cudaVersion % 100);

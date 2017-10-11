@@ -25,23 +25,27 @@
 #define __JOB_H__
 
 
+#include <stddef.h>
 #include <stdint.h>
 
 
 #include "align.h"
+#include "net/JobId.h"
 
 
 class Job
 {
 public:
     Job(int poolId = -2, bool nicehash = false);
+    ~Job();
+
     bool setBlob(const char *blob);
-    bool setId(const char *id);
     bool setTarget(const char *target);
 
     inline bool isNicehash() const         { return m_nicehash; }
     inline bool isValid() const            { return m_size > 0 && m_diff > 0; }
-    inline const char *id() const          { return m_id; }
+    inline bool setId(const char *id)      { return m_id.setId(id); }
+    inline const JobId &id() const         { return m_id; }
     inline const uint32_t *nonce() const   { return reinterpret_cast<const uint32_t*>(m_blob + 39); }
     inline const uint8_t *blob() const     { return m_blob; }
     inline int poolId() const              { return m_poolId; }
@@ -66,11 +70,12 @@ public:
     bool operator==(const Job &other) const;
 
 private:
+    VAR_ALIGN(16, uint8_t m_blob[84]); // Max blob size is 84 (75 fixed + 9 variable), aligned to 96. https://github.com/xmrig/xmrig/issues/1 Thanks fireice-uk.
+
     bool m_nicehash;
     int m_poolId;
     int m_threadId;
-    VAR_ALIGN(16, char m_id[64]);
-    VAR_ALIGN(16, uint8_t m_blob[84]); // Max blob size is 84 (75 fixed + 9 variable), aligned to 96. https://github.com/xmrig/xmrig/issues/1 Thanks fireice-uk.
+    JobId m_id;
     size_t m_size;
     uint64_t m_diff;
     uint64_t m_target;
