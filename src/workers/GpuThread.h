@@ -40,8 +40,6 @@ public:
     bool init();
     void limit(int maxUsage, int maxThreads);
 
-    static void autoConf(std::vector<GpuThread*> &threads, int bfactor, int bsleep);
-
     inline const char *name() const       { return m_name; }
     inline const int *arch() const        { return m_arch; }
     inline int bfactor() const            { return m_bfactor; }

@@ -35,6 +35,9 @@ set(HEADERS
     src/net/strategies/SinglePoolStrategy.h
     src/net/SubmitResult.h
     src/net/Url.h
+    src/nvidia/CudaCLI.h
+    src/nvidia/Health.h
+    src/nvidia/NvmlApi.h
     src/Options.h
     src/Platform.h
     src/Summary.h
@@ -78,8 +81,8 @@ set(SOURCES
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/SubmitResult.cpp
     src/net/Url.cpp
-    src/nvidia/Health.h
-    src/nvidia/NvmlApi.h
+    src/nvidia/CudaCLI.cpp
+    src/nvidia/NvmlApi.cpp
     src/Options.cpp
     src/Platform.cpp
     src/Summary.cpp

@@ -126,28 +126,3 @@ void GpuThread::limit(int maxUsage, int maxThreads)
         m_threads = (int) m_threads / 100.0 * maxUsage;
     }
 }
-
-
-void GpuThread::autoConf(std::vector<GpuThread*> &threads, int bfactor, int bsleep)
-{
-    const int count = cuda_get_devicecount();
-    if (count == 0) {
-        return;
-    }
-
-    for (int i = 0; i < count; i++) {
-        nvid_ctx ctx;
-        ctx.device_id      = i;
-        ctx.device_blocks  = -1;
-        ctx.device_threads = -1;
-        ctx.device_bfactor = bfactor;
-        ctx.device_bsleep  = bsleep;
-
-        if (cuda_get_deviceinfo(&ctx) != 1) {
-            continue;
-        }
-
-        threads.push_back(new GpuThread(ctx));
-    }
-}
-

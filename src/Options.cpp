@@ -69,6 +69,11 @@ Options:\n\
   -k, --keepalive          send keepalived for prevent timeout (need pool support)\n\
   -r, --retries=N          number of times to retry before switch to backup server (default: 5)\n\
   -R, --retry-pause=N      time to pause between retries (default: 5)\n\
+      --cuda-devices       List of CUDA devices to use.\n\
+      --cuda-launch=TxB    List of launch config for the Cryptonight kernel\n\
+      --cuda-max-threads=N limit maximum count of GPU threads\n\
+      --bfactor=[0-12]     run CryptoNight core kernel in smaller pieces\n\
+      --bsleep=N           insert a delay of N microseconds between kernel launches\n\
       --no-color           disable colored output\n\
       --donate-level=N     donate level, default 5%% (5 minutes in 100 minutes)\n\
       --user-agent         set custom user-agent string for pool\n\
@@ -89,9 +94,6 @@ Options:\n\
   -V, --version            output version information and exit\n\
 \n\
 Auto-configuration specific options:\n\
-      --bfactor=[0-12]     run CryptoNight core kernel in smaller pieces\n\
-                           from 0 (ui freeze) to 12 (smooth), Windows default is 6\n\
-      --bsleep=N           insert a delay of N microseconds between kernel launches\n\
       --max-gpu-threads=N  limit maximum count of GPU threads\n\
 ";
 
@@ -101,10 +103,16 @@ static char const short_options[] = "a:c:khBp:Px:r:R:s:T:o:u:O:Vl:S";
 
 static struct option const options[] = {
     { "algo",             1, nullptr, 'a' },
+    { "api-access-token", 1, nullptr, 4001 },
+    { "api-port",         1, nullptr, 4000 },
+    { "api-worker-id",    1, nullptr, 4002 },
     { "background",       0, nullptr, 'B' },
     { "bfactor",          1, nullptr, 1201 },
     { "bsleep",           1, nullptr, 1202 },
     { "config",           1, nullptr, 'c' },
+    { "cuda-devices",     1, nullptr, 1203 },
+    { "cuda-launch",      1, nullptr, 1204 },
+    { "cuda-max-threads", 1, nullptr, 1200 },
     { "donate-level",     1, nullptr, 1003 },
     { "help",             0, nullptr, 'h' },
     { "keepalive",        0, nullptr ,'k' },
@@ -123,9 +131,6 @@ static struct option const options[] = {
     { "user-agent",       1, nullptr, 1008 },
     { "userpass",         1, nullptr, 'O' },
     { "version",          0, nullptr, 'V' },
-    { "api-port",         1, nullptr, 4000 },
-    { "api-access-token", 1, nullptr, 4001 },
-    { "api-worker-id",    1, nullptr, 4002 },
     { 0, 0, 0, 0 }
 };
 
@@ -304,8 +309,6 @@ Options::Options(int argc, char **argv) :
     m_userAgent(nullptr),
     m_algo(0),
     m_algoVariant(0),
-    m_bfactor(0),
-    m_bsleep(0),
     m_apiPort(0),
     m_donateLevel(kDonateLevel),
     m_maxGpuThreads(64),
@@ -315,11 +318,6 @@ Options::Options(int argc, char **argv) :
     m_retryPause(5),
     m_threads(0)
 {
-#   ifdef _WIN32
-    m_bfactor = 6;
-    m_bsleep  = 25;
-#   endif
-
     NvmlApi::init();
 
     m_pools.push_back(new Url());
@@ -353,9 +351,9 @@ Options::Options(int argc, char **argv) :
 
     m_algoVariant = Cpu::hasAES() ? AV1_AESNI : AV3_SOFT_AES;
 
-    if (m_threads.empty()) {
+    if (m_threads.empty() && !m_cudaCLI.setup(m_threads)) {
         m_autoConf = true;
-        GpuThread::autoConf(m_threads, m_bfactor, m_bsleep);
+        m_cudaCLI.autoConf(m_threads);
 
         for (GpuThread *thread : m_threads) {
             thread->limit(m_maxGpuUsage, m_maxGpuThreads);
@@ -464,6 +462,22 @@ bool Options::parseArg(int key, const char *arg)
         m_apiWorkerId = strdup(arg);
         break;
 
+    case 1201: /* --bfactor */
+        m_cudaCLI.parseBFactor(arg);
+        break;
+
+    case 1202: /* --bsleep */
+        m_cudaCLI.parseBSleep(arg);
+        break;
+
+    case 1203: /* --cuda-devices */
+        m_cudaCLI.parseDevices(arg);
+        break;
+
+    case 1204: /* --cuda-launch */
+        m_cudaCLI.parseLaunch(arg);
+        break;
+
     case 'r':  /* --retries */
     case 'R':  /* --retry-pause */
     case 't':  /* --threads */
@@ -472,8 +486,7 @@ bool Options::parseArg(int key, const char *arg)
     case 1004: /* --max-gpu-usage */
     case 1007: /* --print-time */
     case 1200: /* --max-gpu-threads */
-    case 1201: /* --bfactor */
-    case 1202: /* --bsleep */
+
     case 4000: /* --api-port */
         return parseArg(key, strtol(arg, nullptr, 10));
 
@@ -572,14 +585,6 @@ bool Options::parseArg(int key, uint64_t arg)
 
     case 1200: /* --max-gpu-threads */
         m_maxGpuThreads = (int) arg;
-        break;
-
-    case 1201: /* --bfactor */
-        m_bfactor = (int) arg;
-        break;
-
-    case 1202: /* --bsleep */
-        m_bsleep = (int) arg;
         break;
 
     case 4000: /* --api-port */

@@ -29,6 +29,7 @@
 #include <vector>
 
 
+#include "nvidia/CudaCLI.h"
 #include "rapidjson/fwd.h"
 
 
@@ -113,11 +114,10 @@ private:
     char *m_configName;
     char *m_logFile;
     char *m_userAgent;
+    CudaCLI m_cudaCLI;
     int m_algo;
     int m_algoVariant;
     int m_apiPort;
-    int m_bfactor;
-    int m_bsleep;
     int m_donateLevel;
     int m_maxGpuThreads;
     int m_maxGpuUsage;
