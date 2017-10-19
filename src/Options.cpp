@@ -70,7 +70,7 @@ Options:\n\
   -r, --retries=N           number of times to retry before switch to backup server (default: 5)\n\
   -R, --retry-pause=N       time to pause between retries (default: 5)\n\
       --cuda-devices=N      List of CUDA devices to use.\n\
-      --cuda-launch=TxB     List of launch config for the Cryptonight kernel\n\
+      --cuda-launch=TxB     List of launch config for the CryptoNight kernel\n\
       --cuda-max-threads=N  limit maximum count of GPU threads in automatic mode\n\
       --cuda-bfactor=[0-12] run CryptoNight core kernel in smaller pieces\n\
       --cuda-bsleep=N       insert a delay of N microseconds between kernel launches\n\
@@ -560,8 +560,7 @@ bool Options::parseArg(int key, uint64_t arg)
 
     case 1003: /* --donate-level */
         if (arg < 1 || arg > 99) {
-            showUsage(1);
-            return false;
+            return true;
         }
 
         m_donateLevel = (int) arg;
