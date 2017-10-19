@@ -82,7 +82,6 @@ set(SOURCES
     src/net/SubmitResult.cpp
     src/net/Url.cpp
     src/nvidia/CudaCLI.cpp
-    src/nvidia/NvmlApi.cpp
     src/Options.cpp
     src/Platform.cpp
     src/Summary.cpp

@@ -80,6 +80,7 @@ elseif("${CUDA_COMPILER}" STREQUAL "nvcc")
     # avoid that nvcc in CUDA < 8 tries to use libc `memcpy` within the kernel
     if (CUDA_VERSION VERSION_LESS 8.0)
         add_definitions(-D_FORCE_INLINES)
+        add_definitions(-D_MWAITXINTRIN_H_INCLUDED)
     endif()
     foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
         # set flags to create device code for the given architecture
