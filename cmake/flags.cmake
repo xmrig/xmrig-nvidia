@@ -5,9 +5,10 @@ set(CMAKE_CXX_STANDARD 11)
 if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -maes -Wall")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wno-strict-aliasing")
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -maes -Wall")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s -Wno-sign-compare")
 
     if (WIN32)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
