@@ -26,6 +26,7 @@
 
 
 #include "crypto/CryptoNight.h"
+#include "Platform.h"
 #include "workers/CudaWorker.h"
 #include "workers/GpuThread.h"
 #include "workers/Handle.h"
@@ -48,6 +49,10 @@ CudaWorker::CudaWorker(Handle *handle) :
     m_ctx.device_threads = thread->threads();
     m_ctx.device_bfactor = thread->bfactor();
     m_ctx.device_bsleep  = thread->bsleep();
+
+    if (thread->affinity() >= 0) {
+        Platform::setThreadAffinity(thread->affinity());
+    }
 }
 
 

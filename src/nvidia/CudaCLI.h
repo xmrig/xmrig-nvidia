@@ -38,15 +38,18 @@ public:
 
     bool setup(std::vector<GpuThread*> &threads);
     void autoConf(std::vector<GpuThread*> &threads);
-    void parseBFactor(const char *arg);
-    void parseBSleep(const char *arg);
     void parseDevices(const char *arg);
     void parseLaunch(const char *arg);
 
+    inline void CudaCLI::parseAffinity(const char *arg) { parse(m_affinity, arg); }
+    inline void parseBFactor(const char *arg)           { parse(m_bfactors, arg); }
+    inline void parseBSleep(const char *arg)            { parse(m_bsleeps, arg); }
+
 private:
-    inline int blocks(int index) const  { return get(m_blocks, index, -1); }
-    inline int threads(int index) const { return get(m_threads, index, -1); }
-    inline bool isEmpty() const { return m_devices.empty() && m_threads.empty(); };
+    inline int affinity(int index) const { return get(m_affinity, index, -1); }
+    inline int blocks(int index) const   { return get(m_blocks, index, -1); }
+    inline int threads(int index) const  { return get(m_threads, index, -1); }
+    inline bool isEmpty() const          { return m_devices.empty() && m_threads.empty(); };
 
     inline int bfactor(int index = 0) const {
 #       ifdef _WIN32
@@ -65,8 +68,10 @@ private:
     }
 
     int get(const std::vector<int> &vector, int index, int defaultValue) const;
+    void parse(std::vector<int> &vector, const char *arg) const;
 
     const int m_count;
+    std::vector<int> m_affinity;
     std::vector<int> m_bfactors;
     std::vector<int> m_blocks;
     std::vector<int> m_bsleeps;

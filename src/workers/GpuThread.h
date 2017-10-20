@@ -34,7 +34,7 @@ class GpuThread
 {
 public:
     GpuThread();
-    GpuThread(const nvid_ctx &ctx);
+    GpuThread(const nvid_ctx &ctx, int affinity = -1);
     ~GpuThread();
 
     bool init();
@@ -42,6 +42,7 @@ public:
 
     inline const char *name() const       { return m_name; }
     inline const int *arch() const        { return m_arch; }
+    inline int affinity() const           { return m_affinity; }
     inline int bfactor() const            { return m_bfactor; }
     inline int blocks() const             { return m_blocks; }
     inline int bsleep() const             { return m_bsleep; }
@@ -56,6 +57,7 @@ public:
     inline int threadId() const           { return m_threadId; }
     inline int threads() const            { return m_threads; }
 
+    inline void setAffinity(int affinity) { m_affinity = affinity; }
     inline void setBFactor(int bfactor)   { if (bfactor >= 0 && bfactor <= 12) { m_bfactor = bfactor; } }
     inline void setBlocks(int blocks)     { m_blocks = blocks; }
     inline void setBSleep(int bsleep)     { m_bsleep = bsleep; }
@@ -65,8 +67,8 @@ public:
     inline void setThreads(int threads)   { m_threads = threads; }
 
 private:
-    bool m_affinity;
     char m_name[256];
+    int m_affinity;
     int m_arch[2];
     int m_bfactor;
     int m_blocks;

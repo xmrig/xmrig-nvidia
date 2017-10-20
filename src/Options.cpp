@@ -74,6 +74,7 @@ Options:\n\
       --cuda-max-threads=N  limit maximum count of GPU threads in automatic mode\n\
       --cuda-bfactor=[0-12] run CryptoNight core kernel in smaller pieces\n\
       --cuda-bsleep=N       insert a delay of N microseconds between kernel launches\n\
+      --cuda-affinity=N     affine GPU threads to a CPU\n\
       --no-color            disable colored output\n\
       --donate-level=N      donate level, default 5%% (5 minutes in 100 minutes)\n\
       --user-agent          set custom user-agent string for pool\n\
@@ -107,6 +108,7 @@ static struct option const options[] = {
     { "bfactor",          1, nullptr, 1201 },
     { "bsleep",           1, nullptr, 1202 },
     { "config",           1, nullptr, 'c'  },
+    { "cuda-affinity",    1, nullptr, 1205 },
     { "cuda-bfactor",     1, nullptr, 1201 }, // deprecated, use --cuda-bfactor instead.
     { "cuda-bsleep",      1, nullptr, 1202 }, // deprecated, use --cuda-bsleep instead.
     { "cuda-devices",     1, nullptr, 1203 },
@@ -163,16 +165,6 @@ static struct option const pool_options[] = {
     { "userpass",      1, nullptr, 'O'  },
     { "keepalive",     0, nullptr ,'k'  },
     { "nicehash",      0, nullptr, 1006 },
-    { 0, 0, 0, 0 }
-};
-
-
-static struct option const thread_options[] = {
-    { "index",         1, nullptr, 3000 },
-    { "threads",       1, nullptr, 3001 },
-    { "blocks",        1, nullptr, 3002 },
-    { "bfactor",       1, nullptr, 3003 },
-    { "bsleep",        1, nullptr, 3004 },
     { 0, 0, 0, 0 }
 };
 
@@ -247,6 +239,13 @@ bool Options::save()
         obj.AddMember("blocks",  thread->blocks(), allocator);
         obj.AddMember("bfactor", thread->bfactor(), allocator);
         obj.AddMember("bsleep",  thread->bsleep(), allocator);
+
+        if (thread->affinity() >= 0) {
+            obj.AddMember("affine_to_cpu", thread->affinity(), allocator);
+        }
+        else {
+            obj.AddMember("affine_to_cpu", false, allocator);
+        }
 
         threads.PushBack(obj, allocator);
     }
@@ -478,6 +477,10 @@ bool Options::parseArg(int key, const char *arg)
 
     case 1204: /* --cuda-launch */
         m_cudaCLI.parseLaunch(arg);
+        break;
+
+    case 1205: /* --cuda-affinity */
+        m_cudaCLI.parseAffinity(arg);
         break;
 
     case 'r':  /* --retries */
@@ -725,6 +728,11 @@ void Options::parseThread(const rapidjson::Value &object)
     thread->setBlocks(object["blocks"].GetInt());
     thread->setBFactor(object["bfactor"].GetInt());
     thread->setBSleep(object["bsleep"].GetInt());
+
+    const rapidjson::Value &affinity = object["affine_to_cpu"];
+    if (affinity.IsInt()) {
+        thread->setAffinity(affinity.GetInt());
+    }
 
     if (thread->init()) {
         m_threads.push_back(thread);

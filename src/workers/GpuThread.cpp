@@ -28,7 +28,7 @@
 
 
 GpuThread::GpuThread() :
-    m_affinity(false),
+    m_affinity(-1),
     m_bfactor(0),
     m_blocks(0),
     m_bsleep(0),
@@ -48,8 +48,8 @@ GpuThread::GpuThread() :
 }
 
 
-GpuThread::GpuThread(const nvid_ctx &ctx) :
-    m_affinity(false),
+GpuThread::GpuThread(const nvid_ctx &ctx, int affinity) :
+    m_affinity(affinity),
     m_bfactor(ctx.device_bfactor),
     m_blocks(ctx.device_blocks),
     m_bsleep(ctx.device_bsleep),

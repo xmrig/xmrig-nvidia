@@ -62,7 +62,7 @@ bool CudaCLI::setup(std::vector<GpuThread*> &threads)
             continue;
         }
 
-        threads.push_back(new GpuThread(ctx));
+        threads.push_back(new GpuThread(ctx, affinity(i)));
     }
 
     return true;
@@ -89,36 +89,6 @@ void CudaCLI::autoConf(std::vector<GpuThread*> &threads)
 
         threads.push_back(new GpuThread(ctx));
     }
-}
-
-
-void CudaCLI::parseBFactor(const char *arg)
-{
-    char *value = strdup(arg);
-    char *pch   = strtok(value, ",");
-
-    while (pch != nullptr) {
-        m_bfactors.push_back((int) strtoul(pch, nullptr, 10));
-
-        pch = strtok(nullptr, ",");
-    }
-
-    free(value);
-}
-
-
-void CudaCLI::parseBSleep(const char *arg)
-{
-    char *value = strdup(arg);
-    char *pch   = strtok(value, ",");
-
-    while (pch != nullptr) {
-        m_bsleeps.push_back((int) strtoul(pch, nullptr, 10));
-
-        pch = strtok(nullptr, ",");
-    }
-
-    free(value);
 }
 
 
@@ -192,4 +162,19 @@ int CudaCLI::get(const std::vector<int> &vector, int index, int defaultValue) co
     }
 
     return vector[index];
+}
+
+
+void CudaCLI::parse(std::vector<int> &vector, const char *arg) const
+{
+    char *value = strdup(arg);
+    char *pch   = strtok(value, ",");
+
+    while (pch != nullptr) {
+        vector.push_back((int) strtoul(pch, nullptr, 10));
+
+        pch = strtok(nullptr, ",");
+    }
+
+    free(value);
 }
