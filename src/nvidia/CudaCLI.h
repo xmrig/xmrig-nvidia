@@ -41,9 +41,9 @@ public:
     void parseDevices(const char *arg);
     void parseLaunch(const char *arg);
 
-    inline void CudaCLI::parseAffinity(const char *arg) { parse(m_affinity, arg); }
-    inline void parseBFactor(const char *arg)           { parse(m_bfactors, arg); }
-    inline void parseBSleep(const char *arg)            { parse(m_bsleeps, arg); }
+    inline void parseAffinity(const char *arg) { parse(m_affinity, arg); }
+    inline void parseBFactor(const char *arg)  { parse(m_bfactors, arg); }
+    inline void parseBSleep(const char *arg)   { parse(m_bsleeps, arg); }
 
 private:
     inline int affinity(int index) const { return get(m_affinity, index, -1); }
