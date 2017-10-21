@@ -1,5 +1,8 @@
 # v2.4.2
  - Added [HTTP API](https://github.com/xmrig/xmrig/wiki/API).
+ - Added CUDA 9 and Volta GPUs support.
+ - Added support for set CPU affinity for GPU threads via command line option `--cuda-affinity` and config option `affine_to_cpu`.
+ - Improved automatic configuration.
  - Added comments support in config file.
  - libjansson replaced to rapidjson.
  - [#11](https://github.com/xmrig/xmrig-nvidia/issues/11#issuecomment-336796627) GPU configuration via command line options now fully supported. Added options `--cuda-devices`, `--cuda-launch`, `--cuda-bfactor` and `--cuda-bsleep`. Options `--bfactor`, `--bsleep`, `--max-gpu-threads` now deprecated.
