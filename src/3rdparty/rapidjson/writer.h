@@ -444,8 +444,9 @@ protected:
                 else  // in object
                     os_->Put((level->valueCount % 2 == 0) ? ',' : ':');
             }
-            if (!level->inArray && level->valueCount % 2 == 0)
+            if (!level->inArray && level->valueCount % 2 == 0) {
                 RAPIDJSON_ASSERT(type == kStringType);  // if it's in object, then even number should be a name
+            }
             level->valueCount++;
         }
         else {

@@ -151,14 +151,20 @@ __forceinline__ __device__ void unusedVar( const T& )
  */
 __forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_t sub,const int val,const uint32_t src)
 {
-#if( __CUDA_ARCH__ < 300 )
+#   if ( __CUDA_ARCH__ < 300 )
     ptr[sub] = val;
     return ptr[src&3];
-#else
+#   else
     unusedVar( ptr );
     unusedVar( sub );
-    return __shfl( val, src, 4 );
-#endif
+
+#   if (__CUDACC_VER_MAJOR__ >= 9)
+    return __shfl_sync(0xFFFFFFFF, val, src, 4);
+#   else
+    return __shfl(val, src, 4);
+#   endif
+
+#   endif
 }
 
 
