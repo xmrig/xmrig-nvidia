@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -167,11 +168,10 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
 	}
 }
 
-extern "C" void cryptonight_extra_cpu_set_data( nvid_ctx* ctx, const void *data, uint32_t len )
+extern "C" void cryptonight_extra_cpu_set_data(nvid_ctx* ctx, const void *data, uint32_t len)
 {
-	ctx->inputlen = len;
-	cudaMemcpy( ctx->d_input, data, len, cudaMemcpyHostToDevice );
-	exit_if_cudaerror( ctx->device_id, __FUNCTION__, __LINE__ );
+    ctx->inputlen = len;
+    CUDA_CHECK(ctx->device_id, cudaMemcpy(ctx->d_input, data, len, cudaMemcpyHostToDevice));
 }
 
 template<size_t MEM>
@@ -190,26 +190,16 @@ int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
-	cudaMalloc(&ctx->d_long_state, MEM * wsize);
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
-	cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
-	cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
-	cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
-	cudaMalloc(&ctx->d_ctx_text, 32 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
-	cudaMalloc(&ctx->d_ctx_a, 4 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
-	cudaMalloc(&ctx->d_ctx_b, 4 * sizeof(uint32_t) * wsize);
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
-	cudaMalloc(&ctx->d_input, 21 * sizeof (uint32_t ) );
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__);
-	cudaMalloc(&ctx->d_result_count, sizeof (uint32_t ) );
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
-	cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t ) );
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state,   MEM * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state,    50  * sizeof(uint32_t) * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1,     40  * sizeof(uint32_t) * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2,     40  * sizeof(uint32_t) * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_text,     32  * sizeof(uint32_t) * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_a,        4   * sizeof(uint32_t) * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b,        4   * sizeof(uint32_t) * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input,        21  * sizeof(uint32_t)));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof(uint32_t)));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10  * sizeof(uint32_t)));
 	return 1;
 }
 
@@ -221,10 +211,8 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce
 	dim3 grid( ( wsize + threadsperblock - 1 ) / threadsperblock );
 	dim3 block( threadsperblock );
 
-	cryptonight_extra_gpu_prepare<<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
-		ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2 );
-
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
+    CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<<< grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
+        ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
 }
 
 extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce)
@@ -235,21 +223,25 @@ extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, 
 	dim3 grid( ( wsize + threadsperblock - 1 ) / threadsperblock );
 	dim3 block( threadsperblock );
 
-	cudaMemset( ctx->d_result_nonce, 0xFF, 10 * sizeof (uint32_t ) );
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
-	cudaMemset( ctx->d_result_count, 0, sizeof (uint32_t ) );
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
+    CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_result_nonce, 0xFF, 10 * sizeof(uint32_t)));
+    CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_result_count, 0, sizeof(uint32_t)));
 
-	cryptonight_extra_gpu_final<<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state );
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
+    CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_final<<< grid, block >>>(wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state));
 
-	cudaMemcpy( rescount, ctx->d_result_count, sizeof (uint32_t ), cudaMemcpyDeviceToHost );
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
-	cudaMemcpy( resnonce, ctx->d_result_nonce, 10 * sizeof (uint32_t ), cudaMemcpyDeviceToHost );
-	exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
+    CUDA_CHECK(ctx->device_id, cudaMemcpy(rescount, ctx->d_result_count, sizeof(uint32_t), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(ctx->device_id, cudaMemcpy(resnonce, ctx->d_result_nonce, 10 * sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
-	for(int i=0; i < *rescount; i++)
-		resnonce[i] += startNonce;
+    /* There is only a 32bit limit for the counter on the device side
+    * therefore this value can be greater than 10, in that case limit rescount
+    * to 10 entries.
+    */
+    if (*rescount > 10) {
+        *rescount = 10;
+    }
+
+    for (int i = 0; i < *rescount; i++) {
+        resnonce[i] += startNonce;
+    }
 }
 
 extern "C" int cuda_get_devicecount()
@@ -311,54 +303,71 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		return 0;
 	}
 
-	ctx->device_name = strdup(props.name);
-	ctx->device_mpcount = props.multiProcessorCount;
-	ctx->device_arch[0] = props.major;
-	ctx->device_arch[1] = props.minor;
-    ctx->device_clockRate = props.clockRate;
+	ctx->device_name            = strdup(props.name);
+	ctx->device_mpcount         = props.multiProcessorCount;
+	ctx->device_arch[0]         = props.major;
+	ctx->device_arch[1]         = props.minor;
+    ctx->device_clockRate       = props.clockRate;
     ctx->device_memoryClockRate = props.memoryClockRate;
+    ctx->device_pciBusID        = props.pciBusID;
+    ctx->device_pciDeviceID     = props.pciDeviceID;
+    ctx->device_pciDomainID     = props.pciDomainID;
 
 	// set all evice option those marked as auto (-1) to a valid value
-	if(ctx->device_blocks == -1)
-	{
+	if (ctx->device_blocks == -1) {
 		/* good values based of my experience
 		 *	 - 3 * SMX count >=sm_30
 		 *   - 2 * SMX count for <sm_30
 		 */
-		ctx->device_blocks = props.multiProcessorCount *
-			( props.major < 3 ? 2 : 3 );
+		ctx->device_blocks = props.multiProcessorCount * (props.major < 3 ? 2 : 3);
 	}
-	if(ctx->device_threads == -1)
-	{
-		/* sm_20 devices can only run 512 threads per cuda block
-		 * `cryptonight_core_gpu_phase1` and `cryptonight_core_gpu_phase3` starts
-		 * `8 * ctx->device_threads` threads per block
-		 */
-		ctx->device_threads = 32;
 
-		if(props.major < 6)
-		{
-			// try to stay under 950 threads ( 1900MiB memory per for hashes )
-			while(ctx->device_blocks * ctx->device_threads >= 950 && ctx->device_threads > 2)
-			{
-				ctx->device_threads /= 2;
-			}
-		}
+    if (ctx->device_threads == -1)
+    {
+        /* sm_20 devices can only run 512 threads per cuda block
+        * `cryptonight_core_gpu_phase1` and `cryptonight_core_gpu_phase3` starts
+        * `8 * ctx->device_threads` threads per block
+        */
+        ctx->device_threads = 64;
+        constexpr size_t byte2mib = 1024u * 1024u;
 
-		// stay within 85% of the available RAM
-		while(ctx->device_threads > 2)
-		{
-			size_t freeMemory = 0;
-			size_t totalMemory = 0;
-			cudaMemGetInfo(&freeMemory, &totalMemory);
-			exit_if_cudaerror(ctx->device_id, __FUNCTION__, __LINE__ );
-			freeMemory = (freeMemory * size_t(85)) / 100;
-			if( freeMemory > (size_t(ctx->device_blocks) * size_t(ctx->device_threads) * size_t(2u * 1024u * 1024u)) )
-				break;
-			else
-				ctx->device_threads /= 2;
-		}
-	}
+        // no limit by default 1TiB
+        size_t maxMemUsage = byte2mib * byte2mib;
+        if (props.major < 6)
+        {
+            // limit memory usage for GPUs before pascal
+            maxMemUsage = size_t(2048u) * byte2mib;
+        }
+        if (props.major == 2)
+        {
+            // limit memory usage for sm 20 GPUs
+            maxMemUsage = size_t(1024u) * byte2mib;
+        }
+
+        size_t freeMemory = 0;
+        size_t totalMemory = 0;
+        CUDA_CHECK(ctx->device_id, cudaMemGetInfo(&freeMemory, &totalMemory));
+
+        // keep 64MiB memory free (value is randomly chosen)
+        // 200byte are meta data memory (result nonce, ...)
+        size_t availableMem = freeMemory - (64u * 1024 * 1024) - 200u;
+        size_t limitedMemory = std::min(availableMem, maxMemUsage);
+
+        // up to 920bytes extra memory is used per thread for some kernel (lmem/local memory)
+        // 680bytes are extra meta data memory per hash
+        size_t perThread = size_t(MEMORY) + 740u + 680u;
+        size_t max_intensity = limitedMemory / perThread;
+        ctx->device_threads = max_intensity / ctx->device_blocks;
+        // use only odd number of threads
+        ctx->device_threads = ctx->device_threads & 0xFFFFFFFE;
+
+        if (props.major == 2 && ctx->device_threads > 64)
+        {
+            // Fermi gpus only support 512 threads per block (we need start 4 * configured threads)
+            ctx->device_threads = 64;
+        }
+
+    }
 
 	return 1;
 }

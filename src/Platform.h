@@ -32,6 +32,7 @@ public:
     static void init(const char *userAgent);
     static void release();
     static void setProcessPriority(int priority);
+    static void setThreadAffinity(uint64_t cpu_id);
     static void setThreadPriority(int priority);
 
     static inline const char *userAgent() { return m_userAgent; }

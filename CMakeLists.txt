@@ -1,14 +1,17 @@
 cmake_minimum_required(VERSION 3.0)
 project(xmrig-nvidia)
 
-option(WITH_AEON "CryptoNight-Lite support" ON)
-
+option(WITH_AEON  "CryptoNight-Lite support" ON)
+option(WITH_HTTPD "HTTP REST API" ON)
 
 include (CheckIncludeFile)
 
 
 set(HEADERS
     src/3rdparty/align.h
+    src/api/Api.h
+    src/api/ApiState.h
+    src/api/NetworkState.h
     src/App.h
     src/Console.h
     src/Cpu.h
@@ -24,6 +27,7 @@ set(HEADERS
     src/log/Log.h
     src/net/Client.h
     src/net/Job.h
+    src/net/JobId.h
     src/net/JobResult.h
     src/net/Network.h
     src/net/strategies/DonateStrategy.h
@@ -31,6 +35,9 @@ set(HEADERS
     src/net/strategies/SinglePoolStrategy.h
     src/net/SubmitResult.h
     src/net/Url.h
+    src/nvidia/CudaCLI.h
+    src/nvidia/Health.h
+    src/nvidia/NvmlApi.h
     src/Options.h
     src/Platform.h
     src/Summary.h
@@ -57,6 +64,9 @@ set(HEADERS_CRYPTO
    )
 
 set(SOURCES
+    src/api/Api.cpp
+    src/api/ApiState.cpp
+    src/api/NetworkState.cpp
     src/App.cpp
     src/Console.cpp
     src/Cpu_stub.cpp
@@ -69,9 +79,9 @@ set(SOURCES
     src/net/strategies/DonateStrategy.cpp
     src/net/strategies/FailoverStrategy.cpp
     src/net/strategies/SinglePoolStrategy.cpp
+    src/net/SubmitResult.cpp
     src/net/Url.cpp
-    src/nvidia/Health.h
-    src/nvidia/NvmlApi.h
+    src/nvidia/CudaCLI.cpp
     src/Options.cpp
     src/Platform.cpp
     src/Summary.cpp
@@ -124,6 +134,7 @@ add_definitions(/DXMRIG_NVIDIA_PROJECT)
 add_definitions(/DUNICODE)
 add_definitions(/DXMRIG_NO_LIBCPUID)
 add_definitions(/D__STDC_FORMAT_MACROS)
+add_definitions(/DRAPIDJSON_SSE2)
 #add_definitions(/DAPP_DEBUG)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
@@ -158,12 +169,25 @@ if (NOT WITH_AEON)
     add_definitions(/DXMRIG_NO_AEON)
 endif()
 
+if (WITH_HTTPD)
+    find_package(MHD)
+
+    if (MHD_FOUND)
+        include_directories(${MHD_INCLUDE_DIRS})
+        set(HTTPD_SOURCES src/api/Httpd.h src/api/Httpd.cpp)
+    else()
+        message(FATAL_ERROR "microhttpd NOT found: use `-DWITH_HTTPD=OFF` to build without http deamon support")
+    endif()
+else()
+    add_definitions(/DXMRIG_NO_HTTPD)
+    add_definitions(/DXMRIG_NO_API)
+
+    set(MHD_LIBRARY "")
+endif()
+
 include_directories(src)
 include_directories(src/3rdparty)
-include_directories(src/3rdparty/jansson)
 include_directories(${UV_INCLUDE_DIR})
 
-add_subdirectory(src/3rdparty/jansson)
-
-add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG})
-target_link_libraries(${PROJECT_NAME} xmrig-cuda jansson ${UV_LIBRARIES} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${HTTPD_SOURCES})
+target_link_libraries(${PROJECT_NAME} xmrig-cuda ${UV_LIBRARIES} ${MHD_LIBRARY} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})

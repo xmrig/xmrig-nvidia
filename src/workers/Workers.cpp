@@ -30,6 +30,7 @@
 #endif
 
 
+#include "api/Api.h"
 #include "crypto/CryptoNight.h"
 #include "interfaces/IJobResultListener.h"
 #include "log/Log.h"
@@ -103,7 +104,9 @@ void Workers::printHealth()
 
     Health health;
     for (const GpuThread *thread : Options::i()->threads()) {
-        NvmlApi::health(thread->index(), health);
+        if (!NvmlApi::health(thread->nvmlId(), health)) {
+            continue;
+        }
 
         const uint32_t temp = health.temperature;
 
@@ -298,4 +301,19 @@ void Workers::onTick(uv_timer_t *handle)
     if ((m_ticks++ & 0xF) == 0)  {
         m_hashrate->updateHighest();
     }
+
+#   ifndef XMRIG_NO_API
+    Api::tick(m_hashrate);
+
+    if ((m_ticks++ & 0x4) == 0) {
+        std::vector<Health> records;
+        Health health;
+        for (const GpuThread *thread : Options::i()->threads()) {
+            NvmlApi::health(thread->nvmlId(), health);
+            records.push_back(health);
+        }
+
+        Api::setHealth(records);
+    }
+#   endif
 }

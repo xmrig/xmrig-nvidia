@@ -48,9 +48,9 @@ public:
     inline void setWorker(IWorker *worker)    { m_worker = worker; }
 
 private:
-    bool m_lite;
-    const int m_threadId;
+    const bool m_lite;
     const GpuThread *m_gpuThread;
+    const int m_threadId;
     const int m_threads;
     IWorker *m_worker;
     uv_thread_t m_thread;

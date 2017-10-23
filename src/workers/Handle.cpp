@@ -28,8 +28,8 @@
 
 Handle::Handle(int threadId, GpuThread *thread, int threads, bool lite) :
     m_lite(lite),
-    m_threadId(threadId),
     m_gpuThread(thread),
+    m_threadId(threadId),
     m_threads(threads),
     m_worker(nullptr)
 {

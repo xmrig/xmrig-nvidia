@@ -17,5 +17,10 @@
             "keepalive": true,
             "nicehash": false
         }
-    ]
+    ],
+    "api": {
+        "port": 0,
+        "access-token": null,
+        "worker-id": null
+    }
 }

@@ -26,6 +26,7 @@
 #include <uv.h>
 
 
+#include "api/Api.h"
 #include "App.h"
 #include "Console.h"
 #include "Cpu.h"
@@ -45,6 +46,10 @@
 #   include "log/SysLog.h"
 #endif
 
+#ifndef XMRIG_NO_HTTPD
+#   include "api/Httpd.h"
+#endif
+
 
 App *App::m_self = nullptr;
 
@@ -52,6 +57,7 @@ App *App::m_self = nullptr;
 
 App::App(int argc, char **argv) :
     m_console(nullptr),
+    m_httpd(nullptr),
     m_network(nullptr),
     m_options(nullptr)
 {
@@ -91,6 +97,11 @@ App::App(int argc, char **argv) :
 App::~App()
 {
     uv_tty_reset_mode();
+
+#   ifndef XMRIG_NO_HTTPD
+    delete m_httpd;
+#   endif
+
     delete m_console;
 }
 
@@ -115,6 +126,15 @@ int App::exec()
     if (!Summary::print()) {
         return 1;
     }
+
+#   ifndef XMRIG_NO_API
+    Api::start();
+#   endif
+
+#   ifndef XMRIG_NO_HTTPD
+    m_httpd = new Httpd(m_options->apiPort(), m_options->apiToken());
+    m_httpd->start();
+#   endif
 
     Workers::start(m_options->threads());
 

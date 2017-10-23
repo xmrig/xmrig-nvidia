@@ -25,8 +25,24 @@ find_package(CUDA 7.5 REQUIRED)
 
 set(LIBS ${LIBS} ${CUDA_LIBRARIES})
 
-#set(CUDA_ARCH "20;30;35;37;50;52;60;61;62" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
-set(CUDA_ARCH "20;30;50;60" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
+set(DEFAULT_CUDA_ARCH "30;50")
+
+# Fermi GPUs are only supported with CUDA < 9.0
+if (CUDA_VERSION VERSION_LESS 9.0)
+    list(APPEND DEFAULT_CUDA_ARCH "20")
+endif()
+
+# add Pascal support for CUDA >= 8.0
+if (NOT CUDA_VERSION VERSION_LESS 8.0)
+    list(APPEND DEFAULT_CUDA_ARCH "60")
+endif()
+
+# add Volta support for CUDA >= 9.0
+if (NOT CUDA_VERSION VERSION_LESS 9.0)
+    list(APPEND DEFAULT_CUDA_ARCH "70")
+endif()
+
+set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
 
 # validate architectures (only numbers are allowed)
 foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
@@ -69,6 +85,7 @@ elseif("${CUDA_COMPILER}" STREQUAL "nvcc")
     # avoid that nvcc in CUDA < 8 tries to use libc `memcpy` within the kernel
     if (CUDA_VERSION VERSION_LESS 8.0)
         add_definitions(-D_FORCE_INLINES)
+        add_definitions(-D_MWAITXINTRIN_H_INCLUDED)
     endif()
     foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
         # set flags to create device code for the given architecture

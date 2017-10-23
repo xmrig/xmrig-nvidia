@@ -151,14 +151,20 @@ __forceinline__ __device__ void unusedVar( const T& )
  */
 __forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_t sub,const int val,const uint32_t src)
 {
-#if( __CUDA_ARCH__ < 300 )
+#   if ( __CUDA_ARCH__ < 300 )
     ptr[sub] = val;
     return ptr[src&3];
-#else
+#   else
     unusedVar( ptr );
     unusedVar( sub );
-    return __shfl( val, src, 4 );
-#endif
+
+#   if (__CUDACC_VER_MAJOR__ >= 9)
+    return __shfl_sync(0xFFFFFFFF, val, src, 4);
+#   else
+    return __shfl(val, src, 4);
+#   endif
+
+#   endif
 }
 
 
@@ -313,10 +319,9 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx)
 
 	for ( int i = 0; i < partcountOneThree; i++ )
 	{
-		cryptonight_core_gpu_phase1<ITERATIONS, OFFSET><<< grid, block8 >>>( ctx->device_blocks*ctx->device_threads,
-			bfactorOneThree, i,
-			ctx->d_long_state, ctx->d_ctx_state, ctx->d_ctx_key1 );
-		exit_if_cudaerror( ctx->device_id, __FUNCTION__, __LINE__ );
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase1<ITERATIONS, OFFSET><<< grid, block8 >>>(ctx->device_blocks*ctx->device_threads,
+            bfactorOneThree, i,
+            ctx->d_long_state, ctx->d_ctx_state, ctx->d_ctx_key1));
 
 		if ( partcount > 1 && ctx->device_bsleep > 0) compat_usleep( ctx->device_bsleep );
 	}
@@ -324,7 +329,7 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx)
 
 	for ( int i = 0; i < partcount; i++ )
 	{
-        cryptonight_core_gpu_phase2<ITERATIONS, OFFSET, MASK><<<
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase2<ITERATIONS, OFFSET, MASK><<<
             grid,
             block4,
             block4.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
@@ -335,19 +340,17 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx)
             ctx->d_long_state,
             ctx->d_ctx_a,
             ctx->d_ctx_b
-        );
-		exit_if_cudaerror( ctx->device_id, __FUNCTION__, __LINE__ );
+        ));
 
 		if ( partcount > 1 && ctx->device_bsleep > 0) compat_usleep( ctx->device_bsleep );
 	}
 
 	for ( int i = 0; i < partcountOneThree; i++ )
 	{
-		cryptonight_core_gpu_phase3<ITERATIONS, OFFSET><<< grid, block8 >>>( ctx->device_blocks*ctx->device_threads,
-			bfactorOneThree, i,
-			ctx->d_long_state,
-			ctx->d_ctx_state, ctx->d_ctx_key2 );
-		exit_if_cudaerror( ctx->device_id, __FUNCTION__, __LINE__ );
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ITERATIONS, OFFSET><<< grid, block8 >>>(ctx->device_blocks*ctx->device_threads,
+            bfactorOneThree, i,
+            ctx->d_long_state,
+            ctx->d_ctx_state, ctx->d_ctx_key2));
 	}
 }
 

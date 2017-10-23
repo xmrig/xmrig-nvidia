@@ -39,6 +39,17 @@ public:
         memClock(0)
     {}
 
+
+    inline void reset()
+    {
+        temperature = 0;
+        power       = 0;
+        fanSpeed    = 0;
+        clock       = 0;
+        memClock    = 0;
+    }
+
+
     uint32_t temperature;
     uint32_t power;
     uint32_t fanSpeed;

@@ -22,6 +22,15 @@
  */
 
 
+#ifdef __FreeBSD__
+#   include <sys/types.h>
+#   include <sys/param.h>
+#   include <sys/cpuset.h>
+#   include <pthread_np.h>
+#endif
+
+
+#include <pthread.h>
 #include <sched.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +43,11 @@
 
 #ifdef XMRIG_NVIDIA_PROJECT
 #   include "nvidia/cryptonight.h"
+#endif
+
+
+#ifdef __FreeBSD__
+typedef cpuset_t cpu_set_t;
 #endif
 
 
@@ -80,6 +94,14 @@ void Platform::setProcessPriority(int priority)
 }
 
 
+void Platform::setThreadAffinity(uint64_t cpu_id)
+{
+    cpu_set_t mn;
+    CPU_ZERO(&mn);
+    CPU_SET(cpu_id, &mn);
+    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &mn);
+}
+
 
 void Platform::setThreadPriority(int priority)
 {
@@ -116,6 +138,7 @@ void Platform::setThreadPriority(int priority)
 
     setpriority(PRIO_PROCESS, 0, prio);
 
+#   ifdef SCHED_IDLE
     if (priority == 0) {
         sched_param param;
         param.sched_priority = 0;
@@ -124,4 +147,5 @@ void Platform::setThreadPriority(int priority)
             sched_setscheduler(0, SCHED_BATCH, &param);
         }
     }
+#   endif
 }

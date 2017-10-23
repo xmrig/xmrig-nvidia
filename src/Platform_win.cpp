@@ -131,6 +131,11 @@ void Platform::setProcessPriority(int priority)
 }
 
 
+void Platform::setThreadAffinity(uint64_t cpu_id)
+{
+    SetThreadAffinityMask(GetCurrentThread(), 1ULL << cpu_id);
+}
+
 
 void Platform::setThreadPriority(int priority)
 {

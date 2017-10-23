@@ -49,3 +49,8 @@ const char *NvmlApi::version()
 {
     return nullptr;
 }
+
+
+void NvmlApi::bind(const std::vector<GpuThread*> &threads)
+{
+}
