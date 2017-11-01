@@ -69,8 +69,8 @@ Options:\n\
   -k, --keepalive           send keepalived for prevent timeout (need pool support)\n\
   -r, --retries=N           number of times to retry before switch to backup server (default: 5)\n\
   -R, --retry-pause=N       time to pause between retries (default: 5)\n\
-      --cuda-devices=N      List of CUDA devices to use.\n\
-      --cuda-launch=TxB     List of launch config for the CryptoNight kernel\n\
+      --cuda-devices=N      list of CUDA devices to use.\n\
+      --cuda-launch=TxB     list of launch config for the CryptoNight kernel\n\
       --cuda-max-threads=N  limit maximum count of GPU threads in automatic mode\n\
       --cuda-bfactor=[0-12] run CryptoNight core kernel in smaller pieces\n\
       --cuda-bsleep=N       insert a delay of N microseconds between kernel launches\n\
