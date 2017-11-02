@@ -34,30 +34,34 @@ GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used
 
 ### Command line options
 ```
-  -a, --algo=ALGO         cryptonight (default) or cryptonight-lite
-  -o, --url=URL           URL of mining server
-  -O, --userpass=U:P      username:password pair for mining server
-  -u, --user=USERNAME     username for mining server
-  -p, --pass=PASSWORD     password for mining server
-  -k, --keepalive         send keepalived for prevent timeout (need pool support)
-  -r, --retries=N         number of times to retry before switch to backup server (default: 5)
-  -R, --retry-pause=N     time to pause between retries (default: 5)
-      --no-color          disable colored output
-      --donate-level=N    donate level, default 5% (5 minutes in 100 minutes)
-      --user-agent        set custom user-agent string for pool
-  -B, --background        run the miner in the background
-  -c, --config=FILE       load a JSON-format configuration file
-  -l, --log-file=FILE     log all output to a file
-      --nicehash          enable nicehash support
-      --print-time=N      print hashrate report every N seconds
-  -h, --help              display this help and exit
-  -V, --version           output version information and exit
-
-Auto-configuration specific options:
-      --bfactor=[0-12]    run CryptoNight core kernel in smaller pieces
-                          from 0 (ui freeze) to 12 (smooth), Windows default is 6
-      --bsleep=N          insert a delay of N microseconds between kernel launches
-      --max-gpu-threads=N limit maximum count of GPU threads
+  -a, --algo=ALGO           cryptonight (default) or cryptonight-lite
+  -o, --url=URL             URL of mining server
+  -O, --userpass=U:P        username:password pair for mining server
+  -u, --user=USERNAME       username for mining server
+  -p, --pass=PASSWORD       password for mining server
+  -k, --keepalive           send keepalived for prevent timeout (need pool support)
+  -r, --retries=N           number of times to retry before switch to backup server (default: 5)
+  -R, --retry-pause=N       time to pause between retries (default: 5)
+      --cuda-devices=N      List of CUDA devices to use.
+      --cuda-launch=TxB     List of launch config for the CryptoNight kernel
+      --cuda-max-threads=N  limit maximum count of GPU threads in automatic mode
+      --cuda-bfactor=[0-12] run CryptoNight core kernel in smaller pieces
+      --cuda-bsleep=N       insert a delay of N microseconds between kernel launches
+      --cuda-affinity=N     affine GPU threads to a CPU
+      --no-color            disable colored output
+      --donate-level=N      donate level, default 5% (5 minutes in 100 minutes)
+      --user-agent          set custom user-agent string for pool
+  -B, --background          run the miner in the background
+  -c, --config=FILE         load a JSON-format configuration file
+  -l, --log-file=FILE       log all output to a file
+  -S, --syslog              use system log for output messages
+      --nicehash            enable nicehash support
+      --print-time=N        print hashrate report every N seconds
+      --api-port=N          port for the miner API
+      --api-access-token=T  access token for API
+      --api-worker-id=ID    custom worker-id for API
+  -h, --help                display this help and exit
+  -V, --version             output version information and exit
 ```
 
 ### Config file.
