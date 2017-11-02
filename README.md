@@ -3,7 +3,7 @@ XMRig is high performance Monero (XMR) NVIDIA miner, with the official full Wind
 
 GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used in xmr-stak-nvidia.
 
-* This is the **NVIDIA GPU** mining version, there is also a [CPU version](https://github.com/xmrig/xmrig) and [AMD (OpenCL) https://github.com/xmrig/xmrig-amd].
+* This is the **NVIDIA GPU** mining version, there is also a [CPU version](https://github.com/xmrig/xmrig) and [AMD GPU version]( https://github.com/xmrig/xmrig-amd).
 * [Roadmap](https://github.com/xmrig/xmrig/issues/106) for next releases.
 
 <img src="https://i.imgur.com/wRCZ3IJ.png" width="620" >
