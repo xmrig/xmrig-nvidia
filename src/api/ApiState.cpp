@@ -56,7 +56,7 @@ static inline double normalize(double d)
         return 0.0;
     }
 
-    return std::floor(d * 100.0) / 100.0;
+    return floor(d * 100.0) / 100.0;
 }
 
 
