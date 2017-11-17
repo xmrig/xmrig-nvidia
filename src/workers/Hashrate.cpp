@@ -23,7 +23,7 @@
 
 
 #include <chrono>
-#include <cmath>
+#include <math.h>
 #include <memory.h>
 
 #include "log/Log.h"
@@ -33,7 +33,7 @@
 
 inline const char *format(double h, char* buf, size_t size)
 {
-    if (std::isnormal(h)) {
+    if (isnormal(h)) {
         snprintf(buf, size, "%03.1f", h);
         return buf;
     }
@@ -68,7 +68,7 @@ double Hashrate::calc(size_t ms) const
 
     for (int i = 0; i < m_threads; ++i) {
         data = calc(i, ms);
-        if (std::isnormal(data)) {
+        if (isnormal(data)) {
             result += data;
         }
     }
@@ -175,7 +175,7 @@ void Hashrate::stop()
 void Hashrate::updateHighest()
 {
    double highest = calc(10000);
-   if (std::isnormal(highest) && highest > m_highest) {
+   if (isnormal(highest) && highest > m_highest) {
        m_highest = highest;
    }
 }
