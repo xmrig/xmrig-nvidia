@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -30,6 +30,11 @@
 #   include "getopt/getopt.h"
 #else
 #   include <getopt.h>
+#endif
+
+
+#ifndef XMRIG_NO_HTTPD
+#   include <microhttpd.h>
 #endif
 
 
@@ -784,6 +789,10 @@ void Options::showVersion()
     "\n");
 
     printf("\nlibuv/%s\n", uv_version_string());
+
+#   ifndef XMRIG_NO_HTTPD
+    printf("libmicrohttpd/%s\n", MHD_get_version());
+#   endif
 
     const int cudaVersion = cuda_get_runtime_version();
     printf("CUDA/%d.%d\n", cudaVersion / 1000, cudaVersion % 100);
