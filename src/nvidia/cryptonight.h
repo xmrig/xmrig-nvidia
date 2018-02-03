@@ -38,7 +38,7 @@ int cuda_get_deviceinfo(nvid_ctx *ctx);
 int cryptonight_gpu_init(nvid_ctx *ctx);
 void cryptonight_extra_cpu_set_data( nvid_ctx* ctx, const void *data, uint32_t len);
 void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce);
-void cryptonight_gpu_hash(nvid_ctx* ctx);
+void cryptonight_gpu_hash(nvid_ctx* ctx, int variant, uint8_t nonce_flag);
 void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce);
 
 #ifndef XMRIG_NO_AEON
