@@ -468,11 +468,11 @@ bool Options::parseArg(int key, const char *arg)
         m_apiWorkerId = strdup(arg);
         break;
 
-    case 1201: /* --bfactor */
+    case 1201: /* --cuda-bfactor */
         m_cudaCLI.parseBFactor(arg);
         break;
 
-    case 1202: /* --bsleep */
+    case 1202: /* --cuda-bsleep */
         m_cudaCLI.parseBSleep(arg);
         break;
 
@@ -496,7 +496,6 @@ bool Options::parseArg(int key, const char *arg)
     case 1004: /* --max-gpu-usage */
     case 1007: /* --print-time */
     case 1200: /* --max-gpu-threads */
-
     case 4000: /* --api-port */
         return parseArg(key, strtol(arg, nullptr, 10));
 
@@ -594,6 +593,14 @@ bool Options::parseArg(int key, uint64_t arg)
 
     case 1200: /* --max-gpu-threads */
         m_maxGpuThreads = (int) arg;
+        break;
+
+    case 1201: /* --cuda-bfactor */
+        m_cudaCLI.addBFactor((int) arg);
+        break;
+
+    case 1202: /* --cuda-bsleep */
+        m_cudaCLI.addBSleep((int) arg);
         break;
 
     case 4000: /* --api-port */
