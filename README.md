@@ -5,7 +5,6 @@
 [![GitHub license](https://img.shields.io/github/license/xmrig/xmrig-nvidia.svg)](https://github.com/xmrig/xmrig-nvidia/blob/master/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/xmrig/xmrig-nvidia.svg)](https://github.com/xmrig/xmrig-nvidia/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/xmrig/xmrig-nvidia.svg)](https://github.com/xmrig/xmrig-nvidia/network)
-> XMRig-NVidia - Monero (XMR) NVIDIA miner 
 
 XMRig is high performance Monero (XMR) NVIDIA miner, with the official full Windows support.
 
