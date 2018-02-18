@@ -1,9 +1,11 @@
 # v2.4.5
  - [#49](https://github.com/xmrig/xmrig-amd/issues/49) Fixed, in some cases, pause was cause an infinite loop.
+ - [#64](https://github.com/xmrig/xmrig-nvidia/issues/64) Fixed compatibility with CUDA 9.1.
  - [#84](https://github.com/xmrig/xmrig-nvidia/issues/84) In some cases miner was doesn't write log to stdout.
  - Added libmicrohttpd version to --version output.
  - Fixed bug in singal handler, in some cases miner wasn't shutdown properly.
  - Fixed recent MSVC 2017 version detection.
+ - Fixed, config file options `cuda-bfactor` and `cuda-bsleep` was ignored.
 
 # v2.4.2
  - Added [HTTP API](https://github.com/xmrig/xmrig/wiki/API).
