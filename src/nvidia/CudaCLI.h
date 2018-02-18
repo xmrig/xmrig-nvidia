@@ -51,7 +51,7 @@ private:
     inline int affinity(int index) const { return get(m_affinity, index, -1); }
     inline int blocks(int index) const   { return get(m_blocks, index, -1); }
     inline int threads(int index) const  { return get(m_threads, index, -1); }
-    inline bool isEmpty() const          { return m_devices.empty() && m_threads.empty(); };
+    inline bool isEmpty() const          { return m_devices.empty() && m_threads.empty(); }
 
     inline int bfactor(int index = 0) const {
 #       ifdef _WIN32

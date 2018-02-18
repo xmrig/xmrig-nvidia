@@ -1,3 +1,6 @@
+# v2.4.5
+- [#84](https://github.com/xmrig/xmrig-nvidia/issues/84) In some cases miner was doesn't write log to stdout.
+
 # v2.4.2
  - Added [HTTP API](https://github.com/xmrig/xmrig/wiki/API).
  - Added CUDA 9 and Volta GPUs support.
