@@ -11,7 +11,6 @@ XMRig is high performance Monero (XMR) NVIDIA miner, with the official full Wind
 GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used in xmr-stak-nvidia.
 
 * This is the **NVIDIA GPU** mining version, there is also a [CPU version](https://github.com/xmrig/xmrig) and [AMD GPU version]( https://github.com/xmrig/xmrig-amd).
-* You can use [config.xmrig.com](https://config.xmrig.com/) to generate/edit/share your configurations. :new:
 * [Roadmap](https://github.com/xmrig/xmrig/issues/106) for next releases.
 
 :warning: Suggested values for GPU auto configuration can be not optimal or not working, you may need tweak your threads options. Please feel free open an [issue](https://github.com/xmrig/xmrig-nvidia/issues) if auto configuration suggest wrong values.
@@ -42,6 +41,7 @@ GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used
   * Clone with `git clone https://github.com/xmrig/xmrig-nvidia.git`  :hammer: [Build instructions](https://github.com/xmrig/xmrig-nvidia/wiki/Build).
 
 ## Usage
+Use [config.xmrig.com](https://config.xmrig.com/nvidia) to generate, edit or share configurations.
 
 ### Command line options
 ```
@@ -74,40 +74,6 @@ GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used
   -h, --help                display this help and exit
   -V, --version             output version information and exit
 ```
-
-### Config file.
-GPU configuration now possible only via config file. Sample config:
-```json
-{
-    "background": false,
-    "colors": true,
-    "donate-level": 5,
-    "log-file": null,
-    "print-time": 60,
-    "retries": 5,
-    "retry-pause": 5,
-    "syslog": false,
-    "threads": [
-        {
-            "index": 0,
-            "threads": 42,
-            "blocks": 18,
-            "bfactor": 6,
-            "bsleep": 25
-        }
-    ],
-    "pools": [
-        {
-            "url": "pool.minemonero.pro:5555",
-            "user": "",
-            "pass": "x",
-            "keepalive": true,
-            "nicehash": false
-        }
-    ]
-}
-```
-If `threads` option not specified the miner will try automatically create optimal configuration for your GPUs.
 
 ## Donations
 Default donation 5% (5 minutes in 100 minutes) can be reduced to 1% via command line option `--donate-level`.
