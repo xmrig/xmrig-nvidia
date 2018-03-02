@@ -87,7 +87,7 @@ __device__ __forceinline__ void cryptonight_aes_set_key( uint32_t * __restrict__
 	}
 }
 
-__global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2 )
+__global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2, int variant, uint32_t * __restrict__ d_tweak1_2)
 {
 	int thread = ( blockDim.x * blockIdx.x + threadIdx.x );
 
@@ -100,6 +100,7 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 	uint32_t ctx_key1[40];
 	uint32_t ctx_key2[40];
 	uint32_t input[21];
+	uint32_t tweak1_2[2];
 
 	memcpy( input, d_input, len );
 	//*((uint32_t *)(((char *)input) + 39)) = startNonce + thread;
@@ -112,6 +113,15 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 	cryptonight_aes_set_key( ctx_key2, ctx_state + 8 );
 	XOR_BLOCKS_DST( ctx_state, ctx_state + 8, ctx_a );
 	XOR_BLOCKS_DST( ctx_state + 4, ctx_state + 12, ctx_b );
+
+	if (variant > 0)
+	{
+		tweak1_2[0] = (input[8] >> 24) | (input[9] << 8);
+		tweak1_2[0] ^= ctx_state[48];
+		tweak1_2[1] = (input[9] >> 24) | (input[10] << 8);
+		tweak1_2[1] ^= ctx_state[49];
+		memcpy( d_tweak1_2 + thread * 2, tweak1_2, 8 );
+	}
 
 	memcpy( d_ctx_state + thread * 50, ctx_state, 50 * 4 );
 	memcpy( d_ctx_a + thread * 4, ctx_a, 4 * 4 );
@@ -200,10 +210,11 @@ int cryptonight_extra_cpu_init(nvid_ctx* ctx)
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input,        21  * sizeof(uint32_t)));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof(uint32_t)));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10  * sizeof(uint32_t)));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_tweak1_2, 2 * sizeof(uint32_t) * wsize));
 	return 1;
 }
 
-extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce)
+extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, int variant, uint32_t startNonce)
 {
 	int threadsperblock = 128;
 	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -212,7 +223,7 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce
 	dim3 block( threadsperblock );
 
     CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<<< grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
-        ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
+        ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2, variant, ctx->d_tweak1_2));
 }
 
 extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce)

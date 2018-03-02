@@ -89,17 +89,18 @@ void CudaWorker::start()
         while (!Workers::isOutdated(m_sequence)) {
             uint32_t foundNonce[10];
             uint32_t foundCount;
+            const int variant = m_job.size() && ((const uint8_t*)m_job.blob())[0] >= 7 ? ((const uint8_t*)m_job.blob())[0] - 6 : 0;
 
-            cryptonight_extra_cpu_prepare(&m_ctx, m_nonce);
+            cryptonight_extra_cpu_prepare(&m_ctx, variant, m_nonce);
 
 #           ifdef XMRIG_NO_AEON
-            cryptonight_gpu_hash(&m_ctx);
+            cryptonight_gpu_hash(&m_ctx, variant);
 #           else
             if (m_lite) {
                 cryptonight_gpu_hash_lite(&m_ctx);
             }
             else {
-                cryptonight_gpu_hash(&m_ctx);
+                cryptonight_gpu_hash(&m_ctx, variant);
             }
 #           endif
 

@@ -167,12 +167,19 @@ __forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_
 #   endif
 }
 
+__device__ __forceinline__ uint32_t variant1_1(const uint32_t src)
+{
+	const uint8_t tmp = src >> 24;
+	const uint32_t table = 0x75310;
+	const uint8_t index = (((tmp >> 3) & 6) | (tmp & 1)) << 1;
+	return (src & 0x00ffffff) | ((tmp ^ ((table >> index) & 0x30)) << 24);
+}
 
 template<size_t ITERATIONS, size_t OFFSET, size_t MASK>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 4 )
 #endif
-__global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b )
+__global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, int variant, const uint32_t * d_tweak1_2)
 {
 	__shared__ uint32_t sharedMemory[1024];
 
@@ -192,6 +199,13 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 #endif
 	if ( thread >= threads )
 		return;
+
+	uint32_t tweak1_2[2];
+	if (variant > 0)
+	{
+		tweak1_2[0] = d_tweak1_2[thread * 2];
+		tweak1_2[1] = d_tweak1_2[thread * 2 + 1];
+	}
 
 	int i, k;
         uint32_t j;
@@ -228,7 +242,8 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 			//XOR_BLOCKS_DST(c, b, &long_state[j]);
 			t1[0] = shuffle(sPtr,sub, d[x], 0);
 			//long_state[j] = d[0] ^ d[1];
-			storeGlobal32( long_state + j, d[0] ^ d[1] );
+			const uint32_t z = d[0] ^ d[1];
+			storeGlobal32( long_state + j, (variant > 0 && sub == 2) ? variant1_1(z) : z );
 
 			//MUL_SUM_XOR_DST(c, a, &long_state[((uint32_t *)c)[0] & MASK]);
 			j = ( ( *t1 & MASK) >> 2 ) + sub;
@@ -248,7 +263,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 
 			res = *( (uint64_t *) t2 )  >> ( sub & 1 ? 32 : 0 );
 
-			storeGlobal32( long_state + j, res );
+			storeGlobal32( long_state + j, (variant > 0 && sub2) ? (tweak1_2[sub & 1] ^ res) : res );
 			a = ( sub & 1 ? yy[1] : yy[0] ) ^ res;
 		}
 	}
@@ -297,7 +312,7 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 
 
 template<size_t ITERATIONS, size_t OFFSET, size_t MASK>
-void cryptonight_core_cpu_hash(nvid_ctx* ctx)
+void cryptonight_core_cpu_hash(nvid_ctx* ctx, int variant)
 {
 	dim3 grid( ctx->device_blocks );
 	dim3 block( ctx->device_threads );
@@ -339,12 +354,13 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx)
             i,
             ctx->d_long_state,
             ctx->d_ctx_a,
-            ctx->d_ctx_b
+            ctx->d_ctx_b,
+            variant,
+            ctx->d_tweak1_2
         ));
 
 		if ( partcount > 1 && ctx->device_bsleep > 0) compat_usleep( ctx->device_bsleep );
 	}
-
 	for ( int i = 0; i < partcountOneThree; i++ )
 	{
         CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ITERATIONS, OFFSET><<< grid, block8 >>>(ctx->device_blocks*ctx->device_threads,
@@ -355,15 +371,15 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx)
 }
 
 
-extern "C" void cryptonight_gpu_hash(nvid_ctx* ctx)
+extern "C" void cryptonight_gpu_hash(nvid_ctx* ctx, int variant)
 {
-    cryptonight_core_cpu_hash<0x80000, 19, 0x1FFFF0>(ctx);
+    cryptonight_core_cpu_hash<0x80000, 19, 0x1FFFF0>(ctx, variant);
 }
 
 
 #ifndef XMRIG_NO_AEON
 extern "C" void cryptonight_gpu_hash_lite(nvid_ctx* ctx)
 {
-    cryptonight_core_cpu_hash<0x40000, 18, 0x0FFFF0>(ctx);
+    cryptonight_core_cpu_hash<0x40000, 18, 0x0FFFF0>(ctx, 0);
 }
 #endif
