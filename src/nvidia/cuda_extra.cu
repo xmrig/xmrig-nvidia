@@ -1,3 +1,28 @@
+/* XMRig
+* Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
+* Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
+* Copyright 2014      Lucas Jones <https://github.com/lucasjones>
+* Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
+* Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
+* Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+* Copyright 2018      Lee Clagett <https://github.com/vtnerd>
+* Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+*
+*   This program is free software: you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License as published by
+*   the Free Software Foundation, either version 3 of the License, or
+*   (at your option) any later version.
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
 #include <algorithm>
 #include <stdio.h>
 #include <stdint.h>
@@ -87,7 +112,8 @@ __device__ __forceinline__ void cryptonight_aes_set_key( uint32_t * __restrict__
     }
 }
 
-__global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2, int variant, uint32_t * __restrict__ d_tweak1_2)
+template<uint8_t VARIANT>
+__global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2, uint32_t * __restrict__ d_tweak1_2)
 {
     int thread = ( blockDim.x * blockIdx.x + threadIdx.x );
 
@@ -114,8 +140,7 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
     XOR_BLOCKS_DST( ctx_state, ctx_state + 8, ctx_a );
     XOR_BLOCKS_DST( ctx_state + 4, ctx_state + 12, ctx_b );
 
-    if (variant > 0)
-    {
+    if (VARIANT > 0) {
         tweak1_2[0] = (input[8] >> 24) | (input[9] << 8);
         tweak1_2[0] ^= ctx_state[48];
         tweak1_2[1] = (input[9] >> 24) | (input[10] << 8);
@@ -214,7 +239,7 @@ int cryptonight_extra_cpu_init(nvid_ctx* ctx)
     return 1;
 }
 
-extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, int variant, uint32_t startNonce)
+extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint8_t version, uint32_t startNonce)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -222,8 +247,14 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, int variant, uint32
     dim3 grid( ( wsize + threadsperblock - 1 ) / threadsperblock );
     dim3 block( threadsperblock );
 
-    CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<<< grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
-        ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2, variant, ctx->d_tweak1_2));
+    if (version > 6) {
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<1><<< grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
+            ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2, ctx->d_tweak1_2));
+    }
+    else {
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<1><<< grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
+            ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2, ctx->d_tweak1_2));
+    }
 }
 
 extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce)

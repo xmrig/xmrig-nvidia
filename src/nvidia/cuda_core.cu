@@ -1,3 +1,28 @@
+/* XMRig
+* Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
+* Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
+* Copyright 2014      Lucas Jones <https://github.com/lucasjones>
+* Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
+* Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
+* Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+* Copyright 2018      Lee Clagett <https://github.com/vtnerd>
+* Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+*
+*   This program is free software: you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License as published by
+*   the Free Software Foundation, either version 3 of the License, or
+*   (at your option) any later version.
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -175,11 +200,11 @@ __device__ __forceinline__ uint32_t variant1_1(const uint32_t src)
     return (src & 0x00ffffff) | ((tmp ^ ((table >> index) & 0x30)) << 24);
 }
 
-template<size_t ITERATIONS, size_t OFFSET, size_t MASK>
+template<size_t ITERATIONS, size_t OFFSET, size_t MASK, uint8_t VARIANT>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 4 )
 #endif
-__global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, int variant, const uint32_t * d_tweak1_2)
+__global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, const uint32_t * d_tweak1_2)
 {
     __shared__ uint32_t sharedMemory[1024];
 
@@ -201,14 +226,13 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
         return;
 
     uint32_t tweak1_2[2];
-    if (variant > 0)
-    {
+    if (VARIANT > 0) {
         tweak1_2[0] = d_tweak1_2[thread * 2];
         tweak1_2[1] = d_tweak1_2[thread * 2 + 1];
     }
 
     int i, k;
-        uint32_t j;
+    uint32_t j;
     const int batchsize = (ITERATIONS * 2) >> ( 2 + bfactor );
     const int start = partidx * batchsize;
     const int end = start + batchsize;
@@ -242,8 +266,14 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
             //XOR_BLOCKS_DST(c, b, &long_state[j]);
             t1[0] = shuffle(sPtr,sub, d[x], 0);
             //long_state[j] = d[0] ^ d[1];
-            const uint32_t z = d[0] ^ d[1];
-            storeGlobal32( long_state + j, (variant > 0 && sub == 2) ? variant1_1(z) : z );
+
+            if (VARIANT > 0) {
+                const uint32_t z = d[0] ^ d[1];
+                storeGlobal32(long_state + j, sub == 2 ? variant1_1(z) : z);
+            }
+            else {
+                storeGlobal32(long_state + j, d[0] ^ d[1]);
+            }
 
             //MUL_SUM_XOR_DST(c, a, &long_state[((uint32_t *)c)[0] & MASK]);
             j = ( ( *t1 & MASK) >> 2 ) + sub;
@@ -263,7 +293,13 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 
             res = *( (uint64_t *) t2 )  >> ( sub & 1 ? 32 : 0 );
 
-            storeGlobal32( long_state + j, (variant > 0 && sub2) ? (tweak1_2[sub & 1] ^ res) : res );
+            if (VARIANT > 0) {
+                storeGlobal32(long_state + j, sub2 ? (tweak1_2[sub & 1] ^ res) : res);
+            }
+            else {
+                storeGlobal32(long_state + j, res);
+            }
+
             a = ( sub & 1 ? yy[1] : yy[0] ) ^ res;
         }
     }
@@ -311,8 +347,8 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 }
 
 
-template<size_t ITERATIONS, size_t OFFSET, size_t MASK>
-void cryptonight_core_cpu_hash(nvid_ctx* ctx, int variant)
+template<size_t ITERATIONS, size_t OFFSET, size_t MASK, uint8_t VARIANT>
+void cryptonight_core_cpu_hash(nvid_ctx* ctx)
 {
     dim3 grid( ctx->device_blocks );
     dim3 block( ctx->device_threads );
@@ -344,7 +380,7 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, int variant)
 
     for ( int i = 0; i < partcount; i++ )
     {
-        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase2<ITERATIONS, OFFSET, MASK><<<
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase2<ITERATIONS, OFFSET, MASK, VARIANT><<<
             grid,
             block4,
             block4.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
@@ -355,7 +391,6 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, int variant)
             ctx->d_long_state,
             ctx->d_ctx_a,
             ctx->d_ctx_b,
-            variant,
             ctx->d_tweak1_2
         ));
 
@@ -371,15 +406,20 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, int variant)
 }
 
 
-extern "C" void cryptonight_gpu_hash(nvid_ctx* ctx, int variant)
+extern "C" void cryptonight_gpu_hash(nvid_ctx* ctx, uint8_t version)
 {
-    cryptonight_core_cpu_hash<0x80000, 19, 0x1FFFF0>(ctx, variant);
+    if (version > 6) {
+        cryptonight_core_cpu_hash<0x80000, 19, 0x1FFFF0, 1>(ctx);
+    }
+    else {
+        cryptonight_core_cpu_hash<0x80000, 19, 0x1FFFF0, 0>(ctx);
+    }
 }
 
 
 #ifndef XMRIG_NO_AEON
 extern "C" void cryptonight_gpu_hash_lite(nvid_ctx* ctx)
 {
-    cryptonight_core_cpu_hash<0x40000, 18, 0x0FFFF0>(ctx, 0);
+    cryptonight_core_cpu_hash<0x40000, 18, 0x0FFFF0, 0>(ctx);
 }
 #endif
