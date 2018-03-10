@@ -35,7 +35,6 @@
 
 #include "crypto/CryptoNight.h"
 
-
 extern "C"
 {
 #include "crypto/c_keccak.h"
@@ -308,10 +307,17 @@ static inline void cn_implode_scratchpad(const __m128i *input, __m128i *output)
 }
 
 
-template<size_t ITERATIONS, size_t MEM, size_t MASK, bool SOFT_AES>
-inline void cryptonight_hash(const void *__restrict__ input, size_t size, void *__restrict__ output, cryptonight_ctx *__restrict__ ctx)
+template<size_t ITERATIONS, size_t MEM, size_t MASK, bool SOFT_AES, bool MONERO>
+inline bool cryptonight_hash(const void *__restrict__ input, size_t size, void *__restrict__ output, cryptonight_ctx *__restrict__ ctx, int variant)
 {
     keccak(static_cast<const uint8_t*>(input), (int) size, ctx->state0, 200);
+
+    if (MONERO && variant > 0 && size < 43)
+    {
+        return false;
+    }
+    const uint64_t tweak1_2 = (MONERO && variant > 0) ?
+        *(reinterpret_cast<const uint64_t*>(reinterpret_cast<const uint8_t*>(input) + 35)) ^ *(reinterpret_cast<const uint64_t*>(ctx->state0) + 24) : 0;
 
     cn_explode_scratchpad<MEM, SOFT_AES>((__m128i*) ctx->state0, (__m128i*) ctx->memory);
 
@@ -336,6 +342,15 @@ inline void cryptonight_hash(const void *__restrict__ input, size_t size, void *
         }
 
         _mm_store_si128((__m128i *) &l0[idx0 & MASK], _mm_xor_si128(bx0, cx));
+
+        if (MONERO && variant > 0)
+        {
+            const uint8_t tmp = ((const uint8_t*)(&l0[idx0 & MASK]))[11];
+            static const uint32_t table = 0x75310;
+            const uint8_t index = (((tmp >> 3) & 6) | (tmp & 1)) << 1;
+            ((uint8_t*)(&l0[idx0 & MASK]))[11] = tmp ^ ((table >> index) & 0x30);
+        }
+
         idx0 = EXTRACT64(cx);
         bx0 = cx;
 
@@ -348,7 +363,7 @@ inline void cryptonight_hash(const void *__restrict__ input, size_t size, void *
         ah0 += lo;
 
         ((uint64_t*)&l0[idx0 & MASK])[0] = al0;
-        ((uint64_t*)&l0[idx0 & MASK])[1] = ah0;
+        ((uint64_t*)&l0[idx0 & MASK])[1] = (MONERO && variant > 0) ? ah0 ^ tweak1_2 : ah0;
 
         ah0 ^= ch;
         al0 ^= cl;
@@ -359,6 +374,7 @@ inline void cryptonight_hash(const void *__restrict__ input, size_t size, void *
 
     keccakf(h0, 24);
     extra_hashes[ctx->state0[0] & 3](ctx->state0, 200, static_cast<char*>(output));
+    return true;
 }
 
 #endif /* __CRYPTONIGHT_P_H__ */
