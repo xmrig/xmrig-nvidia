@@ -406,7 +406,7 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx)
 }
 
 
-extern "C" void cryptonight_gpu_hash(nvid_ctx* ctx, uint8_t version)
+void cryptonight_gpu_hash(nvid_ctx *ctx, uint8_t version)
 {
     if (version > 6) {
         cryptonight_core_cpu_hash<0x80000, 19, 0x1FFFF0, 1>(ctx);
@@ -418,7 +418,7 @@ extern "C" void cryptonight_gpu_hash(nvid_ctx* ctx, uint8_t version)
 
 
 #ifndef XMRIG_NO_AEON
-extern "C" void cryptonight_gpu_hash_lite(nvid_ctx* ctx)
+void cryptonight_gpu_hash_lite(nvid_ctx* ctx)
 {
     cryptonight_core_cpu_hash<0x40000, 18, 0x0FFFF0, 0>(ctx);
 }

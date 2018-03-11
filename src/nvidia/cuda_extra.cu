@@ -203,14 +203,16 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
     }
 }
 
-extern "C" void cryptonight_extra_cpu_set_data(nvid_ctx* ctx, const void *data, uint32_t len)
+
+void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, uint32_t len)
 {
     ctx->inputlen = len;
     CUDA_CHECK(ctx->device_id, cudaMemcpy(ctx->d_input, data, len, cudaMemcpyHostToDevice));
 }
 
+
 template<size_t MEM>
-int cryptonight_extra_cpu_init(nvid_ctx* ctx)
+int cryptonight_extra_cpu_init(nvid_ctx *ctx)
 {
     cudaError_t err;
     err = cudaSetDevice(ctx->device_id);
@@ -239,7 +241,8 @@ int cryptonight_extra_cpu_init(nvid_ctx* ctx)
     return 1;
 }
 
-extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint8_t version, uint32_t startNonce)
+
+void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint8_t version, uint32_t startNonce)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -257,7 +260,8 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint8_t version, ui
     }
 }
 
-extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce)
+
+void cryptonight_extra_cpu_final(nvid_ctx *ctx, uint32_t startNonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -286,7 +290,7 @@ extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, 
     }
 }
 
-extern "C" int cuda_get_devicecount()
+int cuda_get_devicecount()
 {
     int deviceCount = 0;
     if (cudaGetDeviceCount(&deviceCount) == cudaSuccess) {
@@ -297,7 +301,7 @@ extern "C" int cuda_get_devicecount()
 }
 
 
-extern "C" int cuda_get_runtime_version()
+int cuda_get_runtime_version()
 {
     int runtimeVersion = 0;
     if (cudaRuntimeGetVersion(&runtimeVersion) == cudaSuccess) {
@@ -308,7 +312,7 @@ extern "C" int cuda_get_runtime_version()
 }
 
 
-extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
+int cuda_get_deviceinfo(nvid_ctx* ctx)
 {
     cudaError_t err;
     int version;
@@ -463,14 +467,14 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 }
 
 
-extern "C" int cryptonight_gpu_init(nvid_ctx* ctx)
+int cryptonight_gpu_init(nvid_ctx *ctx)
 {
     return cryptonight_extra_cpu_init<MEMORY>(ctx);
 }
 
 
 #ifndef XMRIG_NO_AEON
-extern "C" int cryptonight_gpu_init_lite(nvid_ctx* ctx)
+int cryptonight_gpu_init_lite(nvid_ctx *ctx)
 {
     return cryptonight_extra_cpu_init<MEMORY_LITE>(ctx);
 }
