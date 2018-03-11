@@ -1,3 +1,11 @@
+# v2.5.0
+- [#434](https://github.com/xmrig/xmrig/issues/434) **Added support for Monero v7 PoW, scheduled on March 28.**
+- Improved automatic configuration, previous may give not usable suggested config.
+- Added full IPv6 support.
+- Added protocol extension, when use the miner with xmrig-proxy 2.5+ no more need manually specify `nicehash` option.
+- [#51](https://github.com/xmrig/xmrig-amd/issues/51) Fixed multiple pools in initial config was saved incorrectly.
+- [#123](https://github.com/xmrig/xmrig-proxy/issues/123) Fixed regression (all versions since 2.4 affected) fragmented responses from pool/proxy was parsed incorrectly.
+
 # v2.4.5
  - [#49](https://github.com/xmrig/xmrig-amd/issues/49) Fixed, in some cases, pause was cause an infinite loop.
  - [#64](https://github.com/xmrig/xmrig-nvidia/issues/64) Fixed compatibility with CUDA 9.1.
