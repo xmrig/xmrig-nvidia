@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -81,6 +81,7 @@ Options:\n\
       --cuda-bsleep=N       insert a delay of N microseconds between kernel launches\n\
       --cuda-affinity=N     affine GPU threads to a CPU\n\
       --no-color            disable colored output\n\
+      --no-monero           disable Monero v7 PoW\n\
       --donate-level=N      donate level, default 5%% (5 minutes in 100 minutes)\n\
       --user-agent          set custom user-agent string for pool\n\
   -B, --background          run the miner in the background\n\
@@ -127,6 +128,7 @@ static struct option const options[] = {
     { "max-gpu-usage",    1, nullptr, 1004 }, // deprecated.
     { "nicehash",         0, nullptr, 1006 },
     { "no-color",         0, nullptr, 1002 },
+    { "no-monero",        0, nullptr, 1010 },
     { "pass",             1, nullptr, 'p'  },
     { "print-time",       1, nullptr, 1007 },
     { "retries",          1, nullptr, 'r'  },
@@ -170,6 +172,7 @@ static struct option const pool_options[] = {
     { "userpass",      1, nullptr, 'O'  },
     { "keepalive",     0, nullptr ,'k'  },
     { "nicehash",      0, nullptr, 1006 },
+    { "monero",        0, nullptr, 1010 },
     { 0, 0, 0, 0 }
 };
 
@@ -256,17 +259,18 @@ bool Options::save()
     }
 
     rapidjson::Value pools(rapidjson::kArrayType);
-    char tmp[256];
 
     for (const Url *url : m_pools) {
         rapidjson::Value obj(rapidjson::kObjectType);
-        snprintf(tmp, sizeof(tmp) - 1, "%s:%d", url->host(), url->port());
-
-        obj.AddMember("url",       rapidjson::StringRef(tmp), allocator);
+        obj.AddMember("url",       rapidjson::StringRef(url->url()), allocator);
         obj.AddMember("user",      rapidjson::StringRef(url->user()), allocator);
         obj.AddMember("pass",      rapidjson::StringRef(url->password()), allocator);
         obj.AddMember("keepalive", url->isKeepAlive(), allocator);
         obj.AddMember("nicehash",  url->isNicehash(), allocator);
+
+        if (algo() == ALGO_CRYPTONIGHT) {
+            obj.AddMember("monero", url->isMonero(), allocator);
+        }
 
         pools.PushBack(obj, allocator);
     }
@@ -507,6 +511,7 @@ bool Options::parseArg(int key, const char *arg)
         return parseBoolean(key, true);
 
     case 1002: /* --no-color */
+    case 1010: /* --no-monero */
         return parseBoolean(key, false);
 
     case 'V': /* --version */
@@ -640,6 +645,10 @@ bool Options::parseBoolean(int key, bool enable)
 
     case 1006: /* --nicehash */
         m_pools.back()->setNicehash(enable);
+        break;
+
+    case 1010: /* monero */
+        m_pools.back()->setMonero(enable);
         break;
 
     case 2000: /* colors */
