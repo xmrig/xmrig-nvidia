@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,11 @@
 #   include "getopt/getopt.h"
 #else
 #   include <getopt.h>
+#endif
+
+
+#ifndef XMRIG_NO_HTTPD
+#   include <microhttpd.h>
 #endif
 
 
@@ -69,13 +74,14 @@ Options:\n\
   -k, --keepalive           send keepalived for prevent timeout (need pool support)\n\
   -r, --retries=N           number of times to retry before switch to backup server (default: 5)\n\
   -R, --retry-pause=N       time to pause between retries (default: 5)\n\
-      --cuda-devices=N      List of CUDA devices to use.\n\
-      --cuda-launch=TxB     List of launch config for the CryptoNight kernel\n\
+      --cuda-devices=N      list of CUDA devices to use.\n\
+      --cuda-launch=TxB     list of launch config for the CryptoNight kernel\n\
       --cuda-max-threads=N  limit maximum count of GPU threads in automatic mode\n\
       --cuda-bfactor=[0-12] run CryptoNight core kernel in smaller pieces\n\
       --cuda-bsleep=N       insert a delay of N microseconds between kernel launches\n\
       --cuda-affinity=N     affine GPU threads to a CPU\n\
       --no-color            disable colored output\n\
+      --no-monero           disable Monero v7 PoW\n\
       --donate-level=N      donate level, default 5%% (5 minutes in 100 minutes)\n\
       --user-agent          set custom user-agent string for pool\n\
   -B, --background          run the miner in the background\n\
@@ -122,6 +128,7 @@ static struct option const options[] = {
     { "max-gpu-usage",    1, nullptr, 1004 }, // deprecated.
     { "nicehash",         0, nullptr, 1006 },
     { "no-color",         0, nullptr, 1002 },
+    { "no-monero",        0, nullptr, 1010 },
     { "pass",             1, nullptr, 'p'  },
     { "print-time",       1, nullptr, 1007 },
     { "retries",          1, nullptr, 'r'  },
@@ -165,6 +172,7 @@ static struct option const pool_options[] = {
     { "userpass",      1, nullptr, 'O'  },
     { "keepalive",     0, nullptr ,'k'  },
     { "nicehash",      0, nullptr, 1006 },
+    { "monero",        0, nullptr, 1010 },
     { 0, 0, 0, 0 }
 };
 
@@ -251,17 +259,18 @@ bool Options::save()
     }
 
     rapidjson::Value pools(rapidjson::kArrayType);
-    char tmp[256];
 
     for (const Url *url : m_pools) {
         rapidjson::Value obj(rapidjson::kObjectType);
-        snprintf(tmp, sizeof(tmp) - 1, "%s:%d", url->host(), url->port());
-
-        obj.AddMember("url",       rapidjson::StringRef(tmp), allocator);
+        obj.AddMember("url",       rapidjson::StringRef(url->url()), allocator);
         obj.AddMember("user",      rapidjson::StringRef(url->user()), allocator);
         obj.AddMember("pass",      rapidjson::StringRef(url->password()), allocator);
         obj.AddMember("keepalive", url->isKeepAlive(), allocator);
         obj.AddMember("nicehash",  url->isNicehash(), allocator);
+
+        if (algo() == ALGO_CRYPTONIGHT) {
+            obj.AddMember("monero", url->isMonero(), allocator);
+        }
 
         pools.PushBack(obj, allocator);
     }
@@ -463,11 +472,11 @@ bool Options::parseArg(int key, const char *arg)
         m_apiWorkerId = strdup(arg);
         break;
 
-    case 1201: /* --bfactor */
+    case 1201: /* --cuda-bfactor */
         m_cudaCLI.parseBFactor(arg);
         break;
 
-    case 1202: /* --bsleep */
+    case 1202: /* --cuda-bsleep */
         m_cudaCLI.parseBSleep(arg);
         break;
 
@@ -491,7 +500,6 @@ bool Options::parseArg(int key, const char *arg)
     case 1004: /* --max-gpu-usage */
     case 1007: /* --print-time */
     case 1200: /* --max-gpu-threads */
-
     case 4000: /* --api-port */
         return parseArg(key, strtol(arg, nullptr, 10));
 
@@ -503,6 +511,7 @@ bool Options::parseArg(int key, const char *arg)
         return parseBoolean(key, true);
 
     case 1002: /* --no-color */
+    case 1010: /* --no-monero */
         return parseBoolean(key, false);
 
     case 'V': /* --version */
@@ -591,6 +600,14 @@ bool Options::parseArg(int key, uint64_t arg)
         m_maxGpuThreads = (int) arg;
         break;
 
+    case 1201: /* --cuda-bfactor */
+        m_cudaCLI.addBFactor((int) arg);
+        break;
+
+    case 1202: /* --cuda-bsleep */
+        m_cudaCLI.addBSleep((int) arg);
+        break;
+
     case 4000: /* --api-port */
         if (arg <= 65536) {
             m_apiPort = (int)arg;
@@ -628,6 +645,10 @@ bool Options::parseBoolean(int key, bool enable)
 
     case 1006: /* --nicehash */
         m_pools.back()->setNicehash(enable);
+        break;
+
+    case 1010: /* monero */
+        m_pools.back()->setMonero(enable);
         break;
 
     case 2000: /* colors */
@@ -784,6 +805,10 @@ void Options::showVersion()
     "\n");
 
     printf("\nlibuv/%s\n", uv_version_string());
+
+#   ifndef XMRIG_NO_HTTPD
+    printf("libmicrohttpd/%s\n", MHD_get_version());
+#   endif
 
     const int cudaVersion = cuda_get_runtime_version();
     printf("CUDA/%d.%d\n", cudaVersion / 1000, cudaVersion % 100);

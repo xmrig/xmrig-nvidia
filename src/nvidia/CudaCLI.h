@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -41,6 +41,8 @@ public:
     void parseDevices(const char *arg);
     void parseLaunch(const char *arg);
 
+    inline void addBFactor(int bfactor)        { m_bfactors.push_back(bfactor); }
+    inline void addBSleep(int bsleep)          { m_bsleeps.push_back(bsleep); }
     inline void parseAffinity(const char *arg) { parse(m_affinity, arg); }
     inline void parseBFactor(const char *arg)  { parse(m_bfactors, arg); }
     inline void parseBSleep(const char *arg)   { parse(m_bsleeps, arg); }
@@ -49,7 +51,7 @@ private:
     inline int affinity(int index) const { return get(m_affinity, index, -1); }
     inline int blocks(int index) const   { return get(m_blocks, index, -1); }
     inline int threads(int index) const  { return get(m_threads, index, -1); }
-    inline bool isEmpty() const          { return m_devices.empty() && m_threads.empty(); };
+    inline bool isEmpty() const          { return m_devices.empty() && m_threads.empty(); }
 
     inline int bfactor(int index = 0) const {
 #       ifdef _WIN32

@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -90,7 +90,9 @@ App::App(int argc, char **argv) :
 
     m_network = new Network(m_options);
 
-    uv_signal_init(uv_default_loop(), &m_signal);
+    uv_signal_init(uv_default_loop(), &m_sigHUP);
+    uv_signal_init(uv_default_loop(), &m_sigINT);
+    uv_signal_init(uv_default_loop(), &m_sigTERM);
 }
 
 
@@ -112,9 +114,9 @@ int App::exec()
         return 0;
     }
 
-    uv_signal_start(&m_signal, App::onSignal, SIGHUP);
-    uv_signal_start(&m_signal, App::onSignal, SIGTERM);
-    uv_signal_start(&m_signal, App::onSignal, SIGINT);
+    uv_signal_start(&m_sigHUP,  App::onSignal, SIGHUP);
+    uv_signal_start(&m_sigINT,  App::onSignal, SIGINT);
+    uv_signal_start(&m_sigTERM, App::onSignal, SIGTERM);
 
     background();
 
@@ -162,8 +164,10 @@ void App::onConsoleCommand(char command)
 
     case 'p':
     case 'P':
-        LOG_INFO(m_options->colors() ? "\x1B[01;33mpaused\x1B[0m, press \x1B[01;35mr\x1B[0m to resume" : "paused, press 'r' to resume");
-        Workers::setEnabled(false);
+        if (Workers::isEnabled()) {
+            LOG_INFO(m_options->colors() ? "\x1B[01;33mpaused\x1B[0m, press \x1B[01;35mr\x1B[0m to resume" : "paused, press 'r' to resume");
+            Workers::setEnabled(false);
+        }
         break;
 
     case 'r':
