@@ -145,6 +145,10 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
+if (NOT WITH_AEON)
+    add_definitions(/DXMRIG_NO_AEON)
+endif()
+
 include(cmake/flags.cmake)
 include(cmake/CUDA.cmake)
 
@@ -163,10 +167,6 @@ CHECK_INCLUDE_FILE (syslog.h HAVE_SYSLOG_H)
 if (HAVE_SYSLOG_H)
     add_definitions(/DHAVE_SYSLOG_H)
     set(SOURCES_SYSLOG src/log/SysLog.h src/log/SysLog.cpp)
-endif()
-
-if (NOT WITH_AEON)
-    add_definitions(/DXMRIG_NO_AEON)
 endif()
 
 if (WITH_HTTPD)

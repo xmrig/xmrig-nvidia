@@ -76,7 +76,7 @@ void (*cryptonight_variations[8])(const void *input, size_t size, void *output, 
             nullptr
         };
 #else
-bool (*cryptonight_variations[4])(const void *input, size_t size, void *output, cryptonight_ctx *ctx, uint8_t version) = {
+void (*cryptonight_variations[4])(const void *input, size_t size, void *output, cryptonight_ctx *ctx, uint8_t version) = {
             cryptonight_av1_aesni,
             nullptr,
             cryptonight_av3_softaes,

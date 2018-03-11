@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -36,8 +36,8 @@ class CudaCLI
 public:
     CudaCLI();
 
-    bool setup(std::vector<GpuThread*> &threads);
-    void autoConf(std::vector<GpuThread*> &threads);
+    bool setup(std::vector<GpuThread*> &threads, bool lite);
+    void autoConf(std::vector<GpuThread*> &threads, bool lite);
     void parseDevices(const char *arg);
     void parseLaunch(const char *arg);
 

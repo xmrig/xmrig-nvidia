@@ -361,9 +361,9 @@ Options::Options(int argc, char **argv) :
 
     m_algoVariant = Cpu::hasAES() ? AV1_AESNI : AV3_SOFT_AES;
 
-    if (m_threads.empty() && !m_cudaCLI.setup(m_threads)) {
+    if (m_threads.empty() && !m_cudaCLI.setup(m_threads, algo() == ALGO_CRYPTONIGHT_LITE)) {
         m_autoConf = true;
-        m_cudaCLI.autoConf(m_threads);
+        m_cudaCLI.autoConf(m_threads, algo() == ALGO_CRYPTONIGHT_LITE);
 
         for (GpuThread *thread : m_threads) {
             thread->limit(m_maxGpuUsage, m_maxGpuThreads);
@@ -755,7 +755,7 @@ void Options::parseThread(const rapidjson::Value &object)
         thread->setAffinity(affinity.GetInt());
     }
 
-    if (thread->init()) {
+    if (thread->init(algo() == ALGO_CRYPTONIGHT_LITE)) {
         m_threads.push_back(thread);
         return;
     }

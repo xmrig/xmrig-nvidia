@@ -312,7 +312,7 @@ int cuda_get_runtime_version()
 }
 
 
-int cuda_get_deviceinfo(nvid_ctx* ctx)
+int cuda_get_deviceinfo(nvid_ctx* ctx, bool lite)
 {
     cudaError_t err;
     int version;
@@ -422,7 +422,7 @@ int cuda_get_deviceinfo(nvid_ctx* ctx)
         CUDA_CHECK(ctx->device_id, cudaFree(tmp));
         CUDA_CHECK(ctx->device_id, cudaDeviceReset());
 
-        const size_t hashMemSize = MEMORY;
+        const size_t hashMemSize = lite ? MEMORY_LITE : MEMORY;
 #       ifdef _WIN32
         /* We use in windows bfactor (split slow kernel into smaller parts) to avoid
         * that windows is killing long running kernel.
@@ -467,15 +467,13 @@ int cuda_get_deviceinfo(nvid_ctx* ctx)
 }
 
 
-int cryptonight_gpu_init(nvid_ctx *ctx)
+int cryptonight_gpu_init(nvid_ctx *ctx, bool lite)
 {
+#   if !defined(XMRIG_NO_AEON)
+    if (lite) {
+        return cryptonight_extra_cpu_init<MEMORY_LITE>(ctx);
+    }
+#   endif
+
     return cryptonight_extra_cpu_init<MEMORY>(ctx);
 }
-
-
-#ifndef XMRIG_NO_AEON
-int cryptonight_gpu_init_lite(nvid_ctx *ctx)
-{
-    return cryptonight_extra_cpu_init<MEMORY_LITE>(ctx);
-}
-#endif

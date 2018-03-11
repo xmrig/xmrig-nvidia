@@ -59,17 +59,10 @@ CudaWorker::CudaWorker(Handle *handle) :
 
 void CudaWorker::start()
 {
-#   ifdef XMRIG_NO_AEON
-    if (cuda_get_deviceinfo(&m_ctx) != 1 || cryptonight_gpu_init(&m_ctx) != 1) {
-        printf("Setup failed for GPU %d. Exitting.\n", (int)m_id);
+    if (cuda_get_deviceinfo(&m_ctx, m_lite) != 1 || cryptonight_gpu_init(&m_ctx, m_lite) != 1) {
+        printf("Setup failed for GPU %d. Exitting.\n", (int) m_id);
         return;
     }
-#   else
-    if (cuda_get_deviceinfo(&m_ctx) != 1 || (m_lite ? cryptonight_gpu_init_lite(&m_ctx) : cryptonight_gpu_init(&m_ctx)) != 1) {
-        printf("Setup failed for GPU %d. Exitting.\n", (int)m_id);
-        return;
-    }
-#   endif
 
     while (Workers::sequence() > 0) {
         if (Workers::isPaused()) {
@@ -92,18 +85,7 @@ void CudaWorker::start()
             uint32_t foundCount;
   
             cryptonight_extra_cpu_prepare(&m_ctx, m_job.version(), m_nonce);
-
-#           ifdef XMRIG_NO_AEON
-            cryptonight_gpu_hash(&m_ctx, m_job.version());
-#           else
-            if (m_lite) {
-                cryptonight_gpu_hash_lite(&m_ctx);
-            }
-            else {
-                cryptonight_gpu_hash(&m_ctx, m_job.version());
-            }
-#           endif
-
+            cryptonight_gpu_hash(&m_ctx, m_job.version(), m_lite);
             cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce);
 
             for (size_t i = 0; i < foundCount; i++) {
