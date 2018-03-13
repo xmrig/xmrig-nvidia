@@ -79,6 +79,12 @@ extern "C" void compat_usleep(uint64_t waitTime)
 #include "cuda_aes.hpp"
 #include "cuda_device.hpp"
 
+#if defined(__x86_64__) || defined(_M_AMD64) || defined(__LP64__)
+#   define _ASM_PTR_ "l"
+#else
+#   define _ASM_PTR_ "r"
+#endif
+
 /* sm_2X is limited to 2GB due to the small TLB
  * therefore we never use 64bit indices
  */
@@ -98,7 +104,7 @@ template< typename T >
 __device__ __forceinline__ T loadGlobal64( T * const addr )
 {
     T x;
-    asm volatile( "ld.global.cg.u64 %0, [%1];" : "=l"( x ) : "l"( addr ) );
+    asm volatile( "ld.global.cg.u64 %0, [%1];" : "=l"( x ) : _ASM_PTR_(addr));
     return x;
 }
 
@@ -106,7 +112,7 @@ template< typename T >
 __device__ __forceinline__ T loadGlobal32( T * const addr )
 {
     T x;
-    asm volatile( "ld.global.cg.u32 %0, [%1];" : "=r"( x ) : "l"( addr ) );
+    asm volatile( "ld.global.cg.u32 %0, [%1];" : "=r"( x ) : _ASM_PTR_(addr));
     return x;
 }
 
@@ -114,7 +120,7 @@ __device__ __forceinline__ T loadGlobal32( T * const addr )
 template< typename T >
 __device__ __forceinline__ void storeGlobal32( T* addr, T const & val )
 {
-    asm volatile( "st.global.cg.u32 [%0], %1;" : : "l"( addr ), "r"( val ) );
+    asm volatile( "st.global.cg.u32 [%0], %1;" : : _ASM_PTR_(addr), "r"( val ) );
 }
 
 template<size_t ITERATIONS, size_t OFFSET>
