@@ -242,7 +242,7 @@ int cryptonight_extra_cpu_init(nvid_ctx *ctx)
 }
 
 
-void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint8_t version, uint32_t startNonce)
+void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, int variant, uint32_t startNonce)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -250,7 +250,7 @@ void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint8_t version, uint32_t star
     dim3 grid( ( wsize + threadsperblock - 1 ) / threadsperblock );
     dim3 block( threadsperblock );
 
-    if (version > 6) {
+    if (variant > 6) {
         CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<1><<< grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
             ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2, ctx->d_tweak1_2));
     }

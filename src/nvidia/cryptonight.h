@@ -62,6 +62,6 @@ int cuda_get_runtime_version();
 int cuda_get_deviceinfo(nvid_ctx *ctx, bool lite);
 int cryptonight_gpu_init(nvid_ctx *ctx, bool lite);
 void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, uint32_t len);
-void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint8_t version, uint32_t startNonce);
-void cryptonight_gpu_hash(nvid_ctx *ctx, uint8_t version, bool lite);
+void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, int variant, uint32_t startNonce);
+void cryptonight_gpu_hash(nvid_ctx *ctx, int variant, bool lite);
 void cryptonight_extra_cpu_final(nvid_ctx *ctx, uint32_t startNonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce);

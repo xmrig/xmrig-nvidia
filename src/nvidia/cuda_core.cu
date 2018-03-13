@@ -406,15 +406,22 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx)
 }
 
 
-void cryptonight_gpu_hash(nvid_ctx *ctx, uint8_t version, bool lite)
+void cryptonight_gpu_hash(nvid_ctx *ctx, int variant, bool lite)
 {
 #   if !defined(XMRIG_NO_AEON)
     if (lite) {
-        return cryptonight_core_cpu_hash<0x40000, 18, 0x0FFFF0, 0>(ctx);
+        if (variant > 0) {
+            cryptonight_core_cpu_hash<0x40000, 18, 0x0FFFF0, 1>(ctx);
+        }
+        else {
+            cryptonight_core_cpu_hash<0x40000, 18, 0x0FFFF0, 0>(ctx);
+        }
+
+        return;
     }
 #   endif
 
-    if (version > 6) {
+    if (variant > 0) {
         cryptonight_core_cpu_hash<0x80000, 19, 0x1FFFF0, 1>(ctx);
     }
     else {

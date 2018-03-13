@@ -52,6 +52,7 @@
 #include "rapidjson/prettywriter.h"
 #include "version.h"
 #include "workers/GpuThread.h"
+#include "xmrig.h"
 
 
 #ifndef ARRAY_SIZE
@@ -81,7 +82,7 @@ Options:\n\
       --cuda-bsleep=N       insert a delay of N microseconds between kernel launches\n\
       --cuda-affinity=N     affine GPU threads to a CPU\n\
       --no-color            disable colored output\n\
-      --no-monero           disable Monero v7 PoW\n\
+      --variant             algorithm PoW variant\n\
       --donate-level=N      donate level, default 5%% (5 minutes in 100 minutes)\n\
       --user-agent          set custom user-agent string for pool\n\
   -B, --background          run the miner in the background\n\
@@ -128,7 +129,7 @@ static struct option const options[] = {
     { "max-gpu-usage",    1, nullptr, 1004 }, // deprecated.
     { "nicehash",         0, nullptr, 1006 },
     { "no-color",         0, nullptr, 1002 },
-    { "no-monero",        0, nullptr, 1010 },
+    { "variant",          1, nullptr, 1010 },
     { "pass",             1, nullptr, 'p'  },
     { "print-time",       1, nullptr, 1007 },
     { "retries",          1, nullptr, 'r'  },
@@ -172,7 +173,7 @@ static struct option const pool_options[] = {
     { "userpass",      1, nullptr, 'O'  },
     { "keepalive",     0, nullptr ,'k'  },
     { "nicehash",      0, nullptr, 1006 },
-    { "monero",        0, nullptr, 1010 },
+    { "variant",       1, nullptr, 1010 },
     { 0, 0, 0, 0 }
 };
 
@@ -267,10 +268,7 @@ bool Options::save()
         obj.AddMember("pass",      rapidjson::StringRef(url->password()), allocator);
         obj.AddMember("keepalive", url->isKeepAlive(), allocator);
         obj.AddMember("nicehash",  url->isNicehash(), allocator);
-
-        if (algo() == ALGO_CRYPTONIGHT) {
-            obj.AddMember("monero", url->isMonero(), allocator);
-        }
+        obj.AddMember("variant",   url->variant(), allocator);
 
         pools.PushBack(obj, allocator);
     }
@@ -361,18 +359,16 @@ Options::Options(int argc, char **argv) :
 
     m_algoVariant = Cpu::hasAES() ? AV1_AESNI : AV3_SOFT_AES;
 
-    if (m_threads.empty() && !m_cudaCLI.setup(m_threads, algo() == ALGO_CRYPTONIGHT_LITE)) {
+    if (m_threads.empty() && !m_cudaCLI.setup(m_threads, algo() == xmrig::ALGO_CRYPTONIGHT_LITE)) {
         m_autoConf = true;
-        m_cudaCLI.autoConf(m_threads, algo() == ALGO_CRYPTONIGHT_LITE);
+        m_cudaCLI.autoConf(m_threads, algo() == xmrig::ALGO_CRYPTONIGHT_LITE);
 
         for (GpuThread *thread : m_threads) {
             thread->limit(m_maxGpuUsage, m_maxGpuThreads);
         }
     }
 
-    for (Url *url : m_pools) {
-        url->applyExceptions();
-    }
+    adjust();
 
     NvmlApi::bind(m_threads);
     m_ready = true;
@@ -499,6 +495,7 @@ bool Options::parseArg(int key, const char *arg)
     case 1003: /* --donate-level */
     case 1004: /* --max-gpu-usage */
     case 1007: /* --print-time */
+    case 1010: /* --variant */
     case 1200: /* --max-gpu-threads */
     case 4000: /* --api-port */
         return parseArg(key, strtol(arg, nullptr, 10));
@@ -511,7 +508,6 @@ bool Options::parseArg(int key, const char *arg)
         return parseBoolean(key, true);
 
     case 1002: /* --no-color */
-    case 1010: /* --no-monero */
         return parseBoolean(key, false);
 
     case 'V': /* --version */
@@ -596,6 +592,10 @@ bool Options::parseArg(int key, uint64_t arg)
         m_printTime = (int) arg;
         break;
 
+    case 1010: /* --variant */
+        m_pools.back()->setVariant((int)arg);
+        break;
+
     case 1200: /* --max-gpu-threads */
         m_maxGpuThreads = (int) arg;
         break;
@@ -647,10 +647,6 @@ bool Options::parseBoolean(int key, bool enable)
         m_pools.back()->setNicehash(enable);
         break;
 
-    case 1010: /* monero */
-        m_pools.back()->setMonero(enable);
-        break;
-
     case 2000: /* colors */
         m_colors = enable;
         break;
@@ -672,6 +668,14 @@ Url *Options::parseUrl(const char *arg) const
     }
 
     return url;
+}
+
+
+void Options::adjust()
+{
+    for (Url *url : m_pools) {
+        url->adjust(m_algo);
+    }
 }
 
 
@@ -732,7 +736,7 @@ void Options::parseJSON(const struct option *option, const rapidjson::Value &obj
     if (option->has_arg && value.IsString()) {
         parseArg(option->val, value.GetString());
     }
-    else if (option->has_arg && value.IsUint64()) {
+    else if (option->has_arg && value.IsInt64()) {
         parseArg(option->val, value.GetUint64());
     }
     else if (!option->has_arg && value.IsBool()) {
@@ -755,7 +759,7 @@ void Options::parseThread(const rapidjson::Value &object)
         thread->setAffinity(affinity.GetInt());
     }
 
-    if (thread->init(algo() == ALGO_CRYPTONIGHT_LITE)) {
+    if (thread->init(algo() == xmrig::ALGO_CRYPTONIGHT_LITE)) {
         m_threads.push_back(thread);
         return;
     }
@@ -825,7 +829,7 @@ bool Options::setAlgo(const char *algo)
 
 #       ifndef XMRIG_NO_AEON
         if (i == ARRAY_SIZE(algo_names) - 1 && !strcmp(algo, "cryptonight-light")) {
-            m_algo = ALGO_CRYPTONIGHT_LITE;
+            m_algo = xmrig::ALGO_CRYPTONIGHT_LITE;
             break;
         }
 #       endif

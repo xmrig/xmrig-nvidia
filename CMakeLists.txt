@@ -47,6 +47,7 @@ set(HEADERS
     src/workers/Handle.h
     src/workers/Hashrate.h
     src/workers/Workers.h
+    src/xmrig.h
    )
 
 set(HEADERS_CRYPTO
