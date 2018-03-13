@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@
 #include "rapidjson/prettywriter.h"
 #include "version.h"
 #include "workers/GpuThread.h"
+#include "xmrig.h"
 
 
 #ifndef ARRAY_SIZE
@@ -81,6 +82,7 @@ Options:\n\
       --cuda-bsleep=N       insert a delay of N microseconds between kernel launches\n\
       --cuda-affinity=N     affine GPU threads to a CPU\n\
       --no-color            disable colored output\n\
+      --variant             algorithm PoW variant\n\
       --donate-level=N      donate level, default 5%% (5 minutes in 100 minutes)\n\
       --user-agent          set custom user-agent string for pool\n\
   -B, --background          run the miner in the background\n\
@@ -127,6 +129,7 @@ static struct option const options[] = {
     { "max-gpu-usage",    1, nullptr, 1004 }, // deprecated.
     { "nicehash",         0, nullptr, 1006 },
     { "no-color",         0, nullptr, 1002 },
+    { "variant",          1, nullptr, 1010 },
     { "pass",             1, nullptr, 'p'  },
     { "print-time",       1, nullptr, 1007 },
     { "retries",          1, nullptr, 'r'  },
@@ -170,6 +173,7 @@ static struct option const pool_options[] = {
     { "userpass",      1, nullptr, 'O'  },
     { "keepalive",     0, nullptr ,'k'  },
     { "nicehash",      0, nullptr, 1006 },
+    { "variant",       1, nullptr, 1010 },
     { 0, 0, 0, 0 }
 };
 
@@ -256,17 +260,15 @@ bool Options::save()
     }
 
     rapidjson::Value pools(rapidjson::kArrayType);
-    char tmp[256];
 
     for (const Url *url : m_pools) {
         rapidjson::Value obj(rapidjson::kObjectType);
-        snprintf(tmp, sizeof(tmp) - 1, "%s:%d", url->host(), url->port());
-
-        obj.AddMember("url",       rapidjson::StringRef(tmp), allocator);
+        obj.AddMember("url",       rapidjson::StringRef(url->url()), allocator);
         obj.AddMember("user",      rapidjson::StringRef(url->user()), allocator);
         obj.AddMember("pass",      rapidjson::StringRef(url->password()), allocator);
         obj.AddMember("keepalive", url->isKeepAlive(), allocator);
         obj.AddMember("nicehash",  url->isNicehash(), allocator);
+        obj.AddMember("variant",   url->variant(), allocator);
 
         pools.PushBack(obj, allocator);
     }
@@ -357,18 +359,16 @@ Options::Options(int argc, char **argv) :
 
     m_algoVariant = Cpu::hasAES() ? AV1_AESNI : AV3_SOFT_AES;
 
-    if (m_threads.empty() && !m_cudaCLI.setup(m_threads)) {
+    if (m_threads.empty() && !m_cudaCLI.setup(m_threads, algo() == xmrig::ALGO_CRYPTONIGHT_LITE)) {
         m_autoConf = true;
-        m_cudaCLI.autoConf(m_threads);
+        m_cudaCLI.autoConf(m_threads, algo() == xmrig::ALGO_CRYPTONIGHT_LITE);
 
         for (GpuThread *thread : m_threads) {
             thread->limit(m_maxGpuUsage, m_maxGpuThreads);
         }
     }
 
-    for (Url *url : m_pools) {
-        url->applyExceptions();
-    }
+    adjust();
 
     NvmlApi::bind(m_threads);
     m_ready = true;
@@ -495,6 +495,7 @@ bool Options::parseArg(int key, const char *arg)
     case 1003: /* --donate-level */
     case 1004: /* --max-gpu-usage */
     case 1007: /* --print-time */
+    case 1010: /* --variant */
     case 1200: /* --max-gpu-threads */
     case 4000: /* --api-port */
         return parseArg(key, strtol(arg, nullptr, 10));
@@ -591,6 +592,10 @@ bool Options::parseArg(int key, uint64_t arg)
         m_printTime = (int) arg;
         break;
 
+    case 1010: /* --variant */
+        m_pools.back()->setVariant((int)arg);
+        break;
+
     case 1200: /* --max-gpu-threads */
         m_maxGpuThreads = (int) arg;
         break;
@@ -666,6 +671,14 @@ Url *Options::parseUrl(const char *arg) const
 }
 
 
+void Options::adjust()
+{
+    for (Url *url : m_pools) {
+        url->adjust(m_algo);
+    }
+}
+
+
 void Options::parseConfig(const char *fileName)
 {
     rapidjson::Document doc;
@@ -723,7 +736,7 @@ void Options::parseJSON(const struct option *option, const rapidjson::Value &obj
     if (option->has_arg && value.IsString()) {
         parseArg(option->val, value.GetString());
     }
-    else if (option->has_arg && value.IsUint64()) {
+    else if (option->has_arg && value.IsInt64()) {
         parseArg(option->val, value.GetUint64());
     }
     else if (!option->has_arg && value.IsBool()) {
@@ -746,7 +759,7 @@ void Options::parseThread(const rapidjson::Value &object)
         thread->setAffinity(affinity.GetInt());
     }
 
-    if (thread->init()) {
+    if (thread->init(algo() == xmrig::ALGO_CRYPTONIGHT_LITE)) {
         m_threads.push_back(thread);
         return;
     }
@@ -816,7 +829,7 @@ bool Options::setAlgo(const char *algo)
 
 #       ifndef XMRIG_NO_AEON
         if (i == ARRAY_SIZE(algo_names) - 1 && !strcmp(algo, "cryptonight-light")) {
-            m_algo = ALGO_CRYPTONIGHT_LITE;
+            m_algo = xmrig::ALGO_CRYPTONIGHT_LITE;
             break;
         }
 #       endif

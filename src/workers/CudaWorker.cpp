@@ -4,8 +4,9 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -58,17 +59,10 @@ CudaWorker::CudaWorker(Handle *handle) :
 
 void CudaWorker::start()
 {
-#   ifdef XMRIG_NO_AEON
-    if (cuda_get_deviceinfo(&m_ctx) != 1 || cryptonight_gpu_init(&m_ctx) != 1) {
-        printf("Setup failed for GPU %d. Exitting.\n", (int)m_id);
+    if (cuda_get_deviceinfo(&m_ctx, m_lite) != 1 || cryptonight_gpu_init(&m_ctx, m_lite) != 1) {
+        printf("Setup failed for GPU %d. Exitting.\n", (int) m_id);
         return;
     }
-#   else
-    if (cuda_get_deviceinfo(&m_ctx) != 1 || (m_lite ? cryptonight_gpu_init_lite(&m_ctx) : cryptonight_gpu_init(&m_ctx)) != 1) {
-        printf("Setup failed for GPU %d. Exitting.\n", (int)m_id);
-        return;
-    }
-#   endif
 
     while (Workers::sequence() > 0) {
         if (Workers::isPaused()) {
@@ -89,20 +83,9 @@ void CudaWorker::start()
         while (!Workers::isOutdated(m_sequence)) {
             uint32_t foundNonce[10];
             uint32_t foundCount;
-
-            cryptonight_extra_cpu_prepare(&m_ctx, m_nonce);
-
-#           ifdef XMRIG_NO_AEON
-            cryptonight_gpu_hash(&m_ctx);
-#           else
-            if (m_lite) {
-                cryptonight_gpu_hash_lite(&m_ctx);
-            }
-            else {
-                cryptonight_gpu_hash(&m_ctx);
-            }
-#           endif
-
+  
+            cryptonight_extra_cpu_prepare(&m_ctx, m_job.variant(), m_nonce);
+            cryptonight_gpu_hash(&m_ctx, m_job.variant(), m_lite);
             cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce);
 
             for (size_t i = 0; i < foundCount; i++) {
