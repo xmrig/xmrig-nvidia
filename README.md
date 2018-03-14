@@ -23,6 +23,7 @@ GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used
 * [Usage](#usage)
 * [Build](https://github.com/xmrig/xmrig-nvidia/wiki/Build)
 * [Donations](#donations)
+* [Release checksums](#release-checksums)
 * [Contacts](#contacts)
 
 ## Features
@@ -80,6 +81,13 @@ Default donation 5% (5 minutes in 100 minutes) can be reduced to 1% via command 
 
 * XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`
 * BTC: `1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT`
+
+## Release checksums
+### SHA-256
+```
+72d0703130e2ef9b632f94921dd5de0bac22b4f968524350c6dc51cd098a5f7c xmrig-nvidia-2.5.0-cuda8-win64.zip/xmrig-nvidia.exe
+3c775c937868f2337d4e6eac3c59331e8c846492be1af2dd1364df3eb9bbbf9a xmrig-nvidia-2.5.0-cuda9-win64.zip/xmrig-nvidia.exe
+```
 
 ## Contacts
 * support@xmrig.com
