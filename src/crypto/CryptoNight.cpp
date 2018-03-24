@@ -32,7 +32,7 @@
 #include "xmrig.h"
 
 
-void (*cryptonight_hash_ctx)(const void *input, size_t size, void *output, cryptonight_ctx *ctx, int variant) = nullptr;
+void (*cryptonight_hash_ctx)(const uint8_t *input, size_t size, uint8_t *output, cryptonight_ctx *ctx, int variant) = nullptr;
 
 
 #define CRYPTONIGHT_HASH(NAME, ITERATIONS, MEM, MASK, SOFT_AES) \
@@ -48,28 +48,28 @@ void (*cryptonight_hash_ctx)(const void *input, size_t size, void *output, crypt
     }
 
 
-static void cryptonight_av1_aesni(const void *input, size_t size, void *output, struct cryptonight_ctx *ctx, int variant) {
+static void cryptonight_av1_aesni(const uint8_t *input, size_t size, uint8_t *output, struct cryptonight_ctx *ctx, int variant) {
     CRYPTONIGHT_HASH(single, MONERO_ITER, MONERO_MEMORY, MONERO_MASK, false)
 }
 
 
-static void cryptonight_av3_softaes(const void *input, size_t size, void *output, cryptonight_ctx *ctx, int variant) {
+static void cryptonight_av3_softaes(const uint8_t *input, size_t size, uint8_t *output, cryptonight_ctx *ctx, int variant) {
     CRYPTONIGHT_HASH(single, MONERO_ITER, MONERO_MEMORY, MONERO_MASK, true)
 }
 
 
 #ifndef XMRIG_NO_AEON
-static void cryptonight_lite_av1_aesni(const void *input, size_t size, void *output, cryptonight_ctx *ctx, int variant) {
+static void cryptonight_lite_av1_aesni(const uint8_t *input, size_t size, uint8_t *output, cryptonight_ctx *ctx, int variant) {
     CRYPTONIGHT_HASH(single, AEON_ITER, AEON_MEMORY, AEON_MASK, false)
 }
 
 
-static void cryptonight_lite_av3_softaes(const void *input, size_t size, void *output, cryptonight_ctx *ctx, int variant) {
+static void cryptonight_lite_av3_softaes(const uint8_t *input, size_t size, uint8_t *output, cryptonight_ctx *ctx, int variant) {
     CRYPTONIGHT_HASH(single, AEON_ITER, AEON_MEMORY, AEON_MASK, true)
 }
 
 
-void (*cryptonight_variations[8])(const void *input, size_t size, void *output, cryptonight_ctx *ctx, int variant) = {
+void (*cryptonight_variations[8])(const uint8_t *input, size_t size, uint8_t *output, cryptonight_ctx *ctx, int variant) = {
             cryptonight_av1_aesni,
             nullptr,
             cryptonight_av3_softaes,
@@ -80,7 +80,7 @@ void (*cryptonight_variations[8])(const void *input, size_t size, void *output, 
             nullptr
         };
 #else
-void (*cryptonight_variations[4])(const void *input, size_t size, void *output, cryptonight_ctx *ctx, int variant) = {
+void (*cryptonight_variations[4])(const uint8_t *input, size_t size, uint8_t *output, cryptonight_ctx *ctx, int variant) = {
             cryptonight_av1_aesni,
             nullptr,
             cryptonight_av3_softaes,
@@ -126,7 +126,7 @@ bool CryptoNight::selfTest(int algo) {
         return false;
     }
 
-    char output[32];
+    uint8_t output[32];
 
     cryptonight_ctx *ctx = static_cast<cryptonight_ctx *>(_mm_malloc(sizeof(cryptonight_ctx), 16));
 

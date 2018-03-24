@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -31,10 +31,6 @@
 #include "log/Log.h"
 
 
-static const char k500 []    = "{\"error\":\"INTERNAL_SERVER_ERROR\"}";
-static const size_t k500Size = sizeof(k500) - 1;
-
-
 Httpd::Httpd(int port, const char *accessToken) :
     m_accessToken(accessToken),
     m_port(port),
@@ -49,7 +45,19 @@ bool Httpd::start()
         return false;
     }
 
-    m_daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, m_port, nullptr, nullptr, &Httpd::handler, this, MHD_OPTION_END);
+    unsigned int flags = MHD_USE_SELECT_INTERNALLY;
+
+#   if MHD_VERSION >= 0x00093500
+    if (MHD_is_feature_supported(MHD_FEATURE_EPOLL)) {
+        flags = MHD_USE_EPOLL_LINUX_ONLY | MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY;
+    }
+
+    if (MHD_is_feature_supported(MHD_FEATURE_IPv6)) {
+        flags |= MHD_USE_DUAL_STACK;
+    }
+#   endif
+
+    m_daemon = MHD_start_daemon(flags, m_port, nullptr, nullptr, &Httpd::handler, this, MHD_OPTION_END);
     if (!m_daemon) {
         LOG_ERR("HTTP Daemon failed to start.");
         return false;
@@ -115,6 +123,6 @@ int Httpd::handler(void *cls, struct MHD_Connection *connection, const char *url
         return MHD_NO;
     }
 
-    MHD_Response *rsp = MHD_create_response_from_buffer(strlen(buf), (void*)buf, MHD_RESPMEM_MUST_FREE);
+    MHD_Response *rsp = MHD_create_response_from_buffer(strlen(buf), (void*) buf, MHD_RESPMEM_MUST_FREE);
     return done(connection, status, rsp);
 }
