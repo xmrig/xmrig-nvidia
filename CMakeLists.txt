@@ -141,10 +141,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 find_package(UV REQUIRED)
 
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
-    set(CMAKE_BUILD_TYPE Release)
-endif()
-
 if (NOT WITH_AEON)
     add_definitions(/DXMRIG_NO_AEON)
 endif()
