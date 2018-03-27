@@ -11,11 +11,12 @@
     "threads": null,
     "pools": [
         {
-            "url": "pool.minemonero.pro:5555",
-            "user": "",
+            "url": "failover.xmrig.com:443",
+            "user": "YOUR_WALLET",
             "pass": "x",
             "keepalive": true,
-            "nicehash": false
+            "nicehash": false,
+            "variant": -1
         }
     ],
     "api": {

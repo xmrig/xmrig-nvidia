@@ -1,4 +1,7 @@
 # XMRig NVIDIA
+
+:warning: **You must update miners to version 2.5 before April 6 due [Monero PoW change](https://getmonero.org/2018/02/11/PoW-change-and-key-reuse.html).**
+
 [![Github All Releases](https://img.shields.io/github/downloads/xmrig/xmrig-nvidia/total.svg)](https://github.com/xmrig/xmrig-nvidia/releases)
 [![GitHub release](https://img.shields.io/github/release/xmrig/xmrig-nvidia/all.svg)](https://github.com/xmrig/xmrig-nvidia/releases)
 [![GitHub Release Date](https://img.shields.io/github/release-date-pre/xmrig/xmrig-nvidia.svg)](https://github.com/xmrig/xmrig-nvidia/releases)
@@ -23,6 +26,7 @@ GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used
 * [Usage](#usage)
 * [Build](https://github.com/xmrig/xmrig-nvidia/wiki/Build)
 * [Donations](#donations)
+* [Release checksums](#release-checksums)
 * [Contacts](#contacts)
 
 ## Features
@@ -80,6 +84,13 @@ Default donation 5% (5 minutes in 100 minutes) can be reduced to 1% via command 
 
 * XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`
 * BTC: `1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT`
+
+## Release checksums
+### SHA-256
+```
+c9d411b22533bd120ab43580f6fe084f508c1dfc2b00ba93e5a7a5852d3119e1 xmrig-nvidia-2.5.2-cuda8-win64.zip/xmrig-nvidia.exe
+4c591b3588b2c7564a4822372fe29799446fc74e7ea5cec163bc09afc882caa2 xmrig-nvidia-2.5.2-cuda9-win64.zip/xmrig-nvidia.exe
+```
 
 ## Contacts
 * support@xmrig.com

@@ -30,7 +30,6 @@
 #include <stdint.h>
 
 
-#include "align.h"
 #include "net/Id.h"
 #include "xmrig.h"
 
@@ -62,12 +61,8 @@ public:
     inline uint32_t diff() const           { return (uint32_t) m_diff; }
     inline uint64_t target() const         { return m_target; }
     inline void setNicehash(bool nicehash) { m_nicehash = nicehash; }
+    inline void setPoolId(int poolId)      { m_poolId = poolId; }
     inline void setThreadId(int threadId)  { m_threadId = threadId; }
-
-#   ifdef XMRIG_PROXY_PROJECT
-    inline char *rawBlob()                 { return m_rawBlob; }
-    inline const char *rawTarget() const   { return m_rawTarget; }
-#   endif
 
     static bool fromHex(const char* in, unsigned int len, unsigned char* out);
     static inline uint32_t *nonce(uint8_t *blob)   { return reinterpret_cast<uint32_t*>(blob + 39); }
@@ -75,10 +70,9 @@ public:
     static void toHex(const unsigned char* in, unsigned int len, char* out);
 
     bool operator==(const Job &other) const;
+    bool operator!=(const Job &other) const;
 
 private:
-    VAR_ALIGN(16, uint8_t m_blob[84]); // Max blob size is 84 (75 fixed + 9 variable), aligned to 96. https://github.com/xmrig/xmrig/issues/1 Thanks fireice-uk.
-
     bool m_nicehash;
     char m_coin[5];
     int m_algo;
@@ -88,12 +82,8 @@ private:
     size_t m_size;
     uint64_t m_diff;
     uint64_t m_target;
+    uint8_t m_blob[96]; // Max blob size is 84 (75 fixed + 9 variable), aligned to 96. https://github.com/xmrig/xmrig/issues/1 Thanks fireice-uk.
     xmrig::Id m_id;
-
-#   ifdef XMRIG_PROXY_PROJECT
-    VAR_ALIGN(16, char m_rawBlob[169]);
-    VAR_ALIGN(16, char m_rawTarget[17]);
-#   endif
 };
 
 #endif /* __JOB_H__ */
