@@ -61,7 +61,7 @@ Network::Network(const Options *options) :
     }
 
     if (m_options->donateLevel() > 0) {
-        m_donate = new DonateStrategy(options->donateLevel(), options->pools().front()->user(), options->algo(), this);
+        m_donate = new DonateStrategy(options->donateLevel(), options->pools().front()->user(), options->algorithm(), this);
     }
 
     m_timer.data = this;

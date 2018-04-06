@@ -56,6 +56,7 @@ set(HEADERS_CRYPTO
     src/crypto/c_keccak.h
     src/crypto/c_skein.h
     src/crypto/CryptoNight.h
+    src/crypto/CryptoNight_constants.h
     src/crypto/CryptoNight_monero.h
     src/crypto/CryptoNight_test.h
     src/crypto/CryptoNight_x86.h

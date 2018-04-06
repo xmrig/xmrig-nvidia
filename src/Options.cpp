@@ -60,6 +60,11 @@
 #endif
 
 
+#if defined(_WIN32) && !defined(strcasecmp)
+#   define strcasecmp _stricmp
+#endif
+
+
 Options *Options::m_self = nullptr;
 
 
@@ -186,11 +191,10 @@ static struct option const api_options[] = {
 };
 
 
-static const char *algo_names[] = {
+static const char *algoNames[] = {
     "cryptonight",
-#   ifndef XMRIG_NO_AEON
-    "cryptonight-lite"
-#   endif
+    "cryptonight-lite",
+    "cryptonight-heavy"
 };
 
 
@@ -300,7 +304,7 @@ bool Options::save()
 
 const char *Options::algoName() const
 {
-    return algo_names[m_algo];
+    return algoNames[m_algorithm];
 }
 
 
@@ -315,8 +319,6 @@ Options::Options(int argc, char **argv) :
     m_configName(nullptr),
     m_logFile(nullptr),
     m_userAgent(nullptr),
-    m_algo(0),
-    m_algoVariant(0),
     m_apiPort(0),
     m_donateLevel(kDonateLevel),
     m_maxGpuThreads(64),
@@ -324,7 +326,8 @@ Options::Options(int argc, char **argv) :
     m_printTime(60),
     m_retries(5),
     m_retryPause(5),
-    m_threads(0)
+    m_threads(0),
+    m_algorithm(xmrig::CRYPTONIGHT)
 {
     NvmlApi::init();
 
@@ -357,11 +360,9 @@ Options::Options(int argc, char **argv) :
         return;
     }
 
-    m_algoVariant = Cpu::hasAES() ? AV1_AESNI : AV3_SOFT_AES;
-
-    if (m_threads.empty() && !m_cudaCLI.setup(m_threads, algo() == xmrig::ALGO_CRYPTONIGHT_LITE)) {
+    if (m_threads.empty() && !m_cudaCLI.setup(m_threads, algorithm() == xmrig::CRYPTONIGHT_LITE)) {
         m_autoConf = true;
-        m_cudaCLI.autoConf(m_threads, algo() == xmrig::ALGO_CRYPTONIGHT_LITE);
+        m_cudaCLI.autoConf(m_threads, algorithm() == xmrig::CRYPTONIGHT_LITE);
 
         for (GpuThread *thread : m_threads) {
             thread->limit(m_maxGpuUsage, m_maxGpuThreads);
@@ -674,7 +675,7 @@ Url *Options::parseUrl(const char *arg) const
 void Options::adjust()
 {
     for (Url *url : m_pools) {
-        url->adjust(m_algo);
+        url->adjust(m_algorithm);
     }
 }
 
@@ -759,7 +760,7 @@ void Options::parseThread(const rapidjson::Value &object)
         thread->setAffinity(affinity.GetInt());
     }
 
-    if (thread->init(algo() == xmrig::ALGO_CRYPTONIGHT_LITE)) {
+    if (thread->init(algorithm() == xmrig::CRYPTONIGHT_LITE)) {
         m_threads.push_back(thread);
         return;
     }
@@ -821,22 +822,19 @@ void Options::showVersion()
 
 bool Options::setAlgo(const char *algo)
 {
-    for (size_t i = 0; i < ARRAY_SIZE(algo_names); i++) {
-        if (algo_names[i] && !strcmp(algo, algo_names[i])) {
-            m_algo = (int) i;
-            break;
-        }
+    if (strcasecmp(algo, "cryptonight-light") == 0) {
+        fprintf(stderr, "Algorithm \"cryptonight-light\" is deprecated, use \"cryptonight-lite\" instead\n");
 
-#       ifndef XMRIG_NO_AEON
-        if (i == ARRAY_SIZE(algo_names) - 1 && !strcmp(algo, "cryptonight-light")) {
-            m_algo = xmrig::ALGO_CRYPTONIGHT_LITE;
-            break;
-        }
-#       endif
+        m_algorithm = xmrig::CRYPTONIGHT_LITE;
+        return true;
+    }
 
-        if (i == ARRAY_SIZE(algo_names) - 1) {
-            showUsage(1);
-            return false;
+    const size_t size = sizeof(algoNames) / sizeof((algoNames)[0]);
+
+    for (size_t i = 0; i < size; i++) {
+        if (algoNames[i] && strcasecmp(algo, algoNames[i]) == 0) {
+            m_algorithm = static_cast<xmrig::Algo>(i);
+            break;
         }
     }
 
