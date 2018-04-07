@@ -30,6 +30,10 @@
 #include <stdint.h>
 
 
+#include "crypto/CryptoNight_constants.h"
+#include "xmrig.h"
+
+
 #define AEON_MEMORY   1048576
 #define AEON_MASK     0xFFFF0
 #define AEON_ITER     0x40000
@@ -41,8 +45,7 @@
 
 struct cryptonight_ctx {
     alignas(16) uint8_t state0[200];
-    alignas(16) uint8_t state1[200];
-    alignas(16) uint8_t memory[MONERO_MEMORY];
+    alignas(16) uint8_t memory[xmrig::CRYPTONIGHT_HEAVY_MEMORY]; // big enough for all algos. TODO: change size in runtime.
 };
 
 
@@ -53,12 +56,19 @@ class JobResult;
 class CryptoNight
 {
 public:
+    typedef void (*cn_hash_fun)(const uint8_t *input, size_t size, uint8_t *output, cryptonight_ctx *ctx);
+
+    static inline cn_hash_fun fn(xmrig::Variant variant) { return fn(m_algorithm, m_av, variant); }
+
     static bool hash(const Job &job, JobResult &result, cryptonight_ctx *ctx);
-    static bool init(int algo, int variant);
-    static void hash(const uint8_t *input, size_t size, uint8_t *output, cryptonight_ctx *ctx, int variant);
+    static bool init(xmrig::Algo algorithm);
+    static cn_hash_fun fn(xmrig::Algo algorithm, xmrig::AlgoVerify av, xmrig::Variant variant);
 
 private:
-    static bool selfTest(int algo);
+    static bool selfTest();
+
+    static xmrig::Algo m_algorithm;
+    static xmrig::AlgoVerify m_av;
 };
 
 #endif /* __CRYPTONIGHT_H__ */

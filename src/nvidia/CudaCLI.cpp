@@ -38,7 +38,7 @@ CudaCLI::CudaCLI() :
 }
 
 
-bool CudaCLI::setup(std::vector<GpuThread*> &threads, bool lite)
+bool CudaCLI::setup(std::vector<GpuThread*> &threads, xmrig::Algo algo)
 {
     if (isEmpty() || m_count == 0) {
         return false;
@@ -57,8 +57,9 @@ bool CudaCLI::setup(std::vector<GpuThread*> &threads, bool lite)
         ctx.device_threads = this->threads(i);
         ctx.device_bfactor = bfactor(i);
         ctx.device_bsleep  = bsleep(i);
+        ctx.syncMode       = 3;
 
-        if (cuda_get_deviceinfo(&ctx, lite) != 1) {
+        if (cuda_get_deviceinfo(&ctx, algo) != 0) {
             continue;
         }
 
@@ -69,7 +70,7 @@ bool CudaCLI::setup(std::vector<GpuThread*> &threads, bool lite)
 }
 
 
-void CudaCLI::autoConf(std::vector<GpuThread*> &threads, bool lite)
+void CudaCLI::autoConf(std::vector<GpuThread*> &threads, xmrig::Algo algo)
 {
     if (m_count == 0) {
         return;
@@ -82,8 +83,9 @@ void CudaCLI::autoConf(std::vector<GpuThread*> &threads, bool lite)
         ctx.device_threads = -1;
         ctx.device_bfactor = bfactor();
         ctx.device_bsleep  = bsleep();
+        ctx.syncMode       = 3;
 
-        if (cuda_get_deviceinfo(&ctx, lite) != 1) {
+        if (cuda_get_deviceinfo(&ctx, algo) != 0) {
             continue;
         }
 

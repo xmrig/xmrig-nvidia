@@ -185,7 +185,7 @@ void Workers::start(const std::vector<GpuThread*> &threads)
     uv_timer_start(&m_timer, Workers::onTick, 500, 500);
 
     for (size_t i = 0; i < count; ++i) {
-        Handle *handle = new Handle((int) i, threads[i], (int) count, Options::i()->algo() == xmrig::ALGO_CRYPTONIGHT_LITE);
+        Handle *handle = new Handle((int) i, threads[i], (int) count, Options::i()->algorithm());
         m_workers.push_back(handle);
         handle->start(Workers::onReady);
     }

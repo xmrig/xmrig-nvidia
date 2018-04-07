@@ -28,6 +28,9 @@
 #include <vector>
 
 
+#include "xmrig.h"
+
+
 class GpuThread;
 
 
@@ -36,8 +39,8 @@ class CudaCLI
 public:
     CudaCLI();
 
-    bool setup(std::vector<GpuThread*> &threads, bool lite);
-    void autoConf(std::vector<GpuThread*> &threads, bool lite);
+    bool setup(std::vector<GpuThread*> &threads, xmrig::Algo algo);
+    void autoConf(std::vector<GpuThread*> &threads, xmrig::Algo algo);
     void parseDevices(const char *arg);
     void parseLaunch(const char *arg);
 

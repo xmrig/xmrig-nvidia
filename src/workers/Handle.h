@@ -29,6 +29,9 @@
 #include <uv.h>
 
 
+#include "xmrig.h"
+
+
 class IWorker;
 class GpuThread;
 
@@ -36,22 +39,22 @@ class GpuThread;
 class Handle
 {
 public:
-    Handle(int threadId, GpuThread *thread, int threads, bool lite);
+    Handle(int threadId, GpuThread *thread, int threads, xmrig::Algo algorithm);
     void join();
     void start(void (*callback) (void *));
 
-    inline bool isLite() const                { return m_lite; }
     inline const GpuThread *gpuThread() const { return m_gpuThread; }
     inline int threadId() const               { return m_threadId; }
     inline int threads() const                { return m_threads; }
     inline IWorker *worker() const            { return m_worker; }
     inline void setWorker(IWorker *worker)    { m_worker = worker; }
+    inline xmrig::Algo algorithm() const      { return m_algorithm; }
 
 private:
-    const bool m_lite;
     const GpuThread *m_gpuThread;
     const int m_threadId;
     const int m_threads;
+    const xmrig::Algo m_algorithm;
     IWorker *m_worker;
     uv_thread_t m_thread;
 };
