@@ -198,6 +198,13 @@ static const char *algoNames[] = {
 };
 
 
+static const char *algoNamesShort[] = {
+    "cn",
+    "cn-lite",
+    "cn-heavy"
+};
+
+
 Options *Options::parse(int argc, char **argv)
 {
     Options *options = new Options(argc, argv);
@@ -834,7 +841,14 @@ bool Options::setAlgo(const char *algo)
     for (size_t i = 0; i < size; i++) {
         if (algoNames[i] && strcasecmp(algo, algoNames[i]) == 0) {
             m_algorithm = static_cast<xmrig::Algo>(i);
-            break;
+            return true;
+        }
+    }
+
+    for (size_t i = 0; i < size; i++) {
+        if (algoNamesShort[i] && strcasecmp(algo, algoNamesShort[i]) == 0) {
+            m_algorithm = static_cast<xmrig::Algo>(i);
+            return true;
         }
     }
 

@@ -1,5 +1,6 @@
 # v2.6.0-beta1
  - [#476](https://github.com/xmrig/xmrig/issues/476) **Added Cryptonight-Heavy support for Sumokoin and Haven Protocol ASIC resistance fork.**
+ - Added short aliases for algorithm names: `cn`, `cn-lite` and `cn-heavy`.
  
 # v2.5.2
 - [#448](https://github.com/xmrig/xmrig/issues/478) Fixed broken reconnect.
