@@ -37,7 +37,7 @@ public:
     GpuThread(const nvid_ctx &ctx, int affinity = -1);
     ~GpuThread();
 
-    bool init(bool lite);
+    bool init(xmrig::Algo algorithm);
     void limit(int maxUsage, int maxThreads);
 
     inline const char *name() const       { return m_name; }

@@ -74,7 +74,7 @@ GpuThread::~GpuThread()
 }
 
 
-bool GpuThread::init(bool lite)
+bool GpuThread::init(xmrig::Algo algorithm)
 {
     if (m_index < 0 || m_blocks < -1 || m_threads < -1 || m_bfactor < 0 || m_bsleep < 0) {
         return false;
@@ -90,8 +90,9 @@ bool GpuThread::init(bool lite)
     ctx.device_threads = m_threads;
     ctx.device_bfactor = m_bfactor;
     ctx.device_bsleep  = m_bsleep;
+    ctx.syncMode       = 3;
 
-    if (cuda_get_deviceinfo(&ctx, lite) != 1) {
+    if (cuda_get_deviceinfo(&ctx, algorithm) != 0) {
         return false;
     }
 

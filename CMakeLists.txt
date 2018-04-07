@@ -146,6 +146,8 @@ if (NOT WITH_AEON)
     add_definitions(/DXMRIG_NO_AEON)
 endif()
 
+include_directories(src)
+
 include(cmake/flags.cmake)
 include(cmake/CUDA.cmake)
 
@@ -182,7 +184,6 @@ else()
     set(MHD_LIBRARY "")
 endif()
 
-include_directories(src)
 include_directories(src/3rdparty)
 include_directories(${UV_INCLUDE_DIR})
 

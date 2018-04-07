@@ -26,11 +26,11 @@
 #include "workers/GpuThread.h"
 
 
-Handle::Handle(int threadId, GpuThread *thread, int threads, bool lite) :
-    m_lite(lite),
+Handle::Handle(int threadId, GpuThread *thread, int threads, xmrig::Algo algorithm) :
     m_gpuThread(thread),
     m_threadId(threadId),
     m_threads(threads),
+    m_algorithm(algorithm),
     m_worker(nullptr)
 {
     thread->setThreadId(threadId);

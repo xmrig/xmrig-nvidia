@@ -35,9 +35,9 @@
 
 
 CudaWorker::CudaWorker(Handle *handle) :
-    m_lite(handle->isLite()),
     m_id(handle->threadId()),
     m_threads(handle->threads()),
+    m_algorithm(handle->algorithm()),
     m_hashCount(0),
     m_timestamp(0),
     m_count(0),
@@ -50,6 +50,7 @@ CudaWorker::CudaWorker(Handle *handle) :
     m_ctx.device_threads = thread->threads();
     m_ctx.device_bfactor = thread->bfactor();
     m_ctx.device_bsleep  = thread->bsleep();
+    m_ctx.syncMode       = 3;
 
     if (thread->affinity() >= 0) {
         Platform::setThreadAffinity(thread->affinity());
@@ -59,7 +60,7 @@ CudaWorker::CudaWorker(Handle *handle) :
 
 void CudaWorker::start()
 {
-    if (cuda_get_deviceinfo(&m_ctx, m_lite) != 1 || cryptonight_gpu_init(&m_ctx, m_lite) != 1) {
+    if (cuda_get_deviceinfo(&m_ctx, m_algorithm) != 0 || cryptonight_gpu_init(&m_ctx, m_algorithm) != 1) {
         printf("Setup failed for GPU %d. Exitting.\n", (int) m_id);
         return;
     }
@@ -84,9 +85,9 @@ void CudaWorker::start()
             uint32_t foundNonce[10];
             uint32_t foundCount;
   
-            cryptonight_extra_cpu_prepare(&m_ctx, m_job.variant(), m_nonce);
-            cryptonight_gpu_hash(&m_ctx, m_job.variant(), m_lite);
-            cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce);
+            cryptonight_extra_cpu_prepare(&m_ctx, m_nonce, m_algorithm);
+            cryptonight_gpu_hash(&m_ctx, m_algorithm, m_job.variant(), m_nonce);
+            cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, m_algorithm);
 
             for (size_t i = 0; i < foundCount; i++) {
                 *m_job.nonce() = foundNonce[i];

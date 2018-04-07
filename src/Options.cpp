@@ -360,9 +360,9 @@ Options::Options(int argc, char **argv) :
         return;
     }
 
-    if (m_threads.empty() && !m_cudaCLI.setup(m_threads, algorithm() == xmrig::CRYPTONIGHT_LITE)) {
+    if (m_threads.empty() && !m_cudaCLI.setup(m_threads, algorithm())) {
         m_autoConf = true;
-        m_cudaCLI.autoConf(m_threads, algorithm() == xmrig::CRYPTONIGHT_LITE);
+        m_cudaCLI.autoConf(m_threads, algorithm());
 
         for (GpuThread *thread : m_threads) {
             thread->limit(m_maxGpuUsage, m_maxGpuThreads);
@@ -760,7 +760,7 @@ void Options::parseThread(const rapidjson::Value &object)
         thread->setAffinity(affinity.GetInt());
     }
 
-    if (thread->init(algorithm() == xmrig::CRYPTONIGHT_LITE)) {
+    if (thread->init(algorithm())) {
         m_threads.push_back(thread);
         return;
     }
