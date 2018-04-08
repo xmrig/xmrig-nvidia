@@ -328,7 +328,7 @@ Options::Options(int argc, char **argv) :
     m_logFile(nullptr),
     m_userAgent(nullptr),
     m_apiPort(0),
-    m_donateLevel(kDonateLevel),
+    m_donateLevel(kDefaultDonateLevel),
     m_maxGpuThreads(64),
     m_maxGpuUsage(100),
     m_printTime(60),
@@ -576,11 +576,9 @@ bool Options::parseArg(int key, uint64_t arg)
         break;
 
     case 1003: /* --donate-level */
-        if (arg < 1 || arg > 99) {
-            return true;
+        if (arg >= kMinimumDonateLevel && arg <= 99) {
+            m_donateLevel = static_cast<int>(arg);
         }
-
-        m_donateLevel = (int) arg;
         break;
 
     case 1004: /* --max-gpu-usage */
