@@ -25,6 +25,7 @@
 #ifndef __CUDAWORKER_H__
 #define __CUDAWORKER_H__
 
+
 #include <atomic>
 
 
@@ -54,9 +55,9 @@ private:
     void save(const Job &job);
     void storeStats();
 
-    bool m_lite;
     const int m_id;
     const int m_threads;
+    const xmrig::Algo m_algorithm;
     Job m_job;
     Job m_pausedJob;
     nvid_ctx m_ctx;

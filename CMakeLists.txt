@@ -56,6 +56,7 @@ set(HEADERS_CRYPTO
     src/crypto/c_keccak.h
     src/crypto/c_skein.h
     src/crypto/CryptoNight.h
+    src/crypto/CryptoNight_constants.h
     src/crypto/CryptoNight_monero.h
     src/crypto/CryptoNight_test.h
     src/crypto/CryptoNight_x86.h
@@ -145,6 +146,8 @@ if (NOT WITH_AEON)
     add_definitions(/DXMRIG_NO_AEON)
 endif()
 
+include_directories(src)
+
 include(cmake/flags.cmake)
 include(cmake/CUDA.cmake)
 
@@ -181,7 +184,6 @@ else()
     set(MHD_LIBRARY "")
 endif()
 
-include_directories(src)
 include_directories(src/3rdparty)
 include_directories(${UV_INCLUDE_DIR})
 

@@ -42,7 +42,7 @@ Url::Url() :
     m_host(nullptr),
     m_password(nullptr),
     m_user(nullptr),
-    m_algo(xmrig::ALGO_CRYPTONIGHT),
+    m_algo(xmrig::CRYPTONIGHT),
     m_variant(xmrig::VARIANT_AUTO),
     m_url(nullptr),
     m_port(kDefaultPort)
@@ -67,7 +67,7 @@ Url::Url(const char *url) :
     m_host(nullptr),
     m_password(nullptr),
     m_user(nullptr),
-    m_algo(xmrig::ALGO_CRYPTONIGHT),
+    m_algo(xmrig::CRYPTONIGHT),
     m_variant(xmrig::VARIANT_AUTO),
     m_url(nullptr),
     m_port(kDefaultPort)
@@ -81,7 +81,7 @@ Url::Url(const char *host, uint16_t port, const char *user, const char *password
     m_nicehash(nicehash),
     m_password(password ? strdup(password) : nullptr),
     m_user(user ? strdup(user) : nullptr),
-    m_algo(xmrig::ALGO_CRYPTONIGHT),
+    m_algo(xmrig::CRYPTONIGHT),
     m_variant(variant),
     m_url(nullptr),
     m_port(port)
