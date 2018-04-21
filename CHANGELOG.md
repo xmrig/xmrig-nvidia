@@ -1,4 +1,4 @@
-# v2.6.0.2
+# v2.6.1
 - Fixed critical bug, in some cases miner was can't recovery connection and switch to failover pool, version 2.5.2 and v2.6.0-beta1 affected.
 - [#499](https://github.com/xmrig/xmrig/issues/499) IPv6 support disabled for internal HTTP API.
 
