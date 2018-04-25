@@ -195,14 +195,16 @@ static struct option const api_options[] = {
 static const char *algoNames[] = {
     "cryptonight",
     "cryptonight-lite",
-    "cryptonight-heavy"
+    "cryptonight-heavy",
+	"cryptonight-ipbc"
 };
 
 
 static const char *algoNamesShort[] = {
     "cn",
     "cn-lite",
-    "cn-heavy"
+    "cn-heavy",
+	"cn-ipbc"
 };
 
 
