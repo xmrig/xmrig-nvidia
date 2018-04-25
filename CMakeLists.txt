@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(xmrig-nvidia)
 
 option(WITH_AEON  "CryptoNight-Lite support" ON)
+option(WITH_IPBC  "CryptoNight-IPBC support" ON)
 option(WITH_HTTPD "HTTP REST API" ON)
 
 include (CheckIncludeFile)
@@ -144,6 +145,10 @@ find_package(UV REQUIRED)
 
 if (NOT WITH_AEON)
     add_definitions(/DXMRIG_NO_AEON)
+endif()
+
+if (NOT WITH_IPBC)
+    add_definitions(/XMRIG_NO_IPBC)
 endif()
 
 include_directories(src)

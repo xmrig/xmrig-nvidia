@@ -62,7 +62,7 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
 
     assert(variant == VARIANT_NONE || variant == VARIANT_V1);
 
-    static const cn_hash_fun func_table[10] = {
+    static const cn_hash_fun func_table[16] = {
         cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_NONE>,
         cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_NONE>,
 
@@ -82,9 +82,18 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
 #       ifndef XMRIG_NO_SUMO
         cryptonight_single_hash<CRYPTONIGHT_HEAVY, false, VARIANT_NONE>,
         cryptonight_single_hash<CRYPTONIGHT_HEAVY, true,  VARIANT_NONE>,
+		nullptr, nullptr,
 #       else
-        nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
 #       endif
+
+#		ifndef XMRIG_NO_IPBC
+		nullptr, nullptr,
+		cryptonight_single_hash<CRYPTONIGHT_IPBC, false, VARIANT_V1>,
+		cryptonight_single_hash<CRYPTONIGHT_IPBC, true,  VARIANT_V1>,
+#		else
+		nullptr, nullptr, nullptr, nullptr,
+#		endif
     };
 
 #   ifndef XMRIG_NO_SUMO
@@ -92,6 +101,12 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         variant = VARIANT_NONE;
     }
 #   endif
+
+#	ifndef XMRIG_NO_IPBC
+	if (algorithm == CRYPTONIGHT_IPBC) {
+		variant = VARIANT_V1;
+	}
+#	endif
 
     return func_table[4 * algorithm + 2 * variant + av - 1];
 }
@@ -125,8 +140,21 @@ bool CryptoNight::selfTest() {
     }
 #   endif
 
-    const bool rc = m_algorithm == xmrig::CRYPTONIGHT_HEAVY && memcmp(output, test_output_heavy, 32) == 0;
-    _mm_free(ctx);
+#	ifndef XMRIG_NO_SUMO
+	if (m_algorithm == xmrig::CRYPTONIGHT_HEAVY && memcmp(output, test_output_heavy, 32) == 0) {
+		_mm_free(ctx);
+
+		return true;
+	}
+#	endif
+
+#   ifndef XMRIG_NO_IPBC
+    const bool rc = m_algorithm == xmrig::CRYPTONIGHT_IPBC && memcmp(output, test_output_ipbc, 32) == 0;
+#	else
+	const bool rc = false;
+#	endif
+
+	_mm_free(ctx);
 
     return rc;
 }

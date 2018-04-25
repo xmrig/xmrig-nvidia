@@ -341,6 +341,13 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
             else
                 storeGlobal32( long_state + j, res );
 
+			if (ALGO == xmrig::CRYPTONIGHT_IPBC && sub == 2) {
+				uint64_t* dst = ((uint64_t*)(long_state + j));
+				uint64_t cur = loadGlobal64<uint64_t>(dst);
+				uint64_t prev = loadGlobal64<uint64_t>(dst - 1);
+				storeGlobal64<uint64_t>(dst, cur ^ prev);
+			}
+
             a = ( sub & 1 ? yy[1] : yy[0] ) ^ res;
             idx0 = shuffle<4>(sPtr,sub, a, 0);
             if(ALGO == xmrig::CRYPTONIGHT_HEAVY)
@@ -521,5 +528,9 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, int variant, uint32_t
     case CRYPTONIGHT_HEAVY:
         cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY / 4, CRYPTONIGHT_HEAVY, 0>(ctx, startNonce);
         break;
+
+	case CRYPTONIGHT_IPBC:
+		cryptonight_core_gpu_hash<CRYPTONIGHT_IPBC_ITER, CRYPTONIGHT_IPBC_MASK, CRYPTONIGHT_IPBC_MEMORY / 4, CRYPTONIGHT_IPBC, 1>(ctx, startNonce);
+		break;
     }
 }
