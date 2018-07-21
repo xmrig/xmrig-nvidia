@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __APIROUTER_H__
-#define __APIROUTER_H__
+#ifndef XMRIG_APIROUTER_H
+#define XMRIG_APIROUTER_H
 
 
 #include "api/NetworkState.h"
@@ -44,7 +44,6 @@ class ApiRouter : public xmrig::IControllerListener
 {
 public:
     ApiRouter(xmrig::Controller *controller);
-    ~ApiRouter();
 
     void get(const xmrig::HttpRequest &req, xmrig::HttpReply &reply) const;
     void exec(const xmrig::HttpRequest &req, xmrig::HttpReply &reply);
@@ -59,6 +58,7 @@ private:
     void genId();
     void getConnection(rapidjson::Document &doc) const;
     void getHashrate(rapidjson::Document &doc) const;
+    void getHealth(rapidjson::Document &doc) const;
     void getIdentify(rapidjson::Document &doc) const;
     void getMiner(rapidjson::Document &doc) const;
     void getResults(rapidjson::Document &doc) const;
@@ -72,4 +72,4 @@ private:
     xmrig::Controller *m_controller;
 };
 
-#endif /* __APIROUTER_H__ */
+#endif /* XMRIG_APIROUTER_H */

@@ -26,7 +26,7 @@
 #include <uv.h>
 
 #if _WIN32
-#   include "winsock2.h"
+#   include "WinSock2.h"
 #else
 #   include "unistd.h"
 #endif
@@ -42,10 +42,12 @@
 #include "core/Controller.h"
 #include "Cpu.h"
 #include "interfaces/IThread.h"
+#include "nvidia/NvmlApi.h"
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/stringbuffer.h"
 #include "version.h"
+#include "workers/CudaThread.h"
 #include "workers/Hashrate.h"
 #include "workers/Workers.h"
 
@@ -67,11 +69,6 @@ ApiRouter::ApiRouter(xmrig::Controller *controller) :
 
     setWorkerId(controller->config()->apiWorkerId());
     genId();
-}
-
-
-ApiRouter::~ApiRouter()
-{
 }
 
 
@@ -101,6 +98,7 @@ void ApiRouter::ApiRouter::get(const xmrig::HttpRequest &req, xmrig::HttpReply &
     getIdentify(doc);
     getMiner(doc);
     getHashrate(doc);
+    getHealth(doc);
     getResults(doc);
     getConnection(doc);
 
@@ -133,7 +131,7 @@ void ApiRouter::onConfigChanged(xmrig::Config *config, xmrig::Config *previousCo
 
 void ApiRouter::finalize(xmrig::HttpReply &reply, rapidjson::Document &doc) const
 {
-    rapidjson::StringBuffer buffer(0, 4096);
+    rapidjson::StringBuffer buffer(nullptr, 4096);
     rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
     writer.SetMaxDecimalPlaces(10);
     doc.Accept(writer);
@@ -219,6 +217,36 @@ void ApiRouter::getHashrate(rapidjson::Document &doc) const
     hashrate.AddMember("highest", normalize(hr->highest()), allocator);
     hashrate.AddMember("threads", threads, allocator);
     doc.AddMember("hashrate", hashrate, allocator);
+}
+
+
+void ApiRouter::getHealth(rapidjson::Document &doc) const
+{
+    auto &allocator = doc.GetAllocator();
+    rapidjson::Value array(rapidjson::kArrayType);
+    std::vector<Health> records;
+    Health health;
+
+    size_t i = 0;
+    for (const xmrig::IThread *t : m_controller->config()->threads()) {
+        auto thread = static_cast<const CudaThread *>(t);
+        NvmlApi::health(thread->nvmlId(), health);
+        records.push_back(health);
+
+        rapidjson::Value record(rapidjson::kObjectType);
+
+        record.AddMember("name",      rapidjson::StringRef(thread->name()), allocator);
+        record.AddMember("clock",     records[i].clock, allocator);
+        record.AddMember("mem_clock", records[i].memClock, allocator);
+        record.AddMember("power",     records[i].power / 1000, allocator);
+        record.AddMember("temp",      records[i].temperature, allocator);
+        record.AddMember("fan",       records[i].fanSpeed, allocator);
+
+        array.PushBack(record, allocator);
+        i++;
+    }
+
+    doc.AddMember("health", array, allocator);
 }
 
 
