@@ -26,8 +26,8 @@
 #include <thread>
 
 
+#include "common/Platform.h"
 #include "crypto/CryptoNight.h"
-#include "Platform.h"
 #include "workers/CudaWorker.h"
 #include "workers/GpuThread.h"
 #include "workers/Handle.h"
@@ -36,25 +36,27 @@
 
 CudaWorker::CudaWorker(Handle *handle) :
     m_id(handle->threadId()),
-    m_threads(handle->threads()),
-    m_algorithm(handle->algorithm()),
+	m_threads(handle->totalWays()),
+    m_algorithm(handle->config()->algorithm()),
     m_hashCount(0),
     m_timestamp(0),
     m_count(0),
-    m_sequence(0)
+    m_sequence(0),
+	m_blob()
 {
-    const GpuThread *thread = handle->gpuThread();
+//    const GpuThread *thread = handle->gpuThread();
 
-    m_ctx.device_id      = thread->index();
-    m_ctx.device_blocks  = thread->blocks();
-    m_ctx.device_threads = thread->threads();
-    m_ctx.device_bfactor = thread->bfactor();
-    m_ctx.device_bsleep  = thread->bsleep();
+//    m_ctx.device_id      = thread->index();
+//    m_ctx.device_blocks  = thread->blocks();
+//    m_ctx.device_threads = thread->threads();
+//    m_ctx.device_bfactor = thread->bfactor();
+//    m_ctx.device_bsleep  = thread->bsleep();
     m_ctx.syncMode       = 3;
 
-    if (thread->affinity() >= 0) {
-        Platform::setThreadAffinity(thread->affinity());
-    }
+	const int64_t affinity = handle->config()->affinity();
+	if (affinity >= 0) {
+		Platform::setThreadAffinity(affinity);
+	}
 }
 
 

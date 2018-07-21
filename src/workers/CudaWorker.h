@@ -29,8 +29,8 @@
 #include <atomic>
 
 
+#include "common/net/Job.h"
 #include "interfaces/IWorker.h"
-#include "net/Job.h"
 #include "net/JobResult.h"
 #include "nvidia/cryptonight.h"
 
@@ -55,18 +55,19 @@ private:
     void save(const Job &job);
     void storeStats();
 
-    const int m_id;
-    const int m_threads;
-    const xmrig::Algo m_algorithm;
-    Job m_job;
-    Job m_pausedJob;
-    nvid_ctx m_ctx;
-    std::atomic<uint64_t> m_hashCount;
-    std::atomic<uint64_t> m_timestamp;
-    uint32_t m_nonce;
-    uint32_t m_pausedNonce;
-    uint64_t m_count;
-    uint64_t m_sequence;
+	const size_t m_id;
+	const size_t m_threads;
+	const xmrig::Algo m_algorithm;
+	Job m_job;
+	Job m_pausedJob;
+	nvid_ctx m_ctx;
+	std::atomic<uint64_t> m_hashCount;
+	std::atomic<uint64_t> m_timestamp;
+	uint32_t m_nonce;
+	uint32_t m_pausedNonce;
+	uint64_t m_count;
+	uint64_t m_sequence;
+	uint8_t m_blob[96]; // Max blob size is 84 (75 fixed + 9 variable), aligned to 96. https://github.com/xmrig/xmrig/issues/1 Thanks fireice-uk
 };
 
 

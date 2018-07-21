@@ -28,7 +28,7 @@
 #include <vector>
 
 
-#include "xmrig.h"
+#include "common/xmrig.h"
 
 
 class GpuThread;
