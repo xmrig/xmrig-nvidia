@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HANDLE_H__
-#define __HANDLE_H__
+#ifndef XMRIG_HANDLE_H
+#define XMRIG_HANDLE_H
 
 
 #include <assert.h>
@@ -60,4 +60,4 @@ private:
 };
 
 
-#endif /* __HANDLE_H__ */
+#endif /* XMRIG_HANDLE_H */

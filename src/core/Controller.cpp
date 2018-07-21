@@ -84,12 +84,6 @@ bool xmrig::Controller::isReady() const
 }
 
 
-bool xmrig::Controller::oclInit()
-{
-    return true;
-}
-
-
 xmrig::Config *xmrig::Controller::config() const
 {
     assert(d_ptr->config != nullptr);

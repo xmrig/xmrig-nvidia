@@ -48,7 +48,6 @@ class Config : public CommonConfig
 public:
     Config();
 
-    bool oclInit();
     bool reload(const char *json);
 
     void getJSON(rapidjson::Document &doc) const override;

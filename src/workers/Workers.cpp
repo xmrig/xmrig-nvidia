@@ -32,7 +32,10 @@
 #include "crypto/CryptoNight.h"
 #include "interfaces/IJobResultListener.h"
 #include "interfaces/IThread.h"
+#include "nvidia/NvmlApi.h"
 #include "rapidjson/document.h"
+#include "workers/CudaThread.h"
+#include "workers/CudaWorker.h"
 #include "workers/Handle.h"
 #include "workers/Hashrate.h"
 #include "workers/Workers.h"
@@ -123,6 +126,45 @@ void Workers::printHashrate(bool detail)
 }
 
 
+void Workers::printHealth()
+{
+    if (!NvmlApi::isAvailable()) {
+        LOG_ERR("NVML GPU monitoring is not available");
+        return;
+    }
+
+    Health health;
+    for (const xmrig::IThread *t : m_controller->config()->threads()) {
+        auto thread = static_cast<const CudaThread *>(t);
+        if (!NvmlApi::health(thread->nvmlId(), health)) {
+            continue;
+        }
+
+        const uint32_t temp = health.temperature;
+
+        if (health.clock && health.power) {
+            if (m_controller->config()->isColors()) {
+                LOG_INFO("\x1B[00;35mGPU #%d: \x1B[01m%u\x1B[00;35m/\x1B[01m%u MHz\x1B[00;35m \x1B[01m%uW\x1B[00;35m %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
+                    thread->index(), health.clock, health.memClock, health.power / 1000, (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
+            }
+            else {
+                LOG_INFO(" * GPU #%d: %u/%u MHz %uW %uC FAN %u%%", thread->index(), health.clock, health.memClock, health.power / 1000, health.temperature, health.fanSpeed);
+            }
+
+            continue;
+        }
+
+        if (m_controller->config()->isColors()) {
+            LOG_INFO("\x1B[00;35mGPU #%d: %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
+                thread->index(), (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
+        }
+        else {
+            LOG_INFO(" * GPU #%d: %uC FAN %u%%", thread->index(), health.temperature, health.fanSpeed);
+        }
+    }
+}
+
+
 void Workers::setEnabled(bool enabled)
 {
     if (m_enabled == enabled) {
@@ -166,31 +208,17 @@ bool Workers::start(xmrig::Controller *controller)
     size_t ways = 0;
 
     for (const xmrig::IThread *thread : threads) {
-       ways += thread->multiway();
+       ways += static_cast<size_t>(thread->multiway());
     }
 
     m_threadsCount = threads.size();
-    m_hashrate = new Hashrate(m_threadsCount, controller);
+    m_hashrate     = new Hashrate(m_threadsCount, controller);
+    m_sequence     = 1;
+    m_paused       = 1;
 
     uv_mutex_init(&m_mutex);
     uv_rwlock_init(&m_rwlock);
-
-    m_sequence = 1;
-    m_paused   = 1;
-
     uv_async_init(uv_default_loop(), &m_async, Workers::onResult);
-
-//    contexts.resize(m_threadsCount);
-
-   // for (size_t i = 0; i < m_threadsCount; ++i) {
-   //     const OclThread *thread = static_cast<OclThread *>(threads[i]);
-   //     contexts[i] = GpuContext(thread->index(), thread->intensity(), thread->worksize(), thread->stridedIndex(), thread->memChunk(), thread->isCompMode());
-   // }
-
-    //if (InitOpenCL(contexts.data(), m_threadsCount, controller->config()) != 0) {
-    //    return false;
-    //}
-
     uv_timer_init(uv_default_loop(), &m_timer);
     uv_timer_start(&m_timer, Workers::onTick, 500, 500);
 
@@ -198,12 +226,12 @@ bool Workers::start(xmrig::Controller *controller)
 
     size_t i = 0;
     for (xmrig::IThread *thread : threads) {
-//        Handle *handle = new Handle(i, thread, &contexts[i], offset, ways);
-//        offset += thread->multiway();
-//        i++;
+        Handle *handle = new Handle(i, thread, offset, ways);
+        offset += static_cast<size_t>(thread->multiway());
+        i++;
 
-//        m_workers.push_back(handle);
- //       handle->start(Workers::onReady);
+        m_workers.push_back(handle);
+        handle->start(Workers::onReady);
     }
 
     if (controller->config()->isShouldSave()) {
@@ -263,10 +291,10 @@ void Workers::onReady(void *arg)
 {
     auto handle = static_cast<Handle*>(arg);
 
-//    IWorker *worker = new OclWorker(handle);
-//    handle->setWorker(worker);
+    IWorker *worker = new CudaWorker(handle);
+    handle->setWorker(worker);
 
-//    start(worker);
+    start(worker);
 }
 
 
@@ -320,14 +348,14 @@ void Workers::onResult(uv_async_t *handle)
 }
 
 
-void Workers::onTick(uv_timer_t *handle)
+void Workers::onTick(uv_timer_t *)
 {
     for (Handle *handle : m_workers) {
         if (!handle->worker()) {
             return;
         }
 
-        //m_hashrate->add(handle->threadId(), handle->worker()->hashCount(), handle->worker()->timestamp());
+        m_hashrate->add(handle->threadId(), handle->worker()->hashCount(), handle->worker()->timestamp());
     }
 
     if ((m_ticks++ & 0xF) == 0)  {
@@ -338,5 +366,5 @@ void Workers::onTick(uv_timer_t *handle)
 
 void Workers::start(IWorker *worker)
 {
-    //worker->start();
+    worker->start();
 }

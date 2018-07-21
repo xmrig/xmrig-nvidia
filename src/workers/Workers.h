@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __WORKERS_H__
-#define __WORKERS_H__
+#ifndef XMRIG_WORKERS_H
+#define XMRIG_WORKERS_H
 
 
 #include <atomic>
@@ -53,6 +53,7 @@ public:
     static size_t hugePages();
     static size_t threads();
     static void printHashrate(bool detail);
+    static void printHealth();
     static void setEnabled(bool enabled);
     static void setJob(const Job &job, bool donate);
     static bool start(xmrig::Controller *controller);
@@ -96,4 +97,4 @@ private:
 };
 
 
-#endif /* __WORKERS_H__ */
+#endif /* XMRIG_WORKERS_H */

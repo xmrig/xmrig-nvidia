@@ -28,7 +28,7 @@
 #include <stdint.h>
 
 
-#include "common/xmrig.h"
+#include "../common/xmrig.h"
 
 
 typedef struct {

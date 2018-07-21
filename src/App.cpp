@@ -123,7 +123,7 @@ int App::exec()
     m_httpd->start();
 #   endif
 
-    if (!m_controller->oclInit() || !Workers::start(m_controller)) {
+    if (!Workers::start(m_controller)) {
         LOG_ERR("Failed to start threads");
         return 1;
     }
@@ -159,6 +159,11 @@ void App::onConsoleCommand(char command)
             LOG_INFO(m_controller->config()->isColors() ? "\x1B[01;32mresumed" : "resumed");
             Workers::setEnabled(true);
         }
+        break;
+
+    case 'E':
+    case 'e':
+        Workers::printHealth();
         break;
 
     case 3:

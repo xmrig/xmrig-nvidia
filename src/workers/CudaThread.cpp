@@ -50,7 +50,7 @@ CudaThread::CudaThread() :
 }
 
 
-CudaThread::CudaThread(const nvid_ctx &ctx, int64_t affinity) :
+CudaThread::CudaThread(const nvid_ctx &ctx, int64_t affinity, xmrig::Algo algorithm) :
     m_bfactor(ctx.device_bfactor),
     m_blocks(ctx.device_blocks),
     m_bsleep(ctx.device_bsleep),
@@ -64,7 +64,8 @@ CudaThread::CudaThread(const nvid_ctx &ctx, int64_t affinity) :
     m_threadId(0),
     m_pciBusID(ctx.device_pciBusID),
     m_pciDeviceID(ctx.device_pciDeviceID),
-    m_pciDomainID(ctx.device_pciDomainID)
+    m_pciDomainID(ctx.device_pciDomainID),
+    m_algorithm(algorithm)
 {
     memcpy(m_arch, ctx.device_arch, sizeof(m_arch));
     strncpy(m_name, ctx.device_name, sizeof(m_name) - 1);
@@ -85,7 +86,8 @@ CudaThread::CudaThread(const rapidjson::Value &object) :
     m_threadId(0),
     m_pciBusID(0),
     m_pciDeviceID(0),
-    m_pciDomainID(0)
+    m_pciDomainID(0),
+    m_algorithm(xmrig::INVALID_ALGO)
 {
     memset(m_arch, 0, sizeof(m_arch));
     memset(m_name, 0, sizeof(m_name));
@@ -138,6 +140,7 @@ bool CudaThread::init(xmrig::Algo algorithm)
     m_pciDeviceID     = ctx.device_pciDeviceID;
     m_pciDomainID     = ctx.device_pciDomainID;
 
+    m_algorithm = algorithm;
     return true;
 }
 

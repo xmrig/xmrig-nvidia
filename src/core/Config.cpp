@@ -48,12 +48,6 @@ xmrig::Config::Config() : xmrig::CommonConfig(),
 }
 
 
-bool xmrig::Config::oclInit()
-{
-    return true;
-}
-
-
 bool xmrig::Config::reload(const char *json)
 {
     return xmrig::ConfigLoader::reload(this, json);
@@ -123,7 +117,8 @@ bool xmrig::Config::finalize()
     }
 
     if (m_threads.empty() && !m_cudaCLI.setup(m_threads, algorithm().algo())) {
-        m_autoConf = true;
+        m_autoConf   = true;
+        m_shouldSave = true;
         m_cudaCLI.autoConf(m_threads, algorithm().algo());
 
         for (IThread *thread : m_threads) {
@@ -131,6 +126,7 @@ bool xmrig::Config::finalize()
         }
     }
 
+    NvmlApi::init();
     NvmlApi::bind(m_threads);
     return true;
 }

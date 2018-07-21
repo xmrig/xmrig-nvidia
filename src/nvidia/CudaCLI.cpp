@@ -63,7 +63,7 @@ bool CudaCLI::setup(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo)
             continue;
         }
 
-        threads.push_back(new CudaThread(ctx, affinity(i)));
+        threads.push_back(new CudaThread(ctx, affinity(i), algo));
     }
 
     return true;
@@ -89,7 +89,7 @@ void CudaCLI::autoConf(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo)
             continue;
         }
 
-        threads.push_back(new CudaThread(ctx));
+        threads.push_back(new CudaThread(ctx, -1, algo));
     }
 }
 

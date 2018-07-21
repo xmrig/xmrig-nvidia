@@ -35,7 +35,7 @@ class CudaThread : public xmrig::IThread
 {
 public:
     CudaThread();
-    CudaThread(const nvid_ctx &ctx, int64_t affinity = -1);
+    CudaThread(const nvid_ctx &ctx, int64_t affinity, xmrig::Algo algorithm);
     CudaThread(const rapidjson::Value &object);
 
     bool init(xmrig::Algo algorithm);
