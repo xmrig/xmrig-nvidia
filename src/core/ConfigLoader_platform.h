@@ -22,8 +22,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CONFIGLOADER_PLATFORM_H__
-#define __CONFIGLOADER_PLATFORM_H__
+#ifndef XMRIG_CONFIGLOADER_PLATFORM_H
+#define XMRIG_CONFIGLOADER_PLATFORM_H
 
 
 #ifdef _MSC_VER
@@ -54,27 +54,27 @@ Options:\n\
                              cryptonight-heavy\n"
 #endif
 "\
-  -o, --url=URL            URL of mining server\n\
-  -O, --userpass=U:P       username:password pair for mining server\n\
-  -u, --user=USERNAME      username for mining server\n\
-  -p, --pass=PASSWORD      password for mining server\n\
-      --rig-id=ID          rig identifier for pool-side statistics (needs pool support)\n\
-  -k, --keepalive          send keepalived for prevent timeout (need pool support)\n\
-  -r, --retries=N          number of times to retry before switch to backup server (default: 5)\n\
-  -R, --retry-pause=N      time to pause between retries (default: 5)\n\
-      --opencl-devices=N   list of OpenCL devices to use.\n\
-      --opencl-launch=IxW  list of launch config, intensity and worksize\n\
-      --opencl-affinity=N  affine GPU threads to a CPU\n\
-      --opencl-platform=N  OpenCL platform index\n\
-      --opencl-loader=N    path to OpenCL-ICD-Loader (OpenCL.dll or libOpenCL.so)\n\
-      --print-platforms    print available OpenCL platforms and exit\n\
-      --no-color           disable colored output\n\
-      --variant            algorithm PoW variant\n\
-      --donate-level=N     donate level, default 5%% (5 minutes in 100 minutes)\n\
-      --user-agent         set custom user-agent string for pool\n\
-  -B, --background         run the miner in the background\n\
-  -c, --config=FILE        load a JSON-format configuration file\n\
-  -l, --log-file=FILE      log all output to a file\n"
+  -o, --url=URL             URL of mining server\n\
+  -O, --userpass=U:P        username:password pair for mining server\n\
+  -u, --user=USERNAME       username for mining server\n\
+  -p, --pass=PASSWORD       password for mining server\n\
+      --rig-id=ID           rig identifier for pool-side statistics (needs pool support)\n\
+  -k, --keepalive           send keepalived for prevent timeout (need pool support)\n\
+  -r, --retries=N           number of times to retry before switch to backup server (default: 5)\n\
+  -R, --retry-pause=N       time to pause between retries (default: 5)\n\
+      --cuda-devices=N      list of CUDA devices to use.\n\
+      --cuda-launch=TxB     list of launch config for the CryptoNight kernel\n\
+      --cuda-max-threads=N  limit maximum count of GPU threads in automatic mode\n\
+      --cuda-bfactor=[0-12] run CryptoNight core kernel in smaller pieces\n\
+      --cuda-bsleep=N       insert a delay of N microseconds between kernel launches\n\
+      --cuda-affinity=N     affine GPU threads to a CPU\n\
+      --no-color            disable colored output\n\
+      --variant             algorithm PoW variant\n\
+      --donate-level=N      donate level, default 5%% (5 minutes in 100 minutes)\n\
+      --user-agent          set custom user-agent string for pool\n\
+  -B, --background          run the miner in the background\n\
+  -c, --config=FILE         load a JSON-format configuration file\n\
+  -l, --log-file=FILE       log all output to a file\n"
 # ifdef HAVE_SYSLOG_H
 "\
   -S, --syslog             use system log for output messages\n"
@@ -103,6 +103,16 @@ static struct option const options[] = {
     { "api-ipv6",          0, nullptr, xmrig::IConfig::ApiIPv6Key        },
     { "api-no-restricted", 0, nullptr, xmrig::IConfig::ApiRestrictedKey  },
     { "background",        0, nullptr, xmrig::IConfig::BackgroundKey     },
+    { "bfactor",           1, nullptr, xmrig::IConfig::CudaBFactorKey    }, // deprecated, use --cuda-bfactor instead.
+    { "bsleep",            1, nullptr, xmrig::IConfig::CudaBSleepKey     }, // deprecated, use --cuda-bsleep instead.
+    { "cuda-affinity",     1, nullptr, xmrig::IConfig::CudaAffinityKey   },
+    { "cuda-bfactor",      1, nullptr, xmrig::IConfig::CudaBFactorKey    },
+    { "cuda-bsleep",       1, nullptr, xmrig::IConfig::CudaBSleepKey     },
+    { "cuda-devices",      1, nullptr, xmrig::IConfig::CudaDevicesKey    },
+    { "cuda-launch",       1, nullptr, xmrig::IConfig::CudaLaunchKey     },
+    { "cuda-max-threads",  1, nullptr, xmrig::IConfig::CudaMaxThreadsKey },
+    { "max-gpu-threads",   1, nullptr, xmrig::IConfig::CudaMaxThreadsKey }, // deprecated, use --cuda-max-threads instead.
+    { "max-gpu-usage",     1, nullptr, xmrig::IConfig::CudaMaxUsageKey   }, // deprecated.
     { "config",            1, nullptr, xmrig::IConfig::ConfigKey         },
     { "donate-level",      1, nullptr, xmrig::IConfig::DonateLevelKey    },
     { "dry-run",           0, nullptr, xmrig::IConfig::DryRunKey         },
@@ -123,33 +133,30 @@ static struct option const options[] = {
     { "userpass",          1, nullptr, xmrig::IConfig::UserpassKey       },
     { "rig-id",            1, nullptr, xmrig::IConfig::RigIdKey          },
     { "version",           0, nullptr, xmrig::IConfig::VersionKey        },
-    { "opencl-affinity",   1, nullptr, xmrig::IConfig::OclAffinity       },
-    { "opencl-devices",    1, nullptr, xmrig::IConfig::OclDevices        },
-    { "opencl-launch",     1, nullptr, xmrig::IConfig::OclLaunch         },
-    { "opencl-platform",   1, nullptr, xmrig::IConfig::OclPlatform       },
-    { "no-cache",          0, nullptr, xmrig::IConfig::OclCache          },
-    { "print-platforms",   0, nullptr, xmrig::IConfig::OclPrint          },
-    { "opencl-loader",     1, nullptr, xmrig::IConfig::OclLoader         },
-    { 0, 0, 0, 0 }
+    { nullptr,             0, nullptr, 0                                 }
 };
 
 
 static struct option const config_options[] = {
-    { "algo",              1, nullptr, xmrig::IConfig::AlgorithmKey   },
-    { "background",        0, nullptr, xmrig::IConfig::BackgroundKey  },
-    { "colors",            0, nullptr, xmrig::IConfig::ColorKey       },
-    { "donate-level",      1, nullptr, xmrig::IConfig::DonateLevelKey },
-    { "dry-run",           0, nullptr, xmrig::IConfig::DryRunKey      },
-    { "log-file",          1, nullptr, xmrig::IConfig::LogFileKey     },
-    { "print-time",        1, nullptr, xmrig::IConfig::PrintTimeKey   },
-    { "retries",           1, nullptr, xmrig::IConfig::RetriesKey     },
-    { "retry-pause",       1, nullptr, xmrig::IConfig::RetryPauseKey  },
-    { "syslog",            0, nullptr, xmrig::IConfig::SyslogKey      },
-    { "user-agent",        1, nullptr, xmrig::IConfig::UserAgentKey   },
-    { "opencl-platform",   1, nullptr, xmrig::IConfig::OclPlatform    },
-    { "cache",             0, nullptr, xmrig::IConfig::OclCache       },
-    { "opencl-loader",     1, nullptr, xmrig::IConfig::OclLoader      },
-    { 0, 0, 0, 0 }
+    { "algo",              1, nullptr, xmrig::IConfig::AlgorithmKey      },
+    { "background",        0, nullptr, xmrig::IConfig::BackgroundKey     },
+    { "colors",            0, nullptr, xmrig::IConfig::ColorKey          },
+    { "donate-level",      1, nullptr, xmrig::IConfig::DonateLevelKey    },
+    { "dry-run",           0, nullptr, xmrig::IConfig::DryRunKey         },
+    { "log-file",          1, nullptr, xmrig::IConfig::LogFileKey        },
+    { "print-time",        1, nullptr, xmrig::IConfig::PrintTimeKey      },
+    { "retries",           1, nullptr, xmrig::IConfig::RetriesKey        },
+    { "retry-pause",       1, nullptr, xmrig::IConfig::RetryPauseKey     },
+    { "syslog",            0, nullptr, xmrig::IConfig::SyslogKey         },
+    { "user-agent",        1, nullptr, xmrig::IConfig::UserAgentKey      },
+    { "bfactor",           1, nullptr, xmrig::IConfig::CudaBFactorKey    }, // deprecated, use --cuda-bfactor instead.
+    { "bsleep",            1, nullptr, xmrig::IConfig::CudaBSleepKey     }, // deprecated, use --cuda-bsleep instead.
+    { "cuda-bfactor",      1, nullptr, xmrig::IConfig::CudaBFactorKey    },
+    { "cuda-bsleep",       1, nullptr, xmrig::IConfig::CudaBSleepKey     },
+    { "cuda-max-threads",  1, nullptr, xmrig::IConfig::CudaMaxThreadsKey },
+    { "max-gpu-threads",   1, nullptr, xmrig::IConfig::CudaMaxThreadsKey }, // deprecated, use --cuda-max-threads instead.
+    { "max-gpu-usage",     1, nullptr, xmrig::IConfig::CudaMaxUsageKey   }, // deprecated.
+    { nullptr,             0, nullptr, 0                                 }
 };
 
 
@@ -162,7 +169,7 @@ static struct option const pool_options[] = {
     { "keepalive",     2, nullptr, xmrig::IConfig::KeepAliveKey  },
     { "variant",       1, nullptr, xmrig::IConfig::VariantKey    },
     { "rig-id",        1, nullptr, xmrig::IConfig::RigIdKey      },
-    { 0, 0, 0, 0 }
+    { nullptr,         0, nullptr, 0                             }
 };
 
 
@@ -172,10 +179,10 @@ static struct option const api_options[] = {
     { "worker-id",     1, nullptr, xmrig::IConfig::ApiWorkerIdKey    },
     { "ipv6",          0, nullptr, xmrig::IConfig::ApiIPv6Key        },
     { "restricted",    0, nullptr, xmrig::IConfig::ApiRestrictedKey  },
-    { 0, 0, 0, 0 }
+    { nullptr,         0, nullptr, 0                                 }
 };
 
 
 } /* namespace xmrig */
 
-#endif /* __CONFIGLOADER_PLATFORM_H__ */
+#endif /* XMRIG_CONFIGLOADER_PLATFORM_H */

@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CPU_H__
-#define __CPU_H__
+#ifndef XMRIG_CPU_H
+#define XMRIG_CPU_H
 
 
 #include <stdint.h>
@@ -47,7 +47,7 @@ public:
     static inline int l2()            { return m_l2_cache; }
     static inline int l3()            { return m_l3_cache; }
     static inline int sockets()       { return m_sockets; }
-    static inline int threads()       { return m_totalThreads; }
+    static inline size_t threads()    { return m_totalThreads; }
 
 private:
     static void initCommon();
@@ -63,4 +63,4 @@ private:
 };
 
 
-#endif /* __CPU_H__ */
+#endif /* XMRIG_CPU_H */

@@ -20,8 +20,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ICONFIG_H__
-#define __ICONFIG_H__
+#ifndef XMRIG_ICONFIG_H
+#define XMRIG_ICONFIG_H
 
 
 #include "common/crypto/Algorithm.h"
@@ -97,6 +97,15 @@ public:
         PoolCoinKey       = 'C',
         ReuseTimeoutKey   = 1106,
         WorkersKey        = 1103,
+
+        // xmrig nvidia
+        CudaMaxThreadsKey = 1200,
+        CudaBFactorKey    = 1201,
+        CudaBSleepKey     = 1202,
+        CudaDevicesKey    = 1203,
+        CudaLaunchKey     = 1204,
+        CudaAffinityKey   = 1205,
+        CudaMaxUsageKey   = 1206,
     };
 
     virtual ~IConfig() {}
@@ -118,4 +127,4 @@ public:
 } /* namespace xmrig */
 
 
-#endif // __ICONFIG_H__
+#endif // XMRIG_ICONFIG_H

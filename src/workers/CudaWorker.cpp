@@ -29,20 +29,20 @@
 #include "common/Platform.h"
 #include "crypto/CryptoNight.h"
 #include "workers/CudaWorker.h"
-#include "workers/GpuThread.h"
+#include "workers/CudaThread.h"
 #include "workers/Handle.h"
 #include "workers/Workers.h"
 
 
 CudaWorker::CudaWorker(Handle *handle) :
     m_id(handle->threadId()),
-	m_threads(handle->totalWays()),
+    m_threads(handle->totalWays()),
     m_algorithm(handle->config()->algorithm()),
     m_hashCount(0),
     m_timestamp(0),
     m_count(0),
     m_sequence(0),
-	m_blob()
+    m_blob()
 {
 //    const GpuThread *thread = handle->gpuThread();
 
@@ -53,10 +53,10 @@ CudaWorker::CudaWorker(Handle *handle) :
 //    m_ctx.device_bsleep  = thread->bsleep();
     m_ctx.syncMode       = 3;
 
-	const int64_t affinity = handle->config()->affinity();
-	if (affinity >= 0) {
-		Platform::setThreadAffinity(affinity);
-	}
+    const int64_t affinity = handle->config()->affinity();
+    if (affinity >= 0) {
+        Platform::setThreadAffinity(affinity);
+    }
 }
 
 

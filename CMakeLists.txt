@@ -60,7 +60,7 @@ set(HEADERS
     src/Summary.h
     src/version.h
     src/workers/CudaWorker.h
-    src/workers/GpuThread.h
+    src/workers/CudaThread.h
     src/workers/Handle.h
     src/workers/Hashrate.h
     src/workers/Workers.h
@@ -114,7 +114,7 @@ set(SOURCES
     src/nvidia/CudaCLI.cpp
     src/Summary.cpp
     src/workers/CudaWorker.cpp
-    src/workers/GpuThread.cpp
+    src/workers/CudaThread.cpp
     src/workers/Handle.cpp
     src/workers/Hashrate.cpp
     src/workers/Workers.cpp

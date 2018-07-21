@@ -32,26 +32,18 @@
 #include "core/ConfigCreator.h"
 #include "Cpu.h"
 #include "crypto/CryptoNight_constants.h"
+#include "nvidia/NvmlApi.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
+#include "workers/CudaThread.h"
 
 
 xmrig::Config::Config() : xmrig::CommonConfig(),
     m_autoConf(false),
-    m_cache(true),
     m_shouldSave(false),
-    m_platformIndex(0),
-#   ifdef _WIN32
-    m_loader("OpenCL.dll")
-#   else
-    m_loader("libOpenCL.so")
-#   endif
-{
-}
-
-
-xmrig::Config::~Config()
+    m_maxGpuThreads(64),
+    m_maxGpuUsage(100)
 {
 }
 
@@ -87,12 +79,9 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("api",          api, allocator);
 
     doc.AddMember("background",   isBackground(), allocator);
-    doc.AddMember("cache",        isOclCache(), allocator);
     doc.AddMember("colors",       isColors(), allocator);
     doc.AddMember("donate-level", donateLevel(), allocator);
     doc.AddMember("log-file",     logFile() ? Value(StringRef(logFile())).Move() : Value(kNullType).Move(), allocator);
-    doc.AddMember("opencl-platform", platformIndex(), allocator);
-    doc.AddMember("opencl-loader",   StringRef(loader()), allocator);
 
     Value pools(kArrayType);
 
@@ -106,9 +95,9 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("retry-pause",   retryPause(), allocator);
 
     Value threads(kArrayType);
-    //for (const IThread *thread : m_threads) {
-    //    threads.PushBack(thread->toConfig(doc), allocator);
-    //}
+    for (const IThread *thread : m_threads) {
+        threads.PushBack(thread->toConfig(doc), allocator);
+    }
     doc.AddMember("threads", threads, allocator);
 
     doc.AddMember("user-agent", userAgent() ? Value(StringRef(userAgent())).Move() : Value(kNullType).Move(), allocator);
@@ -133,25 +122,16 @@ bool xmrig::Config::finalize()
         return false;
     }
 
-    return true;
-}
+    if (m_threads.empty() && !m_cudaCLI.setup(m_threads, algorithm().algo())) {
+        m_autoConf = true;
+        m_cudaCLI.autoConf(m_threads, algorithm().algo());
 
-
-bool xmrig::Config::parseBoolean(int key, bool enable)
-{
-    if (!CommonConfig::parseBoolean(key, enable)) {
-        return false;
+        for (IThread *thread : m_threads) {
+            static_cast<CudaThread *>(thread)->limit(m_maxGpuUsage, m_maxGpuThreads);
+        }
     }
 
-    switch (key) {
-    case OclCache: /* cache */
-        m_cache = enable;
-        break;
-
-    default:
-        break;
-    }
-
+    NvmlApi::bind(m_threads);
     return true;
 }
 
@@ -163,6 +143,30 @@ bool xmrig::Config::parseString(int key, const char *arg)
     }
 
     switch (key) {
+    case CudaBFactorKey: /* --cuda-bfactor */
+        m_cudaCLI.parseBFactor(arg);
+        break;
+
+    case CudaBSleepKey: /* --cuda-bsleep */
+        m_cudaCLI.parseBSleep(arg);
+        break;
+
+    case CudaDevicesKey: /* --cuda-devices */
+        m_cudaCLI.parseDevices(arg);
+        break;
+
+    case CudaLaunchKey: /* --cuda-launch */
+        m_cudaCLI.parseLaunch(arg);
+        break;
+
+    case CudaAffinityKey: /* --cuda-affinity */
+        m_cudaCLI.parseAffinity(arg);
+        break;
+
+    case CudaMaxThreadsKey:
+    case CudaMaxUsageKey:
+        return parseUint64(key, strtoul(arg, nullptr, 10));
+
     default:
         break;
     }
@@ -178,6 +182,22 @@ bool xmrig::Config::parseUint64(int key, uint64_t arg)
     }
 
     switch (key) {
+    case CudaMaxThreadsKey: /* --cuda-max-threads */
+        m_maxGpuThreads = static_cast<int>(arg);
+        break;
+
+    case CudaBFactorKey: /* --cuda-bfactor */
+        m_cudaCLI.addBFactor(static_cast<int>(arg));
+        break;
+
+    case CudaBSleepKey: /* --cuda-bsleep */
+        m_cudaCLI.addBSleep(static_cast<int>(arg));
+        break;
+
+    case CudaMaxUsageKey: /* --max-gpu-usage */
+        m_maxGpuUsage = static_cast<int>(arg);
+        break;
+
     default:
         break;
     }
@@ -196,7 +216,7 @@ void xmrig::Config::parseJSON(const rapidjson::Document &doc)
                 continue;
             }
 
-            if (value.HasMember("intensity")) {
+            if (value.HasMember("threads")) {
                 parseThread(value);
             }
         }
@@ -206,5 +226,11 @@ void xmrig::Config::parseJSON(const rapidjson::Document &doc)
 
 void xmrig::Config::parseThread(const rapidjson::Value &object)
 {
-    //m_threads.push_back(new OclThread(object));
+    CudaThread *thread = new CudaThread(object);
+    if (thread->init(algorithm().algo())) {
+        m_threads.push_back(thread);
+        return;
+    }
+
+    delete thread;
 }

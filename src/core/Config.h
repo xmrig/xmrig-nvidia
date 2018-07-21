@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CONFIG_H__
-#define __CONFIG_H__
+#ifndef XMRIG_CONFIG_H
+#define XMRIG_CONFIG_H
 
 
 #include <stdint.h>
@@ -31,6 +31,7 @@
 
 #include "common/config/CommonConfig.h"
 #include "common/xmrig.h"
+#include "nvidia/CudaCLI.h"
 #include "rapidjson/fwd.h"
 
 
@@ -46,24 +47,20 @@ class Config : public CommonConfig
 {
 public:
     Config();
-    ~Config();
 
     bool oclInit();
     bool reload(const char *json);
 
     void getJSON(rapidjson::Document &doc) const override;
 
-    inline bool isOclCache() const                       { return m_cache; }
     inline bool isShouldSave() const                     { return m_shouldSave; }
-    inline const char *loader() const                    { return m_loader.data(); }
     inline const std::vector<IThread *> &threads() const { return m_threads; }
-    inline int platformIndex() const                     { return m_platformIndex; }
+    inline int maxGpuThreads() const                     { return m_maxGpuThreads; }
 
     static Config *load(int argc, char **argv, IWatcherListener *listener);
 
 protected:
     bool finalize() override;
-    bool parseBoolean(int key, bool enable) override;
     bool parseString(int key, const char *arg) override;
     bool parseUint64(int key, uint64_t arg) override;
     void parseJSON(const rapidjson::Document &doc) override;
@@ -72,14 +69,14 @@ private:
     void parseThread(const rapidjson::Value &object);
 
     bool m_autoConf;
-    bool m_cache;
     bool m_shouldSave;
-    int m_platformIndex;
+    CudaCLI m_cudaCLI;
+    int m_maxGpuThreads;
+    int m_maxGpuUsage;
     std::vector<IThread *> m_threads;
-    xmrig::c_str m_loader;
 };
 
 
 } /* namespace xmrig */
 
-#endif /* __CONFIG_H__ */
+#endif /* XMRIG_CONFIG_H */

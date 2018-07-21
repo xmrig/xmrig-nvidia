@@ -34,6 +34,7 @@
 #include "Cpu.h"
 #include "Summary.h"
 #include "version.h"
+#include "workers/CudaThread.h"
 
 
 static void print_versions(xmrig::Config *config)
@@ -48,21 +49,10 @@ static void print_versions(xmrig::Config *config)
     snprintf(buf, 16, " MSVC/%d", MSVC_VERSION);
 #   endif
 
-#   if CL_VERSION_2_0
-    const char *ocl = "2.0";
-#   elif CL_VERSION_1_2
-    const char *ocl = "1.2";
-#   elif CL_VERSION_1_1
-    const char *ocl = "1.1";
-#   elif CL_VERSION_1_0
-    const char *ocl = "1.0";
-#   else
-    const char *ocl = "0.0";
-#   endif
-
-    Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") CYAN_BOLD("%s/%s") WHITE_BOLD(" libuv/%s OpenCL/%s%s")
-                                      : " * %-13s%s/%s libuv/%s OpenCL/%s%s",
-                   "VERSIONS", APP_NAME, APP_VERSION, uv_version_string(), ocl, buf);
+    const int cudaVersion = cuda_get_runtime_version();
+    Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") CYAN_BOLD("%s/%s") WHITE_BOLD(" libuv/%s CUDA/%d.%d%s")
+                                      : " * %-13s%s/%s libuv/%s CUDA/%d.%d%s",
+                   "VERSIONS", APP_NAME, APP_VERSION, uv_version_string(), cudaVersion / 1000, cudaVersion % 100, buf);
 }
 
 
@@ -114,6 +104,28 @@ static void print_pools(xmrig::Config *config)
 }
 
 
+static void print_gpu(xmrig::Config *config)
+{
+    for (const xmrig::IThread *t : config->threads()) {
+        auto thread = static_cast<const CudaThread *>(t);
+        Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("GPU #%-8zu") GREEN("%s @ %d/%d MHz") " \x1B[1;30m%dx%d %dx%d arch:%d%d SMX:%d"
+                                          : " * GPU #%-8zu%s @ %d/%d MHz %dx%d %dx%d arch:%d%d SMX:%d",
+            thread->index(),
+            thread->name(),
+            thread->clockRate() / 1000,
+            thread->memoryClockRate() / 1000,
+            thread->threads(),
+            thread->blocks(),
+            thread->bfactor(),
+            thread->bsleep(),
+            thread->arch()[0],
+            thread->arch()[1],
+            thread->smx()
+        );
+    }
+}
+
+
 #ifndef XMRIG_NO_API
 static void print_api(xmrig::Config *config)
 {
@@ -133,11 +145,12 @@ static void print_commands(xmrig::Config *config)
 {
     if (config->isColors()) {
         Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("COMMANDS     ") MAGENTA_BOLD("h") WHITE_BOLD("ashrate, ")
+                                                                     WHITE_BOLD("h") MAGENTA_BOLD("e") WHITE_BOLD("alth, ")
                                                                      MAGENTA_BOLD("p") WHITE_BOLD("ause, ")
                                                                      MAGENTA_BOLD("r") WHITE_BOLD("esume"));
     }
     else {
-        Log::i()->text(" * COMMANDS     'h' hashrate, 'p' pause, 'r' resume");
+        Log::i()->text(" * COMMANDS     'h' hashrate, 'e' health, 'p' pause, 'r' resume");
     }
 }
 
@@ -146,6 +159,7 @@ void Summary::print(xmrig::Controller *controller)
 {
     print_versions(controller->config());
     print_cpu(controller->config());
+    print_gpu(controller->config());
     print_algo(controller->config());
     print_pools(controller->config());
 

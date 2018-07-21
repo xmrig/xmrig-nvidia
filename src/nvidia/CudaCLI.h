@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CUDACLI_H__
-#define __CUDACLI_H__
+#ifndef XMRIG_CUDACLI_H
+#define XMRIG_CUDACLI_H
 
 
 #include <vector>
@@ -31,7 +31,10 @@
 #include "common/xmrig.h"
 
 
-class GpuThread;
+namespace xmrig {
+    class IThread;
+}
+
 
 
 class CudaCLI
@@ -39,8 +42,8 @@ class CudaCLI
 public:
     CudaCLI();
 
-    bool setup(std::vector<GpuThread*> &threads, xmrig::Algo algo);
-    void autoConf(std::vector<GpuThread*> &threads, xmrig::Algo algo);
+    bool setup(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo);
+    void autoConf(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo);
     void parseDevices(const char *arg);
     void parseLaunch(const char *arg);
 
@@ -85,4 +88,4 @@ private:
 };
 
 
-#endif /* __CUDACLI_H__ */
+#endif /* XMRIG_CUDACLI_H */

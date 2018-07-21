@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SUMMARY_H__
-#define __SUMMARY_H__
+#ifndef XMRIG_SUMMARY_H
+#define XMRIG_SUMMARY_H
 
 
 namespace xmrig {
@@ -37,4 +37,4 @@ public:
 };
 
 
-#endif /* __SUMMARY_H__ */
+#endif /* XMRIG_SUMMARY_H */

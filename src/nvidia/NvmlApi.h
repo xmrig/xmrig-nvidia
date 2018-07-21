@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NVML_H__
-#define __NVML_H__
+#ifndef XMRIG_NVML_H
+#define XMRIG_NVML_H
 
 
 #include <vector>
@@ -31,7 +31,9 @@
 #include "nvidia/Health.h"
 
 
-class GpuThread;
+namespace xmrig {
+    class IThread;
+}
 
 
 class NvmlApi
@@ -42,7 +44,7 @@ public:
 
     static bool health(int id, Health &health);
     static const char *version();
-    static void bind(const std::vector<GpuThread*> &threads);
+    static void bind(const std::vector<xmrig::IThread*> &threads);
 
     static inline bool isAvailable() { return m_available; }
 
@@ -51,4 +53,4 @@ private:
 };
 
 
-#endif /* __NVML_H__ */
+#endif /* XMRIG_NVML_H */

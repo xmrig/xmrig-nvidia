@@ -24,59 +24,88 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "workers/GpuThread.h"
+
+#include "rapidjson/document.h"
+#include "workers/CudaThread.h"
 
 
-GpuThread::GpuThread() :
-    m_affinity(-1),
+CudaThread::CudaThread() :
     m_bfactor(0),
     m_blocks(0),
     m_bsleep(0),
     m_clockRate(0),
-    m_index(0),
     m_memoryClockRate(0),
     m_nvmlId(-1),
+    m_smx(0),
+    m_threads(0),
+    m_affinity(-1),
+    m_index(0),
+    m_threadId(0),
     m_pciBusID(0),
     m_pciDeviceID(0),
-    m_pciDomainID(0),
-    m_smx(0),
-    m_threadId(0),
-    m_threads(0)
+    m_pciDomainID(0)
 {
     memset(m_arch, 0, sizeof(m_arch));
     memset(m_name, 0, sizeof(m_name));
 }
 
 
-GpuThread::GpuThread(const nvid_ctx &ctx, int affinity) :
-    m_affinity(affinity),
+CudaThread::CudaThread(const nvid_ctx &ctx, int64_t affinity) :
     m_bfactor(ctx.device_bfactor),
     m_blocks(ctx.device_blocks),
     m_bsleep(ctx.device_bsleep),
     m_clockRate(ctx.device_clockRate),
-    m_index(ctx.device_id),
     m_memoryClockRate(ctx.device_memoryClockRate),
     m_nvmlId(-1),
+    m_smx(ctx.device_mpcount),
+    m_threads(ctx.device_threads),
+    m_affinity(affinity),
+    m_index(static_cast<size_t>(ctx.device_id)),
+    m_threadId(0),
     m_pciBusID(ctx.device_pciBusID),
     m_pciDeviceID(ctx.device_pciDeviceID),
-    m_pciDomainID(ctx.device_pciDomainID),
-    m_smx(ctx.device_mpcount),
-    m_threadId(0),
-    m_threads(ctx.device_threads)
+    m_pciDomainID(ctx.device_pciDomainID)
 {
     memcpy(m_arch, ctx.device_arch, sizeof(m_arch));
     strncpy(m_name, ctx.device_name, sizeof(m_name) - 1);
 }
 
 
-GpuThread::~GpuThread()
+CudaThread::CudaThread(const rapidjson::Value &object) :
+    m_bfactor(0),
+    m_blocks(0),
+    m_bsleep(0),
+    m_clockRate(0),
+    m_memoryClockRate(0),
+    m_nvmlId(-1),
+    m_smx(0),
+    m_threads(0),
+    m_affinity(-1),
+    m_index(0),
+    m_threadId(0),
+    m_pciBusID(0),
+    m_pciDeviceID(0),
+    m_pciDomainID(0)
 {
+    memset(m_arch, 0, sizeof(m_arch));
+    memset(m_name, 0, sizeof(m_name));
+
+    setIndex(object["index"].GetUint());
+    setThreads(object["threads"].GetInt());
+    setBlocks(object["blocks"].GetInt());
+    setBFactor(object["bfactor"].GetInt());
+    setBSleep(object["bsleep"].GetInt());
+
+    const rapidjson::Value &affinity = object["affine_to_cpu"];
+    if (affinity.IsInt()) {
+        setAffinity(affinity.GetInt());
+    }
 }
 
 
-bool GpuThread::init(xmrig::Algo algorithm)
+bool CudaThread::init(xmrig::Algo algorithm)
 {
-    if (m_index < 0 || m_blocks < -1 || m_threads < -1 || m_bfactor < 0 || m_bsleep < 0) {
+    if (m_blocks < -1 || m_threads < -1 || m_bfactor < 0 || m_bsleep < 0) {
         return false;
     }
 
@@ -85,7 +114,7 @@ bool GpuThread::init(xmrig::Algo algorithm)
     }
 
     nvid_ctx ctx;
-    ctx.device_id      = m_index;
+    ctx.device_id      = static_cast<int>(m_index);
     ctx.device_blocks  = m_blocks;
     ctx.device_threads = m_threads;
     ctx.device_bfactor = m_bfactor;
@@ -113,7 +142,7 @@ bool GpuThread::init(xmrig::Algo algorithm)
 }
 
 
-void GpuThread::limit(int maxUsage, int maxThreads)
+void CudaThread::limit(int maxUsage, int maxThreads)
 {
     if (maxThreads > 0) {
         if (m_threads > maxThreads) {
@@ -124,6 +153,38 @@ void GpuThread::limit(int maxUsage, int maxThreads)
     }
 
     if (maxUsage < 100) {
-        m_threads = (int) m_threads / 100.0 * maxUsage;
+        m_threads = static_cast<int>(m_threads / 100.0 * maxUsage);
     }
+}
+
+
+#ifndef XMRIG_NO_API
+rapidjson::Value CudaThread::toAPI(rapidjson::Document &doc) const
+{
+    return toConfig(doc);
+}
+#endif
+
+
+rapidjson::Value CudaThread::toConfig(rapidjson::Document &doc) const
+{
+    using namespace rapidjson;
+
+    Value obj(kObjectType);
+    auto &allocator = doc.GetAllocator();
+
+    obj.AddMember("index",   static_cast<uint64_t>(index()), allocator);
+    obj.AddMember("threads", m_threads, allocator);
+    obj.AddMember("blocks",  m_blocks, allocator);
+    obj.AddMember("bfactor", m_bfactor, allocator);
+    obj.AddMember("bsleep",  m_bsleep, allocator);
+
+    if (affinity() >= 0) {
+        obj.AddMember("affine_to_cpu", affinity(), allocator);
+    }
+    else {
+        obj.AddMember("affine_to_cpu", false, allocator);
+    }
+
+    return obj;
 }
