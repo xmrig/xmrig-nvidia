@@ -107,15 +107,18 @@ void Workers::printHashrate(bool detail)
         char num2[8] = { 0 };
         char num3[8] = { 0 };
 
-        Log::i()->text("%s| THREAD | GPU | 10s H/s | 60s H/s | 15m H/s |", isColors ? "\x1B[1;37m" : "");
+        Log::i()->text("%s| THREAD | GPU | 10s H/s | 60s H/s | 15m H/s | NAME", isColors ? "\x1B[1;37m" : "");
 
         size_t i = 0;
-        for (const xmrig::IThread *thread : m_controller->config()->threads()) {
-             Log::i()->text("| %6zu | %3zu | %7s | %7s | %7s |",
+        for (const xmrig::IThread *t : m_controller->config()->threads()) {
+            auto thread = static_cast<const CudaThread *>(t);
+             Log::i()->text("| %6zu | %3zu | %7s | %7s | %7s | %s%s",
                             i, thread->index(),
                             Hashrate::format(m_hashrate->calc(i, Hashrate::ShortInterval), num1, sizeof num1),
                             Hashrate::format(m_hashrate->calc(i, Hashrate::MediumInterval), num2, sizeof num2),
-                            Hashrate::format(m_hashrate->calc(i, Hashrate::LargeInterval), num3, sizeof num3)
+                            Hashrate::format(m_hashrate->calc(i, Hashrate::LargeInterval), num3, sizeof num3),
+                            isColors ? "\x1B[1;30m" : "",
+                            thread->name()
                             );
 
              i++;
@@ -268,21 +271,8 @@ void Workers::submit(const Job &result)
 
 
 #ifndef XMRIG_NO_API
-void Workers::threadsSummary(rapidjson::Document &doc)
+void Workers::threadsSummary(rapidjson::Document &)
 {
-//    uv_mutex_lock(&m_mutex);
-//    const uint64_t pages[2] = { m_status.hugePages, m_status.pages };
-//    const uint64_t memory   = m_status.ways * xmrig::cn_select_memory(m_status.algo);
-//    uv_mutex_unlock(&m_mutex);
-
-//    auto &allocator = doc.GetAllocator();
-
-//    rapidjson::Value hugepages(rapidjson::kArrayType);
-//    hugepages.PushBack(pages[0], allocator);
-//    hugepages.PushBack(pages[1], allocator);
-
-//    doc.AddMember("hugepages", hugepages, allocator);
-//    doc.AddMember("memory", memory, allocator);
 }
 #endif
 
@@ -298,7 +288,7 @@ void Workers::onReady(void *arg)
 }
 
 
-void Workers::onResult(uv_async_t *handle)
+void Workers::onResult(uv_async_t *)
 {
     JobBaton *baton = new JobBaton();
 
@@ -331,7 +321,7 @@ void Workers::onResult(uv_async_t *handle)
 
             CryptoNight::freeCtx(ctx);
         },
-        [](uv_work_t* req, int status) {
+        [](uv_work_t* req, int) {
             JobBaton *baton = static_cast<JobBaton*>(req->data);
 
             for (const JobResult &result : baton->results) {

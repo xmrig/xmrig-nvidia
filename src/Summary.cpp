@@ -108,19 +108,22 @@ static void print_gpu(xmrig::Config *config)
 {
     for (const xmrig::IThread *t : config->threads()) {
         auto thread = static_cast<const CudaThread *>(t);
-        Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("GPU #%-8zu") GREEN("%s @ %d/%d MHz") " \x1B[1;30m%dx%d %dx%d arch:%d%d SMX:%d"
-                                          : " * GPU #%-8zu%s @ %d/%d MHz %dx%d %dx%d arch:%d%d SMX:%d",
-            thread->index(),
-            thread->name(),
-            thread->clockRate() / 1000,
-            thread->memoryClockRate() / 1000,
-            thread->threads(),
-            thread->blocks(),
-            thread->bfactor(),
-            thread->bsleep(),
-            thread->arch()[0],
-            thread->arch()[1],
-            thread->smx()
+        Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("GPU #%-8zu") YELLOW("PCI:%04x:%02x:%02x") GREEN(" %s @ %d/%d MHz") " \x1B[1;30m%dx%d %dx%d arch:%d%d SMX:%d"
+                                          : " * GPU #%-8zuPCI:%04x:%02x:%02x %s @ %d/%d MHz %dx%d %dx%d arch:%d%d SMX:%d",
+                       thread->index(),
+                       thread->pciDomainID(),
+                       thread->pciBusID(),
+                       thread->pciDeviceID(),
+                       thread->name(),
+                       thread->clockRate() / 1000,
+                       thread->memoryClockRate() / 1000,
+                       thread->threads(),
+                       thread->blocks(),
+                       thread->bfactor(),
+                       thread->bsleep(),
+                       thread->arch()[0],
+                       thread->arch()[1],
+                       thread->smx()
         );
     }
 }
