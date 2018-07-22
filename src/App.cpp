@@ -103,6 +103,11 @@ int App::exec()
 
     Summary::print(m_controller);
 
+    if (m_controller->config()->threads().empty()) {
+        LOG_ERR("No CUDA device found!");
+        return 1;
+    }
+
     if (m_controller->config()->isDryRun()) {
         LOG_NOTICE("OK");
         return 0;
