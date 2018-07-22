@@ -142,7 +142,7 @@ void Workers::printHealth()
 
         const uint32_t temp = health.temperature;
 
-        if (health.clock && health.power) {
+        if (health.clock && health.clock) {
             if (m_controller->config()->isColors()) {
                 LOG_INFO("\x1B[00;35mGPU #%d: \x1B[01m%u\x1B[00;35m/\x1B[01m%u MHz\x1B[00;35m \x1B[01m%uW\x1B[00;35m %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
                     thread->index(), health.clock, health.memClock, health.power / 1000, (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
