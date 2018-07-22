@@ -77,18 +77,18 @@ Options:\n\
   -l, --log-file=FILE       log all output to a file\n"
 # ifdef HAVE_SYSLOG_H
 "\
-  -S, --syslog             use system log for output messages\n"
+  -S, --syslog              use system log for output messages\n"
 # endif
 "\
-      --nicehash           enable nicehash/xmrig-proxy support\n\
-      --print-time=N       print hashrate report every N seconds\n\
-      --api-port=N         port for the miner API\n\
-      --api-access-token=T access token for API\n\
-      --api-worker-id=ID   custom worker-id for API\n\
-      --api-ipv6           enable IPv6 support for API\n\
-      --api-no-restricted  enable full remote access (only if API token set)\n\
-  -h, --help               display this help and exit\n\
-  -V, --version            output version information and exit\n\
+      --nicehash            enable nicehash/xmrig-proxy support\n\
+      --print-time=N        print hashrate report every N seconds\n\
+      --api-port=N          port for the miner API\n\
+      --api-access-token=T  access token for API\n\
+      --api-worker-id=ID    custom worker-id for API\n\
+      --api-ipv6            enable IPv6 support for API\n\
+      --api-no-restricted   enable full remote access (only if API token set)\n\
+  -h, --help                display this help and exit\n\
+  -V, --version             output version information and exit\n\
 ";
 
 

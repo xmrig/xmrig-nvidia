@@ -65,17 +65,20 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("algo", StringRef(algorithm().name()), allocator);
 
     Value api(kObjectType);
-    api.AddMember("port",         apiPort(), allocator);
-    api.AddMember("access-token", apiToken() ? Value(StringRef(apiToken())).Move() : Value(kNullType).Move(), allocator);
-    api.AddMember("worker-id",    apiWorkerId() ? Value(StringRef(apiWorkerId())).Move() : Value(kNullType).Move(), allocator);
-    api.AddMember("ipv6",         isApiIPv6(), allocator);
-    api.AddMember("restricted",   isApiRestricted(), allocator);
-    doc.AddMember("api",          api, allocator);
+    api.AddMember("port",             apiPort(), allocator);
+    api.AddMember("access-token",     apiToken() ? Value(StringRef(apiToken())).Move() : Value(kNullType).Move(), allocator);
+    api.AddMember("worker-id",        apiWorkerId() ? Value(StringRef(apiWorkerId())).Move() : Value(kNullType).Move(), allocator);
+    api.AddMember("ipv6",             isApiIPv6(), allocator);
+    api.AddMember("restricted",       isApiRestricted(), allocator);
+    doc.AddMember("api",              api, allocator);
 
-    doc.AddMember("background",   isBackground(), allocator);
-    doc.AddMember("colors",       isColors(), allocator);
-    doc.AddMember("donate-level", donateLevel(), allocator);
-    doc.AddMember("log-file",     logFile() ? Value(StringRef(logFile())).Move() : Value(kNullType).Move(), allocator);
+    doc.AddMember("background",       isBackground(), allocator);
+    doc.AddMember("colors",           isColors(), allocator);
+    doc.AddMember("cuda-bfactor",     m_cudaCLI.bfactor(), allocator);
+    doc.AddMember("cuda-bsleep",      m_cudaCLI.bsleep(), allocator);
+    doc.AddMember("cuda-max-threads", m_maxGpuThreads, allocator);
+    doc.AddMember("donate-level",     donateLevel(), allocator);
+    doc.AddMember("log-file",         logFile() ? Value(StringRef(logFile())).Move() : Value(kNullType).Move(), allocator);
 
     Value pools(kArrayType);
 
