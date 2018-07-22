@@ -43,7 +43,9 @@ CudaThread::CudaThread() :
     m_threadId(0),
     m_pciBusID(0),
     m_pciDeviceID(0),
-    m_pciDomainID(0)
+    m_pciDomainID(0),
+    m_syncMode(3),
+    m_algorithm(xmrig::INVALID_ALGO)
 {
     memset(m_arch, 0, sizeof(m_arch));
     memset(m_name, 0, sizeof(m_name));
@@ -65,6 +67,7 @@ CudaThread::CudaThread(const nvid_ctx &ctx, int64_t affinity, xmrig::Algo algori
     m_pciBusID(ctx.device_pciBusID),
     m_pciDeviceID(ctx.device_pciDeviceID),
     m_pciDomainID(ctx.device_pciDomainID),
+    m_syncMode(ctx.syncMode),
     m_algorithm(algorithm)
 {
     memcpy(m_arch, ctx.device_arch, sizeof(m_arch));
@@ -87,6 +90,7 @@ CudaThread::CudaThread(const rapidjson::Value &object) :
     m_pciBusID(0),
     m_pciDeviceID(0),
     m_pciDomainID(0),
+    m_syncMode(3),
     m_algorithm(xmrig::INVALID_ALGO)
 {
     memset(m_arch, 0, sizeof(m_arch));
@@ -97,6 +101,7 @@ CudaThread::CudaThread(const rapidjson::Value &object) :
     setBlocks(object["blocks"].GetInt());
     setBFactor(object["bfactor"].GetInt());
     setBSleep(object["bsleep"].GetInt());
+    setSyncMode(object["sync_mode"].GetUint());
 
     const rapidjson::Value &affinity = object["affine_to_cpu"];
     if (affinity.IsInt()) {
@@ -121,7 +126,7 @@ bool CudaThread::init(xmrig::Algo algorithm)
     ctx.device_threads = m_threads;
     ctx.device_bfactor = m_bfactor;
     ctx.device_bsleep  = m_bsleep;
-    ctx.syncMode       = 3;
+    ctx.syncMode       = m_syncMode;
 
     if (cuda_get_deviceinfo(&ctx, algorithm) != 0) {
         return false;
@@ -176,11 +181,12 @@ rapidjson::Value CudaThread::toConfig(rapidjson::Document &doc) const
     Value obj(kObjectType);
     auto &allocator = doc.GetAllocator();
 
-    obj.AddMember("index",   static_cast<uint64_t>(index()), allocator);
-    obj.AddMember("threads", m_threads, allocator);
-    obj.AddMember("blocks",  m_blocks, allocator);
-    obj.AddMember("bfactor", m_bfactor, allocator);
-    obj.AddMember("bsleep",  m_bsleep, allocator);
+    obj.AddMember("index",     static_cast<uint64_t>(index()), allocator);
+    obj.AddMember("threads",   m_threads, allocator);
+    obj.AddMember("blocks",    m_blocks, allocator);
+    obj.AddMember("bfactor",   m_bfactor, allocator);
+    obj.AddMember("bsleep",    m_bsleep, allocator);
+    obj.AddMember("sync_mode", m_syncMode, allocator);
 
     if (affinity() >= 0) {
         obj.AddMember("affine_to_cpu", affinity(), allocator);

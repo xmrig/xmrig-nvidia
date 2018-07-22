@@ -52,7 +52,7 @@ CudaWorker::CudaWorker(Handle *handle) :
     m_ctx.device_threads = thread->threads();
     m_ctx.device_bfactor = thread->bfactor();
     m_ctx.device_bsleep  = thread->bsleep();
-    m_ctx.syncMode       = 3;
+    m_ctx.syncMode       = thread->syncMode();
 
     if (thread->affinity() >= 0) {
         Platform::setThreadAffinity(static_cast<uint64_t>(thread->affinity()));

@@ -46,15 +46,16 @@ public:
     inline int bfactor() const            { return m_bfactor; }
     inline int blocks() const             { return m_blocks; }
     inline int bsleep() const             { return m_bsleep; }
-    inline int clockRate() const          { return m_clockRate; } 
+    inline int clockRate() const          { return m_clockRate; }
     inline int memoryClockRate() const    { return m_memoryClockRate; }
     inline int nvmlId() const             { return m_nvmlId; }
+    inline int smx() const                { return m_smx; }
+    inline int threads() const            { return m_threads; }
+    inline size_t threadId() const        { return m_threadId; }
     inline uint32_t pciBusID() const      { return m_pciBusID; }
     inline uint32_t pciDeviceID() const   { return m_pciDeviceID; }
     inline uint32_t pciDomainID() const   { return m_pciDomainID; }
-    inline int smx() const                { return m_smx; }
-    inline size_t threadId() const        { return m_threadId; }
-    inline int threads() const            { return m_threads; }
+    inline uint32_t syncMode() const      { return m_syncMode; }
 
     inline xmrig::Algo algorithm() const override { return m_algorithm; }
     inline int priority() const override          { return -1; }
@@ -63,14 +64,15 @@ public:
     inline size_t index() const override          { return m_index; }
     inline Type type() const override             { return CUDA; }
 
-    inline void setAffinity(int affinity)    { m_affinity = affinity; }
-    inline void setBFactor(int bfactor)      { if (bfactor >= 0 && bfactor <= 12) { m_bfactor = bfactor; } }
-    inline void setBlocks(int blocks)        { m_blocks = blocks; }
-    inline void setBSleep(int bsleep)        { m_bsleep = bsleep; }
-    inline void setIndex(size_t index)       { m_index = index; }
-    inline void setNvmlId(int id)            { m_nvmlId = id; }
-    inline void setThreadId(size_t threadId) { m_threadId = threadId; }
-    inline void setThreads(int threads)      { m_threads = threads; }
+    inline void setAffinity(int affinity)      { m_affinity = affinity; }
+    inline void setBFactor(int bfactor)        { if (bfactor >= 0 && bfactor <= 12) { m_bfactor = bfactor; } }
+    inline void setBlocks(int blocks)          { m_blocks = blocks; }
+    inline void setBSleep(int bsleep)          { m_bsleep = bsleep; }
+    inline void setIndex(size_t index)         { m_index = index; }
+    inline void setNvmlId(int id)              { m_nvmlId = id; }
+    inline void setThreadId(size_t threadId)   { m_threadId = threadId; }
+    inline void setThreads(int threads)        { m_threads = threads; }
+    inline void setSyncMode(uint32_t syncMode) { m_syncMode = syncMode > 3 ? 3 : syncMode; }
 
 protected:
 #   ifndef XMRIG_NO_API
@@ -96,6 +98,7 @@ private:
     uint32_t m_pciBusID;
     uint32_t m_pciDeviceID;
     uint32_t m_pciDomainID;
+    uint32_t m_syncMode;
     xmrig::Algo m_algorithm;
 };
 

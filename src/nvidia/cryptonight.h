@@ -45,7 +45,7 @@ typedef struct {
     uint32_t device_pciBusID;
     uint32_t device_pciDeviceID;
     uint32_t device_pciDomainID;
-    int syncMode;
+    uint32_t syncMode;
 
     uint32_t *d_input;
     uint32_t inputlen;
