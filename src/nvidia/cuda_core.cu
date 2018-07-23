@@ -264,7 +264,7 @@ __global__ void cryptonight_core_gpu_phase2(int threads, int bfactor, int partid
 
     a = (d_ctx_a + thread * 4)[sub];
     idx0 = shuffle<4>(sPtr,sub, a, 0);
-    if(ALGO == xmrig::CRYPTONIGHT_HEAVY) {
+    if (ALGO == xmrig::CRYPTONIGHT_HEAVY) {
         if (partidx != 0) {
             // state is stored after all ctx_b states
             idx0 = *(d_ctx_b + threads * 4 + thread);
@@ -277,17 +277,44 @@ __global__ void cryptonight_core_gpu_phase2(int threads, int bfactor, int partid
     for (i = start; i < end; ++i) {
         #pragma unroll 2
         for (int x = 0; x < 2; ++x) {
-            j = ( ( idx0 & MASK ) >> 2 ) + sub;
+            j = ((idx0 & MASK) >> 2) + sub;
 
-            const uint32_t x_0 = loadGlobal32<uint32_t>( long_state + j );
-            const uint32_t x_1 = shuffle<4>(sPtr,sub, x_0, sub + 1);
-            const uint32_t x_2 = shuffle<4>(sPtr,sub, x_0, sub + 2);
-            const uint32_t x_3 = shuffle<4>(sPtr,sub, x_0, sub + 3);
-            d[x] = a ^
-                t_fn0(x_0 & 0xff) ^
-                t_fn1((x_1 >> 8) & 0xff) ^
-                t_fn2((x_2 >> 16) & 0xff) ^
-                t_fn3((x_3 >> 24));
+            if (VARIANT == xmrig::VARIANT_TUBE) {
+                uint32_t k[4];
+                k[0] = ~loadGlobal32<uint32_t>(long_state + j);
+                k[1] = shuffle<4>(sPtr,sub, k[0], sub + 1);
+                k[2] = shuffle<4>(sPtr,sub, k[0], sub + 2);
+                k[3] = shuffle<4>(sPtr,sub, k[0], sub + 3);
+
+                #pragma unroll 4
+                for (int i = 0; i < 4; ++i) {
+                    // only calculate the key if all data are up to date
+                    if (i == sub) {
+                        d[x] = a ^
+                            t_fn0(k[0] & 0xff) ^
+                            t_fn1((k[1] >> 8) & 0xff) ^
+                            t_fn2((k[2] >> 16) & 0xff) ^
+                            t_fn3((k[3] >> 24));
+                    }
+                    // the last shuffle is not needed
+                    if (i != 3) {
+                        /* avoid negative number for modulo
+                         * load valid key (k) depending on the round
+                         */
+                        k[(4 - sub + i) % 4] = shuffle<4>(sPtr,sub, k[0] ^ d[x], i);
+                    }
+                }
+            } else {
+                const uint32_t x_0 = loadGlobal32<uint32_t>(long_state + j);
+                const uint32_t x_1 = shuffle<4>(sPtr,sub, x_0, sub + 1);
+                const uint32_t x_2 = shuffle<4>(sPtr,sub, x_0, sub + 2);
+                const uint32_t x_3 = shuffle<4>(sPtr,sub, x_0, sub + 3);
+                d[x] = a ^
+                    t_fn0(x_0 & 0xff) ^
+                    t_fn1((x_1 >> 8) & 0xff) ^
+                    t_fn2((x_2 >> 16) & 0xff) ^
+                    t_fn3((x_3 >> 24));
+            }
 
             //XOR_BLOCKS_DST(c, b, &long_state[j]);
             t1[0] = shuffle<4>(sPtr,sub, d[x], 0);
