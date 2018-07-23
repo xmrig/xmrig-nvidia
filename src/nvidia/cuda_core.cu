@@ -208,8 +208,8 @@ __forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_
 #   else
     unusedVar( ptr );
     unusedVar( sub );
-#   if(__CUDACC_VER_MAJOR__ >= 9)
-    return __shfl_sync(0xFFFFFFFF, val, src, group_n );
+#   if (__CUDACC_VER_MAJOR__ >= 9)
+    return __shfl_sync(__activemask(), val, src, group_n);
 #   else
     return __shfl( val, src, group_n );
 #   endif
@@ -295,7 +295,7 @@ __global__ void cryptonight_core_gpu_phase2(int threads, int bfactor, int partid
             const uint32_t z = d[0] ^ d[1];
             if (IS_MONERO) {
                 const uint32_t table = 0x75310U;
-                const uint32_t index = ((z >> 26) & 12) | ((z >> 23) & 2);
+                const uint32_t index = ((z >> (VARIANT == xmrig::VARIANT_XTL ? 27 : 26)) & 12) | ((z >> 23) & 2);
                 const uint32_t fork_7 = z ^ ((table >> index) & 0x30U) << 24;
                 storeGlobal32(long_state + j, sub == 2 ? fork_7 : z);
             }
@@ -324,7 +324,13 @@ __global__ void cryptonight_core_gpu_phase2(int threads, int bfactor, int partid
 
             if (IS_MONERO) {
                 const uint32_t tweaked_res = tweak1_2[sub & 1] ^ res;
-                const uint32_t long_state_update = sub2 ? tweaked_res : res;
+                uint32_t long_state_update = sub2 ? tweaked_res : res;
+
+                if (VARIANT == xmrig::VARIANT_TUBE || VARIANT == xmrig::VARIANT_RTO) {
+                    uint32_t value = shuffle<4>(sPtr,sub, long_state_update, sub & 1) ^ long_state_update;
+                    long_state_update = sub >= 2 ? value : long_state_update;
+                }
+
                 storeGlobal32(long_state + j, long_state_update);
             }
             else {
@@ -340,6 +346,10 @@ __global__ void cryptonight_core_gpu_phase2(int threads, int bfactor, int partid
 
                 if (sub & 1) {
                     storeGlobal64<uint64_t>( ( (uint64_t *) long_state ) + (( idx0 & MASK ) >> 3), n ^ q );
+                }
+
+                if (VARIANT == xmrig::VARIANT_XHV) {
+                    d = ~d;
                 }
 
                 idx0 = d ^ q;
