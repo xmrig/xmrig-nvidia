@@ -1,3 +1,13 @@
+# v2.7.0-beta
+- Algorithm variant `cryptonight-lite/ipbc` replaced to `cryptonight-heavy/tube` for **Bittube (TUBE)** coin.
+- Added `cryptonight-heavy/xhv` variant for **Haven Protocol (XHV)** coin.
+- Added `cryptonight/rto` (cryptonight variant 1 with IPBC/TUBE mod) variant for **Arto (RTO)** coin.
+- Added `cryptonight/xao` (original cryptonight with bigger iteration count) variant for **Alloy (XAO)** coin.
+- Added `cryptonight/xtl` variant for **Stellite (XTL)** coin.
+- Added `cryptonight/msr` also known as `cryptonight-fast` for **Masari (MSR)** coin.
+- Added new detailed hashrate report.
+- Added command line option `--dry-run`.
+
 # v2.6.1
 - Fixed critical bug, in some cases miner was can't recovery connection and switch to failover pool, version 2.5.2 and v2.6.0-beta1 affected.
 - [#499](https://github.com/xmrig/xmrig/issues/499) IPv6 support disabled for internal HTTP API.
