@@ -1,27 +1,35 @@
 {
     "algo": "cryptonight",
-    "background": false,
-    "colors": true,
-    "donate-level": 5,
-    "log-file": null,
-    "print-time": 60,
-    "retries": 5,
-    "retry-pause": 5,
-    "syslog": false,
-    "threads": null,
-    "pools": [
-        {
-            "url": "failover.xmrig.com:443",
-            "user": "YOUR_WALLET",
-            "pass": "x",
-            "keepalive": true,
-            "nicehash": false,
-            "variant": -1
-        }
-    ],
     "api": {
         "port": 0,
         "access-token": null,
-        "worker-id": null
-    }
+        "worker-id": null,
+        "ipv6": false,
+        "restricted": true
+    },
+    "background": false,
+    "colors": true,
+    "cuda-bfactor": null,
+    "cuda-bsleep": null,
+    "cuda-max-threads": 64,
+    "donate-level": 5,
+    "log-file": null,
+    "pools": [
+        {
+            "url": "proxy.fee.xmrig.com:9999",
+            "user": "YOUR_WALLET",
+            "pass": "x",
+            "rig-id": null,
+            "nicehash": false,
+            "keepalive": true,
+            "variant": 1
+        }
+    ],
+    "print-time": 60,
+    "retries": 5,
+    "retry-pause": 5,
+    "threads": null,
+    "user-agent": null,
+    "syslog": false,
+    "watch": false
 }

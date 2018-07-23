@@ -131,6 +131,7 @@ endif()
 
 #find_library(NVML_LIBRARY NAMES ${NVML_NAMES} PATHS ${NVML_LIB_PATHS} )
 
+find_path(NVML_INCLUDE_DIR nvml.h PATHS ${NVML_INC_PATHS} NO_DEFAULT_PATH)
 find_path(NVML_INCLUDE_DIR nvml.h PATHS ${NVML_INC_PATHS})
 
 # handle the QUIETLY and REQUIRED arguments and set NVML_FOUND to TRUE if

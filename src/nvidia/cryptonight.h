@@ -28,7 +28,7 @@
 #include <stdint.h>
 
 
-#include "xmrig.h"
+#include "../common/xmrig.h"
 
 
 typedef struct {
@@ -42,10 +42,10 @@ typedef struct {
     int device_bsleep;
     int device_clockRate;
     int device_memoryClockRate;
-    int device_pciBusID;
-    int device_pciDeviceID;
-    int device_pciDomainID;
-    int syncMode;
+    uint32_t device_pciBusID;
+    uint32_t device_pciDeviceID;
+    uint32_t device_pciDomainID;
+    uint32_t syncMode;
 
     uint32_t *d_input;
     uint32_t inputlen;
@@ -67,7 +67,7 @@ int cuda_get_devicecount();
 int cuda_get_runtime_version();
 int cuda_get_deviceinfo(nvid_ctx *ctx, xmrig::Algo algo);
 int cryptonight_gpu_init(nvid_ctx *ctx, xmrig::Algo algo);
-void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, uint32_t len);
+void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, size_t len);
 void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrig::Algo algo);
-void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, int variant, uint32_t startNonce);
+void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant variant, uint32_t startNonce);
 void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce, xmrig::Algo algo);

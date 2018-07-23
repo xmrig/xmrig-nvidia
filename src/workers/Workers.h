@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __WORKERS_H__
-#define __WORKERS_H__
+#ifndef XMRIG_WORKERS_H
+#define XMRIG_WORKERS_H
 
 
 #include <atomic>
@@ -30,45 +30,60 @@
 #include <uv.h>
 #include <vector>
 
-#include "net/Job.h"
+#include "common/net/Job.h"
 #include "net/JobResult.h"
+#include "rapidjson/fwd.h"
 
 
 class Handle;
 class Hashrate;
 class IJobResultListener;
+class IWorker;
+
+
+namespace xmrig {
+    class Controller;
+}
 
 
 class Workers
 {
 public:
     static Job job();
+    static size_t hugePages();
+    static size_t threads();
     static void printHashrate(bool detail);
     static void printHealth();
     static void setEnabled(bool enabled);
     static void setJob(const Job &job, bool donate);
-    static void start(const std::vector<GpuThread*> &threads);
+    static bool start(xmrig::Controller *controller);
     static void stop();
     static void submit(const Job &result);
 
     static inline bool isEnabled()                               { return m_enabled; }
     static inline bool isOutdated(uint64_t sequence)             { return m_sequence.load(std::memory_order_relaxed) != sequence; }
     static inline bool isPaused()                                { return m_paused.load(std::memory_order_relaxed) == 1; }
+    static inline Hashrate *hashrate()                           { return m_hashrate; }
     static inline uint64_t sequence()                            { return m_sequence.load(std::memory_order_relaxed); }
     static inline void pause()                                   { m_active = false; m_paused = 1; m_sequence++; }
     static inline void setListener(IJobResultListener *listener) { m_listener = listener; }
 
+#   ifndef XMRIG_NO_API
+    static void threadsSummary(rapidjson::Document &doc);
+#   endif
+
 private:
     static void onReady(void *arg);
     static void onResult(uv_async_t *handle);
-    static void onReport(uv_timer_t *handle);
     static void onTick(uv_timer_t *handle);
+    static void start(IWorker *worker);
 
     static bool m_active;
     static bool m_enabled;
     static Hashrate *m_hashrate;
     static IJobResultListener *m_listener;
     static Job m_job;
+    static size_t m_threadsCount;
     static std::atomic<int> m_paused;
     static std::atomic<uint64_t> m_sequence;
     static std::list<Job> m_queue;
@@ -77,9 +92,9 @@ private:
     static uv_async_t m_async;
     static uv_mutex_t m_mutex;
     static uv_rwlock_t m_rwlock;
-    static uv_timer_t m_reportTimer;
     static uv_timer_t m_timer;
+    static xmrig::Controller *m_controller;
 };
 
 
-#endif /* __WORKERS_H__ */
+#endif /* XMRIG_WORKERS_H */

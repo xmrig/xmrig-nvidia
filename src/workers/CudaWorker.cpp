@@ -26,34 +26,36 @@
 #include <thread>
 
 
+#include "common/log/Log.h"
+#include "common/Platform.h"
 #include "crypto/CryptoNight.h"
-#include "Platform.h"
+#include "workers/CudaThread.h"
 #include "workers/CudaWorker.h"
-#include "workers/GpuThread.h"
 #include "workers/Handle.h"
 #include "workers/Workers.h"
 
 
 CudaWorker::CudaWorker(Handle *handle) :
     m_id(handle->threadId()),
-    m_threads(handle->threads()),
-    m_algorithm(handle->algorithm()),
+    m_threads(handle->totalWays()),
+    m_algorithm(handle->config()->algorithm()),
     m_hashCount(0),
     m_timestamp(0),
     m_count(0),
-    m_sequence(0)
+    m_sequence(0),
+    m_blob()
 {
-    const GpuThread *thread = handle->gpuThread();
+    const CudaThread *thread = static_cast<CudaThread *>(handle->config());
 
-    m_ctx.device_id      = thread->index();
+    m_ctx.device_id      = static_cast<int>(thread->index());
     m_ctx.device_blocks  = thread->blocks();
     m_ctx.device_threads = thread->threads();
     m_ctx.device_bfactor = thread->bfactor();
     m_ctx.device_bsleep  = thread->bsleep();
-    m_ctx.syncMode       = 3;
+    m_ctx.syncMode       = thread->syncMode();
 
     if (thread->affinity() >= 0) {
-        Platform::setThreadAffinity(thread->affinity());
+        Platform::setThreadAffinity(static_cast<uint64_t>(thread->affinity()));
     }
 }
 
@@ -61,7 +63,7 @@ CudaWorker::CudaWorker(Handle *handle) :
 void CudaWorker::start()
 {
     if (cuda_get_deviceinfo(&m_ctx, m_algorithm) != 0 || cryptonight_gpu_init(&m_ctx, m_algorithm) != 1) {
-        printf("Setup failed for GPU %d. Exitting.\n", (int) m_id);
+        LOG_ERR("Setup failed for GPU %zu. Exitting.", m_id);
         return;
     }
 
@@ -79,7 +81,7 @@ void CudaWorker::start()
             consumeJob();
         }
 
-        cryptonight_extra_cpu_set_data(&m_ctx, m_job.blob(), (uint32_t) m_job.size());
+        cryptonight_extra_cpu_set_data(&m_ctx, m_blob, m_job.size());
 
         while (!Workers::isOutdated(m_sequence)) {
             uint32_t foundNonce[10];
@@ -129,6 +131,7 @@ void CudaWorker::consumeJob()
     save(job);
 
     if (resume(job)) {
+        setJob();
         return;
     }
 
@@ -141,6 +144,8 @@ void CudaWorker::consumeJob()
     else {
         m_nonce = 0xffffffffU / m_threads * m_id;
     }
+
+    setJob();
 }
 
 
@@ -150,6 +155,12 @@ void CudaWorker::save(const Job &job)
         m_pausedJob   = m_job;
         m_pausedNonce = m_nonce;
     }
+}
+
+
+void CudaWorker::setJob()
+{
+    memcpy(m_blob, m_job.blob(), sizeof(m_blob));
 }
 
 

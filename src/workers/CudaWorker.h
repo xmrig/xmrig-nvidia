@@ -22,15 +22,15 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CUDAWORKER_H__
-#define __CUDAWORKER_H__
+#ifndef XMRIG_CUDAWORKER_H
+#define XMRIG_CUDAWORKER_H
 
 
 #include <atomic>
 
 
+#include "common/net/Job.h"
 #include "interfaces/IWorker.h"
-#include "net/Job.h"
 #include "net/JobResult.h"
 #include "nvidia/cryptonight.h"
 
@@ -46,6 +46,8 @@ public:
 protected:
     inline uint64_t hashCount() const override { return m_hashCount.load(std::memory_order_relaxed); }
     inline uint64_t timestamp() const override { return m_timestamp.load(std::memory_order_relaxed); }
+    inline bool selfTest() override            { return true; }
+    inline size_t id() const override          { return m_id; }
 
     void start() override;
 
@@ -53,10 +55,11 @@ private:
     bool resume(const Job &job);
     void consumeJob();
     void save(const Job &job);
+    void setJob();
     void storeStats();
 
-    const int m_id;
-    const int m_threads;
+    const size_t m_id;
+    const size_t m_threads;
     const xmrig::Algo m_algorithm;
     Job m_job;
     Job m_pausedJob;
@@ -67,7 +70,8 @@ private:
     uint32_t m_pausedNonce;
     uint64_t m_count;
     uint64_t m_sequence;
+    uint8_t m_blob[96]; // Max blob size is 84 (75 fixed + 9 variable), aligned to 96. https://github.com/xmrig/xmrig/issues/1 Thanks fireice-uk
 };
 
 
-#endif /* __CUDAWORKER_H__ */
+#endif /* XMRIG_CUDAWORKER_H */

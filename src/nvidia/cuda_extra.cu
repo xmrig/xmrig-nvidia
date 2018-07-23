@@ -59,7 +59,7 @@ typedef unsigned long long DataLength;
 #include "cuda_skein.hpp"
 #include "cuda_device.hpp"
 #include "cuda_aes.hpp"
-#include "xmrig.h"
+#include "common/xmrig.h"
 #include "crypto/CryptoNight_constants.h"
 
 __constant__ uint8_t d_sub_byte[16][16] ={
@@ -251,28 +251,28 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
 
     // Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
     // and expect an accurate result for target > 32-bit without implementing carries
+    if (hash[3] < target) {
+        uint32_t idx = atomicInc(d_res_count, 0xFFFFFFFF);
 
-    if ( hash[3] < target )
-    {
-        uint32_t idx = atomicInc( d_res_count, 0xFFFFFFFF );
-
-        if(idx < 10)
+        if (idx < 10) {
             d_res_nonce[idx] = thread;
+        }
     }
 }
 
-void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, uint32_t len)
+
+void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, size_t len)
 {
-    ctx->inputlen = len;
+    ctx->inputlen = static_cast<unsigned int>(len);
     CUDA_CHECK(ctx->device_id, cudaMemcpy(ctx->d_input, data, len, cudaMemcpyHostToDevice));
 }
+
 
 int cryptonight_extra_cpu_init(nvid_ctx *ctx, xmrig::Algo algo, size_t hashMemSize)
 {
     cudaError_t err;
     err = cudaSetDevice(ctx->device_id);
-    if(err != cudaSuccess)
-    {
+    if (err != cudaSuccess) {
         printf("GPU %d: %s", ctx->device_id, cudaGetErrorString(err));
         return 0;
     }
@@ -299,21 +299,22 @@ int cryptonight_extra_cpu_init(nvid_ctx *ctx, xmrig::Algo algo, size_t hashMemSi
     /* Disable L1 cache for GPUs before Volta.
     * L1 speed is increased and latency reduced with Volta.
     */
-    if (gpuArch < 70)
+    if (gpuArch < 70) {
         CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
+    }
 
     size_t wsize = ctx->device_blocks * ctx->device_threads;
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
     size_t ctx_b_size = 4 * sizeof(uint32_t) * wsize;
-    if (algo == xmrig::CRYPTONIGHT_HEAVY)
-    {
+    if (algo == xmrig::CRYPTONIGHT_HEAVY) {
         // extent ctx_b to hold the state of idx0
         ctx_b_size += sizeof(uint32_t) * wsize;
         // create a double buffer for the state to exchange the mixed state to phase1
         CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state2, 50 * sizeof(uint32_t) * wsize));
     }
-    else
+    else {
         ctx->d_ctx_state2 = ctx->d_ctx_state;
+    }
 
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize));
@@ -325,6 +326,7 @@ int cryptonight_extra_cpu_init(nvid_ctx *ctx, xmrig::Algo algo, size_t hashMemSi
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof (uint32_t ) ));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t ) ));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state, hashMemSize * wsize));
+
     return 1;
 }
 
