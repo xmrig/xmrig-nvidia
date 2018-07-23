@@ -59,7 +59,7 @@ typedef unsigned long long DataLength;
 #include "cuda_skein.hpp"
 #include "cuda_device.hpp"
 #include "cuda_aes.hpp"
-#include "xmrig.h"
+#include "common/xmrig.h"
 #include "crypto/CryptoNight_constants.h"
 
 __constant__ uint8_t d_sub_byte[16][16] ={

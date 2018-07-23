@@ -78,7 +78,7 @@ extern "C" void compat_usleep(uint64_t waitTime)
 #include "cuda_extra.h"
 #include "cuda_aes.hpp"
 #include "cuda_device.hpp"
-#include "xmrig.h"
+#include "common/xmrig.h"
 #include "crypto/CryptoNight_constants.h"
 
 #if defined(__x86_64__) || defined(_M_AMD64) || defined(__LP64__)

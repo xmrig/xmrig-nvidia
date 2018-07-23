@@ -21,17 +21,20 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CUDACLI_H__
-#define __CUDACLI_H__
+#ifndef XMRIG_CUDACLI_H
+#define XMRIG_CUDACLI_H
 
 
 #include <vector>
 
 
-#include "xmrig.h"
+#include "common/xmrig.h"
 
 
-class GpuThread;
+namespace xmrig {
+    class IThread;
+}
+
 
 
 class CudaCLI
@@ -39,8 +42,8 @@ class CudaCLI
 public:
     CudaCLI();
 
-    bool setup(std::vector<GpuThread*> &threads, xmrig::Algo algo);
-    void autoConf(std::vector<GpuThread*> &threads, xmrig::Algo algo);
+    bool setup(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo);
+    void autoConf(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo);
     void parseDevices(const char *arg);
     void parseLaunch(const char *arg);
 
@@ -50,13 +53,8 @@ public:
     inline void parseBFactor(const char *arg)  { parse(m_bfactors, arg); }
     inline void parseBSleep(const char *arg)   { parse(m_bsleeps, arg); }
 
-private:
-    inline int affinity(int index) const { return get(m_affinity, index, -1); }
-    inline int blocks(int index) const   { return get(m_blocks, index, -1); }
-    inline int threads(int index) const  { return get(m_threads, index, -1); }
-    inline bool isEmpty() const          { return m_devices.empty() && m_threads.empty(); }
-
-    inline int bfactor(int index = 0) const {
+    inline int bfactor(int index = 0) const
+    {
 #       ifdef _WIN32
         return get(m_bfactors, index, 6);
 #       else
@@ -64,13 +62,20 @@ private:
 #       endif
     }
 
-    inline int bsleep(int index = 0) const {
+    inline int bsleep(int index = 0) const
+    {
 #       ifdef _WIN32
         return get(m_bsleeps, index, 25);
 #       else
         return get(m_bsleeps, index, 0);
 #       endif
     }
+
+private:
+    inline int affinity(int index) const { return get(m_affinity, index, -1); }
+    inline int blocks(int index) const   { return get(m_blocks, index, -1); }
+    inline int threads(int index) const  { return get(m_threads, index, -1); }
+    inline bool isEmpty() const          { return m_devices.empty() && m_threads.empty(); }
 
     int get(const std::vector<int> &vector, int index, int defaultValue) const;
     void parse(std::vector<int> &vector, const char *arg) const;
@@ -85,4 +90,4 @@ private:
 };
 
 
-#endif /* __CUDACLI_H__ */
+#endif /* XMRIG_CUDACLI_H */

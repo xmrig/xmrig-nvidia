@@ -29,7 +29,7 @@
 
 #include "nvidia/CudaCLI.h"
 #include "nvidia/cryptonight.h"
-#include "workers/GpuThread.h"
+#include "workers/CudaThread.h"
 
 
 CudaCLI::CudaCLI() :
@@ -38,7 +38,7 @@ CudaCLI::CudaCLI() :
 }
 
 
-bool CudaCLI::setup(std::vector<GpuThread*> &threads, xmrig::Algo algo)
+bool CudaCLI::setup(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo)
 {
     if (isEmpty() || m_count == 0) {
         return false;
@@ -50,9 +50,9 @@ bool CudaCLI::setup(std::vector<GpuThread*> &threads, xmrig::Algo algo)
         }
     }
 
-    for (int i = 0; i < m_devices.size(); i++) {
+    for (int i = 0; i < static_cast<int>(m_devices.size()); i++) {
         nvid_ctx ctx;
-        ctx.device_id      = m_devices[i];
+        ctx.device_id      = m_devices[static_cast<size_t>(i)];
         ctx.device_blocks  = blocks(i);
         ctx.device_threads = this->threads(i);
         ctx.device_bfactor = bfactor(i);
@@ -63,14 +63,14 @@ bool CudaCLI::setup(std::vector<GpuThread*> &threads, xmrig::Algo algo)
             continue;
         }
 
-        threads.push_back(new GpuThread(ctx, affinity(i)));
+        threads.push_back(new CudaThread(ctx, affinity(i), algo));
     }
 
     return true;
 }
 
 
-void CudaCLI::autoConf(std::vector<GpuThread*> &threads, xmrig::Algo algo)
+void CudaCLI::autoConf(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo)
 {
     if (m_count == 0) {
         return;
@@ -89,7 +89,7 @@ void CudaCLI::autoConf(std::vector<GpuThread*> &threads, xmrig::Algo algo)
             continue;
         }
 
-        threads.push_back(new GpuThread(ctx));
+        threads.push_back(new CudaThread(ctx, -1, algo));
     }
 }
 
@@ -100,7 +100,7 @@ void CudaCLI::parseDevices(const char *arg)
     char *pch   = strtok(value, ",");
 
     while (pch != nullptr) {
-        const int index = (int) strtoul(pch, nullptr, 10);
+        const int index = static_cast<int>(strtoul(pch, nullptr, 10));
         if (index < m_count) {
             m_devices.push_back(index);
         }
@@ -133,7 +133,7 @@ void CudaCLI::parseLaunch(const char *arg)
         while (pch != nullptr && count < 2) {
             count++;
 
-            const int v = (int) strtoul(pch, nullptr, 10);
+            const int v = static_cast<int>(strtoul(pch, nullptr, 10));
             if (count == 1) {
                 m_threads.push_back(v > 0 ? v : -1);
             }
@@ -173,7 +173,7 @@ void CudaCLI::parse(std::vector<int> &vector, const char *arg) const
     char *pch   = strtok(value, ",");
 
     while (pch != nullptr) {
-        vector.push_back((int) strtoul(pch, nullptr, 10));
+        vector.push_back(static_cast<int>(strtoul(pch, nullptr, 10)));
 
         pch = strtok(nullptr, ",");
     }

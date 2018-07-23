@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,43 +21,43 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HANDLE_H__
-#define __HANDLE_H__
+#ifndef XMRIG_HANDLE_H
+#define XMRIG_HANDLE_H
 
 
+#include <assert.h>
 #include <stdint.h>
 #include <uv.h>
 
 
-#include "xmrig.h"
+#include "interfaces/IThread.h"
 
 
 class IWorker;
-class GpuThread;
 
 
 class Handle
 {
 public:
-    Handle(int threadId, GpuThread *thread, int threads, xmrig::Algo algorithm);
+    Handle(size_t threadId, xmrig::IThread *config, uint32_t offset, size_t totalWays);
     void join();
     void start(void (*callback) (void *));
 
-    inline const GpuThread *gpuThread() const { return m_gpuThread; }
-    inline int threadId() const               { return m_threadId; }
-    inline int threads() const                { return m_threads; }
-    inline IWorker *worker() const            { return m_worker; }
-    inline void setWorker(IWorker *worker)    { m_worker = worker; }
-    inline xmrig::Algo algorithm() const      { return m_algorithm; }
+    inline IWorker *worker() const         { return m_worker; }
+    inline size_t threadId() const         { return m_threadId; }
+    inline size_t totalWays() const        { return m_totalWays; }
+    inline uint32_t offset() const         { return m_offset; }
+    inline void setWorker(IWorker *worker) { assert(worker != nullptr); m_worker = worker; }
+    inline xmrig::IThread *config() const  { return m_config; }
 
 private:
-    const GpuThread *m_gpuThread;
-    const int m_threadId;
-    const int m_threads;
-    const xmrig::Algo m_algorithm;
     IWorker *m_worker;
+    size_t m_threadId;
+    size_t m_totalWays;
+    uint32_t m_offset;
     uv_thread_t m_thread;
+    xmrig::IThread *m_config;
 };
 
 
-#endif /* __HANDLE_H__ */
+#endif /* XMRIG_HANDLE_H */

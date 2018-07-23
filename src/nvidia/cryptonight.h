@@ -28,7 +28,7 @@
 #include <stdint.h>
 
 
-#include "xmrig.h"
+#include "../common/xmrig.h"
 
 
 typedef struct {
@@ -42,10 +42,10 @@ typedef struct {
     int device_bsleep;
     int device_clockRate;
     int device_memoryClockRate;
-    int device_pciBusID;
-    int device_pciDeviceID;
-    int device_pciDomainID;
-    int syncMode;
+    uint32_t device_pciBusID;
+    uint32_t device_pciDeviceID;
+    uint32_t device_pciDomainID;
+    uint32_t syncMode;
 
     uint32_t *d_input;
     uint32_t inputlen;

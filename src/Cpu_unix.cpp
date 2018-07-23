@@ -22,6 +22,14 @@
  */
 
 
+#ifdef __FreeBSD__
+#   include <sys/types.h>
+#   include <sys/param.h>
+#   include <sys/cpuset.h>
+#   include <pthread_np.h>
+#endif
+
+
 #include <pthread.h>
 #include <sched.h>
 #include <unistd.h>
@@ -31,6 +39,11 @@
 #include "Cpu.h"
 
 
+#ifdef __FreeBSD__
+typedef cpuset_t cpu_set_t;
+#endif
+
+
 void Cpu::init()
 {
 #   ifdef XMRIG_NO_LIBCPUID
@@ -38,23 +51,4 @@ void Cpu::init()
 #   endif
 
     initCommon();
-}
-
-
-void Cpu::setAffinity(int id, uint64_t mask)
-{
-    cpu_set_t set;
-    CPU_ZERO(&set);
-
-    for (int i = 0; i < m_totalThreads; i++) {
-        if (mask & (1UL << i)) {
-            CPU_SET(i, &set);
-        }
-    }
-
-    if (id == -1) {
-        sched_setaffinity(0, sizeof(&set), &set);
-    } else {
-        pthread_setaffinity_np(pthread_self(), sizeof(&set), &set);
-    }
 }

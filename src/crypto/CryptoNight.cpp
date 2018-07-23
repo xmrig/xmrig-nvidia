@@ -26,22 +26,23 @@
 #include <assert.h>
 
 
+#include "common/net/Job.h"
+#include "common/utils/mm_malloc.h"
 #include "Cpu.h"
 #include "crypto/CryptoNight.h"
 #include "crypto/CryptoNight_test.h"
 #include "crypto/CryptoNight_x86.h"
-#include "net/Job.h"
 #include "net/JobResult.h"
-#include "Options.h"
 
 
+alignas(16) cryptonight_ctx *CryptoNight::m_ctx = nullptr;
 xmrig::Algo CryptoNight::m_algorithm = xmrig::CRYPTONIGHT;
 xmrig::AlgoVerify CryptoNight::m_av  = xmrig::VERIFY_HW_AES;
 
 
 bool CryptoNight::hash(const Job &job, JobResult &result, cryptonight_ctx *ctx)
 {
-    fn(job.variant())(job.blob(), job.size(), result.result, ctx);
+    fn(job.variant())(job.blob(), job.size(), result.result, &ctx);
 
     return *reinterpret_cast<uint64_t*>(result.result + 24) < job.target();
 }
@@ -52,7 +53,11 @@ bool CryptoNight::init(xmrig::Algo algorithm)
     m_algorithm = algorithm;
     m_av        = Cpu::hasAES() ? xmrig::VERIFY_HW_AES : xmrig::VERIFY_SOFT_AES;
 
-    return selfTest();
+    const bool valid = selfTest();
+    freeCtx(m_ctx);
+    m_ctx = nullptr;
+
+    return valid;
 }
 
 
@@ -60,73 +65,154 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
 {
     using namespace xmrig;
 
-    assert(variant == VARIANT_NONE || variant == VARIANT_V1);
+    assert(variant >= VARIANT_0 && variant < VARIANT_MAX);
 
-    static const cn_hash_fun func_table[10] = {
-        cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_NONE>,
-        cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_NONE>,
+    static const cn_hash_fun func_table[VARIANT_MAX * 2 * 3] = {
+        cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_0>,
+        cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_0>,
 
-        cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_V1>,
-        cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_V1>,
+        cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_1>,
+        cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_1>,
+
+        nullptr, nullptr, // VARIANT_TUBE
+
+        cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_XTL>,
+        cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_XTL>,
+
+        cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_MSR>,
+        cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_MSR>,
+
+        nullptr, nullptr, // VARIANT_XHV
+
+        cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_XAO>,
+        cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_XAO>,
+
+        cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_RTO>,
+        cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_RTO>,
 
 #       ifndef XMRIG_NO_AEON
-        cryptonight_single_hash<CRYPTONIGHT_LITE, false, VARIANT_NONE>,
-        cryptonight_single_hash<CRYPTONIGHT_LITE, true,  VARIANT_NONE>,
+        cryptonight_single_hash<CRYPTONIGHT_LITE, false, VARIANT_0>,
+        cryptonight_single_hash<CRYPTONIGHT_LITE, true,  VARIANT_0>,
 
-        cryptonight_single_hash<CRYPTONIGHT_LITE, false, VARIANT_V1>,
-        cryptonight_single_hash<CRYPTONIGHT_LITE, true,  VARIANT_V1>,
+        cryptonight_single_hash<CRYPTONIGHT_LITE, false, VARIANT_1>,
+        cryptonight_single_hash<CRYPTONIGHT_LITE, true,  VARIANT_1>,
+
+        nullptr, nullptr, // VARIANT_TUBE
+        nullptr, nullptr, // VARIANT_XTL
+        nullptr, nullptr, // VARIANT_MSR
+        nullptr, nullptr, // VARIANT_XHV
+        nullptr, nullptr, // VARIANT_XAO
+        nullptr, nullptr, // VARIANT_RTO
 #       else
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
 #       endif
 
 #       ifndef XMRIG_NO_SUMO
-        cryptonight_single_hash<CRYPTONIGHT_HEAVY, false, VARIANT_NONE>,
-        cryptonight_single_hash<CRYPTONIGHT_HEAVY, true,  VARIANT_NONE>,
+        cryptonight_single_hash<CRYPTONIGHT_HEAVY, false, VARIANT_0>,
+        cryptonight_single_hash<CRYPTONIGHT_HEAVY, true,  VARIANT_0>,
+
+        nullptr, nullptr, // VARIANT_1
+
+        cryptonight_single_hash<CRYPTONIGHT_HEAVY, false, VARIANT_TUBE>,
+        cryptonight_single_hash<CRYPTONIGHT_HEAVY, true,  VARIANT_TUBE>,
+
+        nullptr, nullptr, // VARIANT_XTL
+        nullptr, nullptr, // VARIANT_MSR
+
+        cryptonight_single_hash<CRYPTONIGHT_HEAVY, false, VARIANT_XHV>,
+        cryptonight_single_hash<CRYPTONIGHT_HEAVY, true,  VARIANT_XHV>,
+
+        nullptr, nullptr, // VARIANT_XAO
+        nullptr, nullptr, // VARIANT_RTO
 #       else
-        nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
 #       endif
     };
 
-#   ifndef XMRIG_NO_SUMO
-    if (algorithm == CRYPTONIGHT_HEAVY) {
-        variant = VARIANT_NONE;
-    }
-#   endif
+    const size_t index = VARIANT_MAX * 2 * algorithm + 2 * variant + av - 1;
 
-    return func_table[4 * algorithm + 2 * variant + av - 1];
+#   ifndef NDEBUG
+    cn_hash_fun func = func_table[index];
+
+    assert(index < sizeof(func_table) / sizeof(func_table[0]));
+    assert(func != nullptr);
+
+    return func;
+#   else
+    return func_table[index];
+#   endif
+}
+
+
+cryptonight_ctx *CryptoNight::createCtx(xmrig::Algo algorithm)
+{
+    cryptonight_ctx *ctx = static_cast<cryptonight_ctx *>(_mm_malloc(sizeof(cryptonight_ctx), 16));
+    ctx->memory          = static_cast<uint8_t *>(_mm_malloc(xmrig::cn_select_memory(algorithm), 16));
+
+    return ctx;
+}
+
+
+void CryptoNight::freeCtx(cryptonight_ctx *ctx)
+{
+    _mm_free(ctx->memory);
+    _mm_free(ctx);
 }
 
 
 bool CryptoNight::selfTest() {
-    if (fn(xmrig::VARIANT_NONE) == nullptr || fn(xmrig::VARIANT_V1) == nullptr) {
+    using namespace xmrig;
+
+    m_ctx = createCtx(m_algorithm);
+
+    if (m_algorithm == xmrig::CRYPTONIGHT) {
+        return verify(VARIANT_0,   test_output_v0)  &&
+               verify(VARIANT_1,   test_output_v1)  &&
+               verify(VARIANT_XTL, test_output_xtl) &&
+               verify(VARIANT_MSR, test_output_msr) &&
+               verify(VARIANT_XAO, test_output_xao) &&
+               verify(VARIANT_RTO, test_output_rto);
+    }
+
+#   ifndef XMRIG_NO_AEON
+    if (m_algorithm == xmrig::CRYPTONIGHT_LITE) {
+        return verify(VARIANT_0, test_output_v0_lite) &&
+               verify(VARIANT_1, test_output_v1_lite);
+    }
+#   endif
+
+#   ifndef XMRIG_NO_SUMO
+    if (m_algorithm == xmrig::CRYPTONIGHT_HEAVY) {
+        return verify(VARIANT_0,    test_output_v0_heavy)  &&
+               verify(VARIANT_XHV,  test_output_xhv_heavy) &&
+               verify(VARIANT_TUBE, test_output_tube_heavy);
+    }
+#   endif
+
+    return false;
+}
+
+
+bool CryptoNight::verify(xmrig::Variant variant, const uint8_t *referenceValue)
+{
+    if (!m_ctx) {
         return false;
     }
 
     uint8_t output[32];
-    cryptonight_ctx *ctx = static_cast<cryptonight_ctx *>(_mm_malloc(sizeof(cryptonight_ctx), 16));
 
-    fn(xmrig::VARIANT_NONE)(test_input, 76, output, ctx);
-
-    if (m_algorithm == xmrig::CRYPTONIGHT && memcmp(output, test_output_v0, 32) == 0) {
-        fn(xmrig::VARIANT_V1)(test_input, 76, output, ctx);
-
-        _mm_free(ctx);
-
-        return memcmp(output, test_output_v1, 32) == 0;
+    cn_hash_fun func = fn(variant);
+    if (!func) {
+        return false;
     }
 
-#   ifndef XMRIG_NO_AEON
-    if (m_algorithm == xmrig::CRYPTONIGHT_LITE && memcmp(output, test_output_v0_lite, 32) == 0) {
-        fn(xmrig::VARIANT_V1)(test_input, 76, output, ctx);
+    func(test_input, 76, output, &m_ctx);
 
-        _mm_free(ctx);
-
-        return memcmp(output, test_output_v1_lite, 32) == 0;
-    }
-#   endif
-
-    const bool rc = m_algorithm == xmrig::CRYPTONIGHT_HEAVY && memcmp(output, test_output_heavy, 32) == 0;
-    _mm_free(ctx);
-
-    return rc;
+    return memcmp(output, referenceValue, 32) == 0;
 }
