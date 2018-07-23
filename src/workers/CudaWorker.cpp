@@ -81,7 +81,7 @@ void CudaWorker::start()
             consumeJob();
         }
 
-        cryptonight_extra_cpu_set_data(&m_ctx, m_blob, (uint32_t) m_job.size());
+        cryptonight_extra_cpu_set_data(&m_ctx, m_blob, m_job.size());
 
         while (!Workers::isOutdated(m_sequence)) {
             uint32_t foundNonce[10];
