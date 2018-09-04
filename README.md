@@ -88,8 +88,8 @@ Default donation 5% (5 minutes in 100 minutes) can be reduced to 1% via command 
 ## Release checksums
 ### SHA-256
 ```
-54ea918c9d08c71d6d1ebdee3da9bcd476ea48992156a0ff6912f7a1e3091bd9 xmrig-nvidia-2.6.1-cuda8-win64.zip/xmrig-nvidia.exe
-5905924c61d96267c176bc9af86c16dcc837b81378e47315231a9ee0c5cc48b7 xmrig-nvidia-2.6.1-cuda9-win64.zip/xmrig-nvidia.exe
+30accf8b03c8bfd90034e6e49fe733a438dff6b530faf411aab6fe738a06fa8b xmrig-nvidia-2.7.0-beta-cuda8-win64.zip/xmrig-nvidia.exe
+ec408bd837141bb8e0e7e6b4f76264255a3986f1e5a858400e6870bfad7e3214 xmrig-nvidia-2.7.0-beta-cuda9-win64.zip/xmrig-nvidia.exe
 ```
 
 ## Contacts

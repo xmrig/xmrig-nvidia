@@ -21,13 +21,13 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __VERSION_H__
-#define __VERSION_H__
+#ifndef XMRIG_VERSION_H
+#define XMRIG_VERSION_H
 
 #define APP_ID        "xmrig"
 #define APP_NAME      "XMRig"
 #define APP_DESC      "XMRig CUDA miner"
-#define APP_VERSION   "2.7.0-dev"
+#define APP_VERSION   "2.7.0-beta"
 #define APP_DOMAIN    "xmrig.com"
 #define APP_SITE      "www.xmrig.com"
 #define APP_COPYRIGHT "Copyright (C) 2016-2018 xmrig.com"
@@ -53,4 +53,4 @@
 #   endif
 #endif
 
-#endif /* __VERSION_H__ */
+#endif /* XMRIG_VERSION_H */
