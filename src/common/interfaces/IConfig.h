@@ -42,6 +42,7 @@ public:
         ApiPort           = 4000,
         ApiRestrictedKey  = 4004,
         ApiWorkerIdKey    = 4002,
+        ApiIdKey          = 4005,
         BackgroundKey     = 'B',
         ColorKey          = 1002,
         ConfigKey         = 'c',
@@ -97,6 +98,7 @@ public:
         PoolCoinKey       = 'C',
         ReuseTimeoutKey   = 1106,
         WorkersKey        = 1103,
+        WorkersAdvKey     = 1107,
 
         // xmrig nvidia
         CudaMaxThreadsKey = 1200,

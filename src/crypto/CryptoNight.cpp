@@ -42,7 +42,7 @@ xmrig::AlgoVerify CryptoNight::m_av  = xmrig::VERIFY_HW_AES;
 
 bool CryptoNight::hash(const Job &job, JobResult &result, cryptonight_ctx *ctx)
 {
-    fn(job.variant())(job.blob(), job.size(), result.result, &ctx);
+    fn(job.algorithm().variant())(job.blob(), job.size(), result.result, &ctx);
 
     return *reinterpret_cast<uint64_t*>(result.result + 24) < job.target();
 }
@@ -90,6 +90,9 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_RTO>,
         cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_RTO>,
 
+        cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_2>,
+        cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_2>,
+
 #       ifndef XMRIG_NO_AEON
         cryptonight_single_hash<CRYPTONIGHT_LITE, false, VARIANT_0>,
         cryptonight_single_hash<CRYPTONIGHT_LITE, true,  VARIANT_0>,
@@ -103,11 +106,13 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, // VARIANT_XHV
         nullptr, nullptr, // VARIANT_XAO
         nullptr, nullptr, // VARIANT_RTO
+        nullptr, nullptr, // VARIANT_2
 #       else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr,
 #       endif
 
 #       ifndef XMRIG_NO_SUMO
@@ -127,11 +132,13 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
 
         nullptr, nullptr, // VARIANT_XAO
         nullptr, nullptr, // VARIANT_RTO
+        nullptr, nullptr, // VARIANT_2
 #       else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr
 #       endif
     };
 
@@ -174,6 +181,7 @@ bool CryptoNight::selfTest() {
     if (m_algorithm == xmrig::CRYPTONIGHT) {
         return verify(VARIANT_0,   test_output_v0)  &&
                verify(VARIANT_1,   test_output_v1)  &&
+               verify(VARIANT_2,   test_output_v2)  &&
                verify(VARIANT_XTL, test_output_xtl) &&
                verify(VARIANT_MSR, test_output_msr) &&
                verify(VARIANT_XAO, test_output_xao) &&
