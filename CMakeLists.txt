@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 project(xmrig-nvidia)
 
-option(WITH_AEON     "CryptoNight-Lite support" ON)
-option(WITH_SUMO     "CryptoNight-Heavy support" ON)
-option(WITH_HTTPD    "HTTP REST API" ON)
-option(BUILD_STATIC  "Build static binary" OFF)
+option(WITH_AEON      "CryptoNight-Lite support" ON)
+option(WITH_SUMO      "CryptoNight-Heavy support" ON)
+option(WITH_HTTPD     "HTTP REST API" ON)
+option(WITH_DEBUG_LOG "Enable debug log output" OFF)
+option(BUILD_STATIC   "Build static binary" OFF)
 
 include (CheckIncludeFile)
 include (cmake/cpu.cmake)
@@ -157,7 +158,6 @@ endif()
 
 add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DUNICODE)
-#add_definitions(/DAPP_DEBUG)
 add_definitions(/DXMRIG_NVIDIA_PROJECT)
 add_definitions(/DXMRIG_NO_LIBCPUID)
 
@@ -232,6 +232,10 @@ include_directories(${UV_INCLUDE_DIR})
 
 if (BUILD_STATIC)
     set(CMAKE_EXE_LINKER_FLAGS " -static")
+endif()
+
+if (WITH_DEBUG_LOG)
+    add_definitions(/DAPP_DEBUG)
 endif()
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_CPUID} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${HTTPD_SOURCES})
