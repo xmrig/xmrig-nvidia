@@ -129,21 +129,6 @@ static void print_gpu(xmrig::Config *config)
 }
 
 
-#ifndef XMRIG_NO_API
-static void print_api(xmrig::Config *config)
-{
-    const int port = config->apiPort();
-    if (port == 0) {
-        return;
-    }
-
-    Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") CYAN("%s:") CYAN_BOLD("%d")
-                                      : " * %-13s%s:%d",
-                   "API BIND", config->isApiIPv6() ? "[::]" : "0.0.0.0", port);
-}
-#endif
-
-
 static void print_commands(xmrig::Config *config)
 {
     if (config->isColors()) {
@@ -160,15 +145,12 @@ static void print_commands(xmrig::Config *config)
 
 void Summary::print(xmrig::Controller *controller)
 {
-    print_versions(controller->config());
+    controller->config()->printVersions();
     print_cpu(controller->config());
     print_gpu(controller->config());
     print_algo(controller->config());
-    print_pools(controller->config());
-
-#   ifndef XMRIG_NO_API
-    print_api(controller->config());
-#   endif
+    controller->config()->printPools();
+    controller->config()->printAPI();
 
     print_commands(controller->config());
 }
