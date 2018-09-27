@@ -35,12 +35,12 @@
 #include "api/ApiRouter.h"
 #include "common/api/HttpReply.h"
 #include "common/api/HttpRequest.h"
+#include "common/cpu/Cpu.h"
 #include "common/crypto/keccak.h"
 #include "common/net/Job.h"
 #include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "Cpu.h"
 #include "interfaces/IThread.h"
 #include "nvidia/NvmlApi.h"
 #include "rapidjson/document.h"
@@ -269,10 +269,10 @@ void ApiRouter::getMiner(rapidjson::Document &doc) const
     auto &allocator = doc.GetAllocator();
 
     rapidjson::Value cpu(rapidjson::kObjectType);
-    cpu.AddMember("brand",   rapidjson::StringRef(Cpu::brand()), allocator);
-    cpu.AddMember("aes",     Cpu::hasAES(), allocator);
-    cpu.AddMember("x64",     Cpu::isX64(), allocator);
-    cpu.AddMember("sockets", Cpu::sockets(), allocator);
+    cpu.AddMember("brand",   rapidjson::StringRef(xmrig::Cpu::info()->brand()), allocator);
+    cpu.AddMember("aes",     xmrig::Cpu::info()->hasAES(), allocator);
+    cpu.AddMember("x64",     xmrig::Cpu::info()->isX64(), allocator);
+    cpu.AddMember("sockets", xmrig::Cpu::info()->sockets(), allocator);
 
     doc.AddMember("version",      APP_VERSION, allocator);
     doc.AddMember("kind",         APP_KIND, allocator);

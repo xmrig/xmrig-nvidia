@@ -30,7 +30,6 @@
 #include "common/log/Log.h"
 #include "core/Config.h"
 #include "core/ConfigCreator.h"
-#include "Cpu.h"
 #include "crypto/CryptoNight_constants.h"
 #include "nvidia/NvmlApi.h"
 #include "rapidjson/document.h"

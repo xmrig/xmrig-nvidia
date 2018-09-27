@@ -26,9 +26,9 @@
 #include <assert.h>
 
 
+#include "common/cpu/Cpu.h"
 #include "common/net/Job.h"
 #include "common/utils/mm_malloc.h"
-#include "Cpu.h"
 #include "crypto/CryptoNight.h"
 #include "crypto/CryptoNight_test.h"
 #include "crypto/CryptoNight_x86.h"
@@ -51,7 +51,7 @@ bool CryptoNight::hash(const Job &job, JobResult &result, cryptonight_ctx *ctx)
 bool CryptoNight::init(xmrig::Algo algorithm)
 {
     m_algorithm = algorithm;
-    m_av        = Cpu::hasAES() ? xmrig::VERIFY_HW_AES : xmrig::VERIFY_SOFT_AES;
+    m_av        = xmrig::Cpu::info()->hasAES() ? xmrig::VERIFY_HW_AES : xmrig::VERIFY_SOFT_AES;
 
     const bool valid = selfTest();
     freeCtx(m_ctx);

@@ -27,33 +27,14 @@
 #include <uv.h>
 
 
+#include "common/cpu/Cpu.h"
 #include "common/log/Log.h"
 #include "common/net/Pool.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "Cpu.h"
 #include "Summary.h"
 #include "version.h"
 #include "workers/CudaThread.h"
-
-
-static void print_versions(xmrig::Config *config)
-{
-    char buf[16] = { 0 };
-
-#   if defined(__clang__)
-    snprintf(buf, 16, " clang/%d.%d.%d", __clang_major__, __clang_minor__, __clang_patchlevel__);
-#   elif defined(__GNUC__)
-    snprintf(buf, 16, " gcc/%d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-#   elif defined(_MSC_VER)
-    snprintf(buf, 16, " MSVC/%d", MSVC_VERSION);
-#   endif
-
-    const int cudaVersion = cuda_get_runtime_version();
-    Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") CYAN_BOLD("%s/%s") WHITE_BOLD(" libuv/%s CUDA/%d.%d%s")
-                                      : " * %-13s%s/%s libuv/%s CUDA/%d.%d%s",
-                   "VERSIONS", APP_NAME, APP_VERSION, uv_version_string(), cudaVersion / 1000, cudaVersion % 100, buf);
-}
 
 
 static void print_cpu(xmrig::Config *config)
@@ -61,12 +42,12 @@ static void print_cpu(xmrig::Config *config)
     if (config->isColors()) {
         Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("%-13s") WHITE_BOLD("%s %sx64 %sAES"),
                        "CPU",
-                       Cpu::brand(),
-                       Cpu::isX64() ? "\x1B[1;32m" : "\x1B[1;31m-",
-                       Cpu::hasAES() ? "\x1B[1;32m" : "\x1B[1;31m-");
+                       xmrig::Cpu::info()->brand(),
+                       xmrig::Cpu::info()->isX64() ? "\x1B[1;32m" : "\x1B[1;31m-",
+                       xmrig::Cpu::info()->hasAES() ? "\x1B[1;32m" : "\x1B[1;31m-");
     }
     else {
-        Log::i()->text(" * %-13s%s %sx64 %sAES", "CPU", Cpu::brand(), Cpu::isX64() ? "" : "-", Cpu::hasAES() ? "" : "-");
+        Log::i()->text(" * %-13s%s %sx64 %sAES", "CPU", xmrig::Cpu::info()->brand(), xmrig::Cpu::info()->isX64() ? "" : "-", xmrig::Cpu::info()->hasAES() ? "" : "-");
     }
 }
 
@@ -80,27 +61,6 @@ static void print_algo(xmrig::Config *config)
                    config->isColors() && config->donateLevel() == 0 ? "\x1B[1;31m" : "",
                    config->donateLevel()
     );
-}
-
-
-static void print_pools(xmrig::Config *config)
-{
-    const std::vector<Pool> &pools = config->pools();
-
-    for (size_t i = 0; i < pools.size(); ++i) {
-        Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("POOL #%-7zu") CYAN_BOLD("%s") " variant " WHITE_BOLD("%s")
-                                          : " * POOL #%-7d%s variant %s",
-                       i + 1,
-                       pools[i].url(),
-                       pools[i].algorithm().variantName()
-                       );
-    }
-
-#   ifdef APP_DEBUG
-    for (const Pool &pool : pools) {
-        pool.print();
-    }
-#   endif
 }
 
 

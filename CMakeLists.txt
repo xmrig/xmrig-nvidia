@@ -19,6 +19,8 @@ set(HEADERS
     src/common/config/ConfigLoader.h
     src/common/config/ConfigWatcher.h
     src/common/Console.h
+    src/common/cpu/BasicCpuInfo.h
+    src/common/cpu/Cpu.h
     src/common/crypto/Algorithm.h
     src/common/crypto/keccak.h
     src/common/interfaces/IClientListener.h
@@ -26,6 +28,7 @@ set(HEADERS
     src/common/interfaces/IConfigCreator.h
     src/common/interfaces/IConsoleListener.h
     src/common/interfaces/IControllerListener.h
+    src/common/interfaces/ICpuInfo.h
     src/common/interfaces/ILogBackend.h
     src/common/interfaces/IStrategy.h
     src/common/interfaces/IStrategyListener.h
@@ -49,7 +52,6 @@ set(HEADERS
     src/common/xmrig.h
     src/core/ConfigLoader_platform.h
     src/core/Controller.h
-    src/Cpu.h
     src/interfaces/IJobResultListener.h
     src/interfaces/IThread.h
     src/interfaces/IWorker.h
@@ -96,6 +98,8 @@ set(SOURCES
     src/common/config/ConfigLoader.cpp
     src/common/config/ConfigWatcher.cpp
     src/common/Console.cpp
+    src/common/cpu/BasicCpuInfo.cpp
+    src/common/cpu/Cpu.cpp
     src/common/crypto/Algorithm.cpp
     src/common/crypto/keccak.cpp
     src/common/log/BasicLog.cpp
@@ -136,7 +140,6 @@ if (WIN32)
         res/app.rc
         src/App_win.cpp
         src/common/Platform_win.cpp
-        src/Cpu_win.cpp
         )
 
     add_definitions(/DWIN32)
@@ -145,13 +148,11 @@ elseif (APPLE)
     set(SOURCES_OS
         src/App_unix.cpp
         src/common/Platform_mac.cpp
-        src/Cpu_mac.cpp
         )
 else()
     set(SOURCES_OS
         src/App_unix.cpp
         src/common/Platform_unix.cpp
-        src/Cpu_unix.cpp
         )
 
     set(EXTRA_LIBS pthread rt dl)
@@ -161,6 +162,7 @@ add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DUNICODE)
 add_definitions(/DXMRIG_NVIDIA_PROJECT)
 add_definitions(/DXMRIG_NO_LIBCPUID)
+add_definitions(/DXMRIG_NO_ASM)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -188,12 +190,6 @@ else()
     add_definitions(/DXMRIG_NO_NVML)
 
     set(SOURCES_NVML src/nvidia/NvmlApi_stub.cpp)
-endif()
-
-if (XMRIG_ARM)
-    set(SOURCES_CPUID src/Cpu_arm.cpp)
-else()
-    set(SOURCES_CPUID src/Cpu_stub.cpp)
 endif()
 
 include(cmake/OpenSSL.cmake)
@@ -242,5 +238,5 @@ if (WITH_DEBUG_LOG)
     add_definitions(/DAPP_DEBUG)
 endif()
 
-add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_CPUID} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${HTTPD_SOURCES} ${TLS_SOURCES})
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${HTTPD_SOURCES} ${TLS_SOURCES})
 target_link_libraries(${PROJECT_NAME} xmrig-cuda ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${MHD_LIBRARY} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})
