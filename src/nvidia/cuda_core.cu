@@ -136,7 +136,7 @@ template< typename T >
 __device__ __forceinline__ void storeGlobal64( T* addr, T const & val )
 {
 #   if (__CUDA_ARCH__ < 700)
-    asm volatile("st.global.cg.u64 [%0], %1;" : : _ASM_PTR_(addr), _ASM_PTR_(val));
+    asm volatile("st.global.cg.u64 [%0], %1;" : : _ASM_PTR_(addr), "l"(val));
 #   else
     *addr = val;
 #   endif
