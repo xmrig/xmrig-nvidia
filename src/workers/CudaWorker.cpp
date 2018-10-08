@@ -106,7 +106,7 @@ void CudaWorker::start()
         consumeJob();
     }
     
-    cryptonight_extra_cpu_free(&m_ctx);
+    cryptonight_extra_cpu_free(&m_ctx, m_algorithm);
 }
 
 
