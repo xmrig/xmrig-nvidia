@@ -347,7 +347,7 @@ int cryptonight_extra_cpu_init(nvid_ctx *ctx, xmrig::Algo algo, size_t hashMemSi
 }
 
 
-void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrig::Algo algo, xmrig::Variant variant)
+void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint32_t startNonce, xmrig::Algo algo, xmrig::Variant variant)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -370,7 +370,7 @@ void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrig::Al
     }
 }
 
-void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce, xmrig::Algo algo)
+void cryptonight_extra_cpu_final(nvid_ctx *ctx, uint32_t startNonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, xmrig::Algo algo)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -404,7 +404,7 @@ void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t ta
     }
 }
 
-void cryptonight_extra_cpu_free(nvid_ctx* ctx, xmrig::Algo algo)
+void cryptonight_extra_cpu_free(nvid_ctx *ctx, xmrig::Algo algo)
 {
     CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key1));
     CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key2));
@@ -417,8 +417,9 @@ void cryptonight_extra_cpu_free(nvid_ctx* ctx, xmrig::Algo algo)
     CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_long_state));
     CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_state));
 
-    if (algo == xmrig::CRYPTONIGHT_HEAVY)
-    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_state2));
+    if (algo == xmrig::CRYPTONIGHT_HEAVY) {
+        CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_state2));
+    }
 }
 
 int cuda_get_devicecount()
