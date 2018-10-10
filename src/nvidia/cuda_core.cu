@@ -271,11 +271,8 @@ struct u64 : public uint2
 };
 
 /** cryptonight with two threads per hash
- *
- * @tparam COMP_MODE if true than 64bit memory transfers per thread will be used to store/load data within shared memory
- *                   else 128bit operations will be used
  */
-template<size_t ITERATIONS, uint32_t MEM, uint32_t MASK, xmrig::Algo ALGO, xmrig::Variant VARIANT, bool COMP_MODE>
+template<size_t ITERATIONS, uint32_t MEM, uint32_t MASK, xmrig::Algo ALGO, xmrig::Variant VARIANT>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 2 )
 #endif
@@ -338,15 +335,7 @@ __global__ void cryptonight_core_gpu_phase2_double(
     for (int i = start; i < end; ++i) {
         ptr0 = (uint64_t *)&l0[idx0 & 0x1FFFC0];
 
-        if (COMP_MODE) {
-            #pragma unroll 4
-            for(int x = 0; x < 8; x += 2) {
-                myChunks[x + sub] = ptr0[x + sub];
-            }
-        }
-        else {
-            ((ulong4*)myChunks)[sub] = ((ulong4*)ptr0)[sub];
-        }
+        ((ulonglong4*)myChunks)[sub] = ((ulonglong4*)ptr0)[sub];
 
         uint32_t idx1 = (idx0 & 0x30) >> 3;
         const u64 cx  = myChunks[ idx1 + sub ];
@@ -375,29 +364,13 @@ __global__ void cryptonight_core_gpu_phase2_double(
 
         myChunks[idx1 + sub] = cx_aes ^ bx0;
 
-        if (COMP_MODE) {
-            #pragma unroll 4
-            for (int x = 0; x < 8; x += 2) {
-                ptr0[x + sub] = myChunks[x + sub];
-            }
-        }
-        else {
-            ((ulong4*)ptr0)[sub] = ((ulong4*)myChunks)[sub];
-        }
+        ((ulonglong4*)ptr0)[sub] = ((ulonglong4*)myChunks)[sub];
 
         idx0 = shuffle<2>(sPtr, sub, cx_aes.x, 0);
         idx1 = (idx0 & 0x30) >> 3;
         ptr0 = (uint64_t *)&l0[idx0 & MASK & 0x1FFFC0];
 
-        if(COMP_MODE) {
-            #pragma unroll 4
-            for (int x = 0; x < 8; x += 2) {
-                myChunks[x + sub] = ptr0[x + sub];
-            }
-        }
-        else {
-            ((ulong4*)myChunks)[sub] = ((ulong4*)ptr0)[sub];
-        }
+        ((ulonglong4*)myChunks)[sub] = ((ulonglong4*)ptr0)[sub];
 
         uint64_t cx_mul;
         ((uint32_t*)&cx_mul)[0] = shuffle<2>(sPtr, sub, cx_aes.x , 0);
@@ -451,15 +424,7 @@ __global__ void cryptonight_core_gpu_phase2_double(
 
         myChunks[idx1 + sub] = ax0;
 
-        if (COMP_MODE) {
-            #pragma unroll 4
-            for (int x = 0; x < 8; x += 2) {
-                ptr0[x + sub] = myChunks[x + sub];
-            }
-        }
-        else {
-            ((ulong4*)ptr0)[sub] = ((ulong4*)myChunks)[sub];
-        }
+        ((ulonglong4*)ptr0)[sub] = ((ulonglong4*)myChunks)[sub];
 
         ax0 ^= c;
         idx0 = shuffle<2>(sPtr, sub, static_cast<uint32_t>(ax0), 0);
@@ -763,7 +728,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 
     for (int i = 0; i < partcount; i++) {
         if (VARIANT == xmrig::VARIANT_2) {
-            CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase2_double<ITERATIONS, MEM, MASK, ALGO, VARIANT, true><<<
+            CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase2_double<ITERATIONS, MEM, MASK, ALGO, VARIANT><<<
                 grid,
                 block2,
                 sizeof(uint64_t) * block2.x * 8 + block2.x * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)
