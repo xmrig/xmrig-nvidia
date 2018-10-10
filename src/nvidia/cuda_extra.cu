@@ -404,6 +404,23 @@ void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t ta
     }
 }
 
+void cryptonight_extra_cpu_free(nvid_ctx* ctx, xmrig::Algo algo)
+{
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key1));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key2));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_text));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_a));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_b));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_input));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_result_count));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_result_nonce));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_long_state));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_state));
+
+    if (algo == xmrig::CRYPTONIGHT_HEAVY)
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_state2));
+}
+
 int cuda_get_devicecount()
 {
     int deviceCount = 0;
