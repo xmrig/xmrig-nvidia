@@ -7,7 +7,6 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
- *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -59,7 +58,10 @@ Options:\n\
   -u, --user=USERNAME       username for mining server\n\
   -p, --pass=PASSWORD       password for mining server\n\
       --rig-id=ID           rig identifier for pool-side statistics (needs pool support)\n\
-  -k, --keepalive           send keepalived for prevent timeout (need pool support)\n\
+  -k, --keepalive           send keepalived packet for prevent timeout (needs pool support)\n\
+      --nicehash            enable nicehash.com support\n\
+      --tls                 enable SSL/TLS support (needs pool support)\n\
+      --tls-fingerprint=F   pool TLS certificate fingerprint, if set enable strict certificate pinning\n\
   -r, --retries=N           number of times to retry before switch to backup server (default: 5)\n\
   -R, --retry-pause=N       time to pause between retries (default: 5)\n\
       --cuda-devices=N      list of CUDA devices to use.\n\
@@ -80,7 +82,6 @@ Options:\n\
   -S, --syslog              use system log for output messages\n"
 # endif
 "\
-      --nicehash            enable nicehash/xmrig-proxy support\n\
       --print-time=N        print hashrate report every N seconds\n\
       --api-port=N          port for the miner API\n\
       --api-access-token=T  access token for API\n\
@@ -88,6 +89,7 @@ Options:\n\
       --api-id=ID           custom instance ID for API\n\
       --api-ipv6            enable IPv6 support for API\n\
       --api-no-restricted   enable full remote access (only if API token set)\n\
+      --dry-run             test configuration and exit\n\
   -h, --help                display this help and exit\n\
   -V, --version             output version information and exit\n\
 ";
