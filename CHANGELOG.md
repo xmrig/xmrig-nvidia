@@ -1,3 +1,11 @@
+# v2.8.1
+- **[#753](https://github.com/xmrig/xmrig/issues/753) Added new algorithm [CryptoNight variant 2](https://github.com/xmrig/xmrig/issues/753) for Monero fork, thanks [@SChernykh](https://github.com/SChernykh).**
+- **[#758](https://github.com/xmrig/xmrig/issues/758) Added SSL/TLS support for secure connections to pools.**
+  - Added per pool options `"tls"` and `"tls-fingerprint"` and command line equivalents.  
+- [#245](https://github.com/xmrig/xmrig-proxy/issues/245) Fixed API ID collision when run multiple miners on same machine.
+- [#757](https://github.com/xmrig/xmrig/issues/757) Fixed send buffer overflow.
+- [#777](https://github.com/xmrig/xmrig/issues/777) Better report about pool connection issues. 
+
 # v2.7.0-beta
 - Algorithm variant `cryptonight-lite/ipbc` replaced to `cryptonight-heavy/tube` for **Bittube (TUBE)** coin.
 - Added `cryptonight-heavy/xhv` variant for **Haven Protocol (XHV)** coin.

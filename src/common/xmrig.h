@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __XMRIG_H__
-#define __XMRIG_H__
+#ifndef XMRIG_XMRIG_H
+#define XMRIG_XMRIG_H
 
 
 namespace xmrig
@@ -67,6 +67,7 @@ enum Variant {
     VARIANT_XHV  = 5,  // Modified CryptoNight-Heavy (Haven Protocol only)
     VARIANT_XAO  = 6,  // Modified CryptoNight variant 0 (Alloy only)
     VARIANT_RTO  = 7,  // Modified CryptoNight variant 1 (Arto only)
+    VARIANT_2    = 8,  // CryptoNight variant 2
     VARIANT_MAX
 };
 
@@ -84,7 +85,25 @@ enum AesMode {
 };
 
 
+enum OclVendor {
+    OCL_VENDOR_UNKNOWN = -2,
+    OCL_VENDOR_MANUAL  = -1,
+    OCL_VENDOR_AMD     = 0,
+    OCL_VENDOR_NVIDIA  = 1,
+    OCL_VENDOR_INTEL   = 2
+};
+
+
+enum Assembly {
+    ASM_NONE,
+    ASM_AUTO,
+    ASM_INTEL,
+    ASM_RYZEN,
+    ASM_MAX
+};
+
+
 } /* namespace xmrig */
 
 
-#endif /* __XMRIG_H__ */
+#endif /* XMRIG_XMRIG_H */

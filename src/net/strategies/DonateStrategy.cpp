@@ -33,16 +33,12 @@
 #include "net/strategies/DonateStrategy.h"
 
 
-const static char *kDonatePool1   = "miner.fee.xmrig.com";
-const static char *kDonatePool2   = "emergency.fee.xmrig.com";
-
-
 static inline float randomf(float min, float max) {
     return (max - min) * ((((float) rand()) / (float) RAND_MAX)) + min;
 }
 
 
-DonateStrategy::DonateStrategy(int level, const char *user, const xmrig::Algorithm &algorithm, IStrategyListener *listener) :
+DonateStrategy::DonateStrategy(int level, const char *user, xmrig::Algo algo, IStrategyListener *listener) :
     m_active(false),
     m_donateTime(level * 60 * 1000),
     m_idleTime((100 - level) * 60 * 1000),
@@ -52,28 +48,17 @@ DonateStrategy::DonateStrategy(int level, const char *user, const xmrig::Algorit
     uint8_t hash[200];
     char userId[65] = { 0 };
 
-    xmrig::keccak(user, strlen(user), hash);
+    xmrig::keccak(reinterpret_cast<const uint8_t *>(user), strlen(user), hash);
     Job::toHex(hash, 32, userId);
 
-    if (algorithm.algo() == xmrig::CRYPTONIGHT) {
-        if (algorithm.variant() == xmrig::VARIANT_MSR) {
-            m_pools.push_back(Pool(kDonatePool1, 7783, userId, nullptr, false, true));
-        }
-        else {
-            m_pools.push_back(Pool(kDonatePool1, 6666, userId, nullptr, false, true));
-            m_pools.push_back(Pool(kDonatePool1, 80,   userId, nullptr, false, true));
-            m_pools.push_back(Pool(kDonatePool2, 5555, "48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD", "emergency", false, false));
-        }
-    }
-    else if (algorithm.algo() == xmrig::CRYPTONIGHT_HEAVY) {
-        m_pools.push_back(Pool(kDonatePool1, 8888, userId, nullptr, false, true));
-    }
-    else {
-        m_pools.push_back(Pool(kDonatePool1, 5555, userId, nullptr, false, true));
-    }
+#   ifndef XMRIG_NO_TLS
+    m_pools.push_back(Pool("donate.ssl.xmrig.com", 443, userId, nullptr, false, true, true));
+#   endif
+
+    m_pools.push_back(Pool("donate.v2.xmrig.com", 3333, userId, nullptr, false, true));
 
     for (Pool &pool : m_pools) {
-        pool.adjust(algorithm);
+        pool.adjust(xmrig::Algorithm(algo, xmrig::VARIANT_AUTO));
     }
 
     if (m_pools.size() > 1) {

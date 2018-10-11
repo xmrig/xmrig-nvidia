@@ -119,16 +119,17 @@ endif()
 
 set(CUDA_SOURCES
     src/nvidia/cryptonight.h
-    src/nvidia/cuda_extra.h
     src/nvidia/cuda_aes.hpp
     src/nvidia/cuda_blake.hpp
+    src/nvidia/cuda_core.cu
     src/nvidia/cuda_device.hpp
+    src/nvidia/cuda_extra.cu
+    src/nvidia/cuda_extra.h
+    src/nvidia/cuda_fast_int_math_v2.hpp
     src/nvidia/cuda_groestl.hpp
     src/nvidia/cuda_jh.hpp
     src/nvidia/cuda_keccak.hpp
     src/nvidia/cuda_skein.hpp
-    src/nvidia/cuda_core.cu
-    src/nvidia/cuda_extra.cu
 )
 
 if("${CUDA_COMPILER}" STREQUAL "clang")

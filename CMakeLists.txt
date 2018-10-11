@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 project(xmrig-nvidia)
 
-option(WITH_AEON     "CryptoNight-Lite support" ON)
-option(WITH_SUMO     "CryptoNight-Heavy support" ON)
-option(WITH_HTTPD    "HTTP REST API" ON)
-option(BUILD_STATIC  "Build static binary" OFF)
+option(WITH_AEON      "CryptoNight-Lite support" ON)
+option(WITH_SUMO      "CryptoNight-Heavy support" ON)
+option(WITH_HTTPD     "HTTP REST API" ON)
+option(WITH_DEBUG_LOG "Enable debug log output" OFF)
+option(WITH_TLS       "Enable OpenSSL support" ON)
+option(BUILD_STATIC   "Build static binary" OFF)
 
 include (CheckIncludeFile)
 include (cmake/cpu.cmake)
@@ -17,6 +19,8 @@ set(HEADERS
     src/common/config/ConfigLoader.h
     src/common/config/ConfigWatcher.h
     src/common/Console.h
+    src/common/cpu/BasicCpuInfo.h
+    src/common/cpu/Cpu.h
     src/common/crypto/Algorithm.h
     src/common/crypto/keccak.h
     src/common/interfaces/IClientListener.h
@@ -24,6 +28,7 @@ set(HEADERS
     src/common/interfaces/IConfigCreator.h
     src/common/interfaces/IConsoleListener.h
     src/common/interfaces/IControllerListener.h
+    src/common/interfaces/ICpuInfo.h
     src/common/interfaces/ILogBackend.h
     src/common/interfaces/IStrategy.h
     src/common/interfaces/IStrategyListener.h
@@ -47,7 +52,6 @@ set(HEADERS
     src/common/xmrig.h
     src/core/ConfigLoader_platform.h
     src/core/Controller.h
-    src/Cpu.h
     src/interfaces/IJobResultListener.h
     src/interfaces/IThread.h
     src/interfaces/IWorker.h
@@ -94,6 +98,8 @@ set(SOURCES
     src/common/config/ConfigLoader.cpp
     src/common/config/ConfigWatcher.cpp
     src/common/Console.cpp
+    src/common/cpu/BasicCpuInfo.cpp
+    src/common/cpu/Cpu.cpp
     src/common/crypto/Algorithm.cpp
     src/common/crypto/keccak.cpp
     src/common/log/BasicLog.cpp
@@ -134,7 +140,6 @@ if (WIN32)
         res/app.rc
         src/App_win.cpp
         src/common/Platform_win.cpp
-        src/Cpu_win.cpp
         )
 
     add_definitions(/DWIN32)
@@ -143,13 +148,11 @@ elseif (APPLE)
     set(SOURCES_OS
         src/App_unix.cpp
         src/common/Platform_mac.cpp
-        src/Cpu_mac.cpp
         )
 else()
     set(SOURCES_OS
         src/App_unix.cpp
         src/common/Platform_unix.cpp
-        src/Cpu_unix.cpp
         )
 
     set(EXTRA_LIBS pthread rt dl)
@@ -157,9 +160,9 @@ endif()
 
 add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DUNICODE)
-#add_definitions(/DAPP_DEBUG)
 add_definitions(/DXMRIG_NVIDIA_PROJECT)
 add_definitions(/DXMRIG_NO_LIBCPUID)
+add_definitions(/DXMRIG_NO_ASM)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -189,11 +192,7 @@ else()
     set(SOURCES_NVML src/nvidia/NvmlApi_stub.cpp)
 endif()
 
-if (XMRIG_ARM)
-    set(SOURCES_CPUID src/Cpu_arm.cpp)
-else()
-    set(SOURCES_CPUID src/Cpu_stub.cpp)
-endif()
+include(cmake/OpenSSL.cmake)
 
 CHECK_INCLUDE_FILE (syslog.h HAVE_SYSLOG_H)
 if (HAVE_SYSLOG_H)
@@ -222,6 +221,7 @@ if (WITH_HTTPD)
         message(FATAL_ERROR "microhttpd NOT found: use `-DWITH_HTTPD=OFF` to build without http deamon support")
     endif()
 else()
+    set(HTTPD_SOURCES "")
     set(MHD_LIBRARY "")
     add_definitions(/DXMRIG_NO_HTTPD)
     add_definitions(/DXMRIG_NO_API)
@@ -234,5 +234,9 @@ if (BUILD_STATIC)
     set(CMAKE_EXE_LINKER_FLAGS " -static")
 endif()
 
-add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_CPUID} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${HTTPD_SOURCES})
-target_link_libraries(${PROJECT_NAME} xmrig-cuda ${UV_LIBRARIES} ${MHD_LIBRARY} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})
+if (WITH_DEBUG_LOG)
+    add_definitions(/DAPP_DEBUG)
+endif()
+
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${HTTPD_SOURCES} ${TLS_SOURCES})
+target_link_libraries(${PROJECT_NAME} xmrig-cuda ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${MHD_LIBRARY} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})

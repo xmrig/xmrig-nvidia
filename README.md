@@ -1,6 +1,6 @@
 # XMRig NVIDIA
 
-:warning: **You must update miners to version 2.5 before April 6 due [Monero PoW change](https://getmonero.org/2018/02/11/PoW-change-and-key-reuse.html).**
+:warning: **[Monero will change PoW algorithm on October 18](https://github.com/xmrig/xmrig/issues/753), all miners and proxy should be updated to [v2.8+](https://github.com/xmrig/xmrig-nvidia/releases/tag/v2.8.1)** :warning:
 
 [![Github All Releases](https://img.shields.io/github/downloads/xmrig/xmrig-nvidia/total.svg)](https://github.com/xmrig/xmrig-nvidia/releases)
 [![GitHub release](https://img.shields.io/github/release/xmrig/xmrig-nvidia/all.svg)](https://github.com/xmrig/xmrig-nvidia/releases)
@@ -49,32 +49,43 @@ Use [config.xmrig.com](https://config.xmrig.com/nvidia) to generate, edit or sha
 
 ### Command line options
 ```
-  -a, --algo=ALGO           cryptonight (default) or cryptonight-lite
+  -a, --algo=ALGO          specify the algorithm to use
+                             cryptonight
+                             cryptonight-lite
+                             cryptonight-heavy
   -o, --url=URL             URL of mining server
   -O, --userpass=U:P        username:password pair for mining server
   -u, --user=USERNAME       username for mining server
   -p, --pass=PASSWORD       password for mining server
-  -k, --keepalive           send keepalived for prevent timeout (need pool support)
+      --rig-id=ID           rig identifier for pool-side statistics (needs pool support)
+  -k, --keepalive           send keepalived packet for prevent timeout (needs pool support)
+      --nicehash            enable nicehash.com support
+      --tls                 enable SSL/TLS support (needs pool support)
+      --tls-fingerprint=F   pool TLS certificate fingerprint, if set enable strict certificate pinning
   -r, --retries=N           number of times to retry before switch to backup server (default: 5)
   -R, --retry-pause=N       time to pause between retries (default: 5)
-      --cuda-devices=N      List of CUDA devices to use.
-      --cuda-launch=TxB     List of launch config for the CryptoNight kernel
+      --cuda-devices=N      list of CUDA devices to use.
+      --cuda-launch=TxB     list of launch config for the CryptoNight kernel
       --cuda-max-threads=N  limit maximum count of GPU threads in automatic mode
       --cuda-bfactor=[0-12] run CryptoNight core kernel in smaller pieces
       --cuda-bsleep=N       insert a delay of N microseconds between kernel launches
       --cuda-affinity=N     affine GPU threads to a CPU
       --no-color            disable colored output
+      --variant             algorithm PoW variant
       --donate-level=N      donate level, default 5% (5 minutes in 100 minutes)
       --user-agent          set custom user-agent string for pool
   -B, --background          run the miner in the background
   -c, --config=FILE         load a JSON-format configuration file
   -l, --log-file=FILE       log all output to a file
   -S, --syslog              use system log for output messages
-      --nicehash            enable nicehash support
       --print-time=N        print hashrate report every N seconds
       --api-port=N          port for the miner API
       --api-access-token=T  access token for API
       --api-worker-id=ID    custom worker-id for API
+      --api-id=ID           custom instance ID for API
+      --api-ipv6            enable IPv6 support for API
+      --api-no-restricted   enable full remote access (only if API token set)
+      --dry-run             test configuration and exit
   -h, --help                display this help and exit
   -V, --version             output version information and exit
 ```
@@ -95,3 +106,4 @@ ec408bd837141bb8e0e7e6b4f76264255a3986f1e5a858400e6870bfad7e3214 xmrig-nvidia-2.
 ## Contacts
 * support@xmrig.com
 * [reddit](https://www.reddit.com/user/XMRig/)
+* [twitter](https://twitter.com/xmrig_dev)

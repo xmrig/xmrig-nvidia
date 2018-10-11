@@ -21,6 +21,9 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
+#include <thread>
+
 
 #ifdef _MSC_VER
 #   include <intrin.h>
@@ -32,14 +35,8 @@
 #   define bit_AES (1 << 25)
 #endif
 
-#ifndef bit_BMI2
-#   define bit_BMI2 (1 << 8)
-#endif
 
-#include <string.h>
-
-
-#include "Cpu.h"
+#include "common/cpu/BasicCpuInfo.h"
 
 
 #define VENDOR_ID                  (0)
@@ -74,7 +71,7 @@ static inline void cpuid(int level, int output[4]) {
 
 
 static inline void cpu_brand_string(char* s) {
-    int cpu_info[4] = { 0 };
+    int32_t cpu_info[4] = { 0 };
     cpuid(VENDOR_ID, cpu_info);
 
     if (cpu_info[EAX_Reg] >= 4) {
@@ -89,50 +86,46 @@ static inline void cpu_brand_string(char* s) {
 
 static inline bool has_aes_ni()
 {
-    int cpu_info[4] = { 0 };
+    int32_t cpu_info[4] = { 0 };
     cpuid(PROCESSOR_INFO, cpu_info);
 
     return (cpu_info[ECX_Reg] & bit_AES) != 0;
 }
 
 
-static inline bool has_bmi2() {
-    int cpu_info[4] = { 0 };
-    cpuid(EXTENDED_FEATURES, cpu_info);
-
-    return (cpu_info[EBX_Reg] & bit_BMI2) != 0;
-}
-
-
-char Cpu::m_brand[64]   = { 0 };
-int Cpu::m_flags        = 0;
-int Cpu::m_l2_cache     = 0;
-int Cpu::m_l3_cache     = 0;
-int Cpu::m_sockets      = 1;
-int Cpu::m_totalCores   = 0;
-size_t Cpu::m_totalThreads = 0;
-
-
-size_t Cpu::optimalThreadsCount(size_t size, int maxCpuUsage)
-{
-    const size_t count = m_totalThreads / 2;
-    return count < 1 ? 1 : count;
-}
-
-
-void Cpu::initCommon()
+xmrig::BasicCpuInfo::BasicCpuInfo() :
+    m_assembly(ASM_NONE),
+    m_aes(has_aes_ni()),
+    m_brand(),
+    m_threads(std::thread::hardware_concurrency())
 {
     cpu_brand_string(m_brand);
 
-#   if defined(__x86_64__) || defined(_M_AMD64)
-    m_flags |= X86_64;
+#   ifndef XMRIG_NO_ASM
+    if (hasAES()) {
+        char vendor[13] = { 0 };
+        int32_t data[4] = { 0 };
+
+        cpuid(0, data);
+
+        memcpy(vendor + 0, &data[1], 4);
+        memcpy(vendor + 4, &data[3], 4);
+        memcpy(vendor + 8, &data[2], 4);
+
+        if (memcmp(vendor, "GenuineIntel", 12) == 0) {
+            m_assembly = ASM_INTEL;
+        }
+        else if (memcmp(vendor, "AuthenticAMD", 12) == 0) {
+            m_assembly = ASM_RYZEN;
+        }
+    }
 #   endif
+}
 
-    if (has_aes_ni()) {
-        m_flags |= AES;
-    }
 
-    if (has_bmi2()) {
-        m_flags |= BMI2;
-    }
+size_t xmrig::BasicCpuInfo::optimalThreadsCount(size_t memSize, int maxCpuUsage) const
+{
+    const size_t count = threads() / 2;
+
+    return count < 1 ? 1 : count;
 }

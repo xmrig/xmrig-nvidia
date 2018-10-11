@@ -42,6 +42,7 @@ public:
         ApiPort           = 4000,
         ApiRestrictedKey  = 4004,
         ApiWorkerIdKey    = 4002,
+        ApiIdKey          = 4005,
         BackgroundKey     = 'B',
         ColorKey          = 1002,
         ConfigKey         = 'c',
@@ -62,6 +63,9 @@ public:
         VerboseKey        = 1100,
         VersionKey        = 'V',
         WatchKey          = 1105,
+        TlsKey            = 1013,
+        FingerprintKey    = 1014,
+        AutoSaveKey       = 1016,
 
         // xmrig common
         CPUPriorityKey    = 1021,
@@ -77,15 +81,20 @@ public:
         SafeKey           = 1005,
         ThreadsKey        = 't',
         HardwareAESKey    = 1011,
+        AssemblyKey       = 1015,
 
         // xmrig amd
-        OclPlatform       = 1400,
-        OclAffinity       = 1401,
-        OclDevices        = 1402,
-        OclLaunch         = 1403,
-        OclCache          = 1404,
-        OclPrint          = 1405,
-        OclLoader         = 1406,
+        OclPlatformKey    = 1400,
+        OclAffinityKey    = 1401,
+        OclDevicesKey     = 1402,
+        OclLaunchKey      = 1403,
+        OclCacheKey       = 1404,
+        OclPrintKey       = 1405,
+        OclLoaderKey      = 1406,
+        OclSridedIndexKey = 1407,
+        OclMemChunkKey    = 1408,
+        OclUnrollKey      = 1409,
+        OclCompModeKey    = 1410,
 
         // xmrig-proxy
         AccessLogFileKey  = 'A',
@@ -97,6 +106,7 @@ public:
         PoolCoinKey       = 'C',
         ReuseTimeoutKey   = 1106,
         WorkersKey        = 1103,
+        WorkersAdvKey     = 1107,
 
         // xmrig nvidia
         CudaMaxThreadsKey = 1200,

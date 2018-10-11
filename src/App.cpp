@@ -33,7 +33,6 @@
 #include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "Cpu.h"
 #include "crypto/CryptoNight.h"
 #include "net/Network.h"
 #include "Summary.h"

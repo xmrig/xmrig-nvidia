@@ -18,8 +18,6 @@ struct uint3  blockDim;
 #define __shfl(a,b,c) 1
 #endif
 
-#define MEMORY          (1 << 21) // 2 MiB / 2097152 B
-#define MEMORY_LITE     (1 << 20) // 1 MiB / 1048576 B
 #define AES_BLOCK_SIZE  16
 #define AES_KEY_SIZE    32
 #define INIT_SIZE_BLK   8

@@ -29,7 +29,6 @@
 #include <string.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <device_functions.h>
 
 #ifdef __CUDACC__
 __constant__
@@ -131,19 +130,32 @@ __device__ __forceinline__ void mix_and_propagate( uint32_t* state )
         (state + 4 * 7)[x] = (state + 4 * 7)[x] ^ tmp0[x];
 }
 
-template<xmrig::Algo ALGO>
-__global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_state2, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2 )
+
+template<xmrig::Algo ALGO, xmrig::Variant VARIANT>
+__global__ void cryptonight_extra_gpu_prepare(
+        int threads,
+        uint32_t *__restrict__ d_input,
+        uint32_t len,
+        uint32_t startNonce,
+        uint32_t *__restrict__ d_ctx_state,
+        uint32_t *__restrict__ d_ctx_state2,
+        uint32_t *__restrict__ d_ctx_a,
+        uint32_t *__restrict__ d_ctx_b,
+        uint32_t *__restrict__ d_ctx_key1,
+        uint32_t *__restrict__ d_ctx_key2
+        )
 {
-    int thread = ( blockDim.x * blockIdx.x + threadIdx.x );
+    int thread = (blockDim.x * blockIdx.x + threadIdx.x);
     __shared__ uint32_t sharedMemory[1024];
 
-    if(ALGO == xmrig::CRYPTONIGHT_HEAVY)
-    {
+    if (ALGO == xmrig::CRYPTONIGHT_HEAVY) {
         cn_aes_gpu_init( sharedMemory );
         __syncthreads( );
     }
-    if ( thread >= threads )
+
+    if (thread >= threads) {
         return;
+    }
 
     uint32_t ctx_state[50];
     uint32_t ctx_a[4];
@@ -152,41 +164,50 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
     uint32_t ctx_key2[40];
     uint32_t input[21];
 
-    memcpy( input, d_input, len );
-    //*((uint32_t *)(((char *)input) + 39)) = startNonce + thread;
+    memcpy(input, d_input, len);
     uint32_t nonce = startNonce + thread;
-    for ( int i = 0; i < sizeof (uint32_t ); ++i )
-        ( ( (char *) input ) + 39 )[i] = ( (char*) ( &nonce ) )[i]; //take care of pointer alignment
+    for (int i = 0; i < sizeof (uint32_t ); ++i) {
+        (((char *)input) + 39)[i] = ((char*) (&nonce))[i]; //take care of pointer alignment
+    }
 
-    cn_keccak( (uint8_t *) input, len, (uint8_t *) ctx_state );
-    cryptonight_aes_set_key( ctx_key1, ctx_state );
-    cryptonight_aes_set_key( ctx_key2, ctx_state + 8 );
+    cn_keccak((uint8_t *) input, len, (uint8_t *) ctx_state);
+    cryptonight_aes_set_key(ctx_key1, ctx_state);
+    cryptonight_aes_set_key(ctx_key2, ctx_state + 8);
 
-    XOR_BLOCKS_DST( ctx_state, ctx_state + 8, ctx_a );
-    XOR_BLOCKS_DST( ctx_state + 4, ctx_state + 12, ctx_b );
-    memcpy( d_ctx_a + thread * 4, ctx_a, 4 * 4 );
-    memcpy( d_ctx_b + thread * 4, ctx_b, 4 * 4 );
+    XOR_BLOCKS_DST(ctx_state, ctx_state + 8, ctx_a);
+    XOR_BLOCKS_DST(ctx_state + 4, ctx_state + 12, ctx_b);
+    memcpy(d_ctx_a + thread * 4, ctx_a, 4 * 4);
 
-    memcpy( d_ctx_key1 + thread * 40, ctx_key1, 40 * 4 );
-    memcpy( d_ctx_key2 + thread * 40, ctx_key2, 40 * 4 );
-    memcpy( d_ctx_state + thread * 50, ctx_state, 50 * 4 );
+    if (VARIANT == xmrig::VARIANT_2) {
+        memcpy(d_ctx_b + thread * 12, ctx_b, 4 * 4);
+        // bx1
+        XOR_BLOCKS_DST(ctx_state + 16, ctx_state + 20, ctx_b);
+        memcpy(d_ctx_b + thread * 12 + 4, ctx_b, 4 * 4);
+        // division_result
+        memcpy(d_ctx_b + thread * 12 + 2 * 4, ctx_state + 24, 4 * 2);
+        // sqrt_result
+        memcpy(d_ctx_b + thread * 12 + 2 * 4 + 2, ctx_state + 26, 4 * 2);
+    } else {
+        memcpy(d_ctx_b + thread * 4, ctx_b, 4 * 4);
+    }
 
-    if(ALGO == xmrig::CRYPTONIGHT_HEAVY)
-    {
+    memcpy(d_ctx_key1 + thread * 40, ctx_key1, 40 * 4);
+    memcpy(d_ctx_key2 + thread * 40, ctx_key2, 40 * 4);
+    memcpy(d_ctx_state + thread * 50, ctx_state, 50 * 4);
 
-        for(int i=0; i < 16; i++)
-        {
-            for(size_t t = 4; t < 12; ++t)
-            {
-                cn_aes_pseudo_round_mut( sharedMemory, ctx_state + 4u * t, ctx_key1 );
+    if (ALGO == xmrig::CRYPTONIGHT_HEAVY) {
+        for (int i = 0; i < 16; i++) {
+            for (size_t t = 4; t < 12; ++t) {
+                cn_aes_pseudo_round_mut(sharedMemory, ctx_state + 4u * t, ctx_key1);
             }
             // scipt first 4 * 128bit blocks = 4 * 4 uint32_t values
             mix_and_propagate(ctx_state + 4 * 4);
         }
         // double buffer to move manipulated state into phase1
-        memcpy( d_ctx_state2 + thread * 50, ctx_state, 50 * 4 );
+        memcpy(d_ctx_state2 + thread * 50, ctx_state, 50 * 4);
     }
 }
+
 
 template<xmrig::Algo ALGO>
 __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
@@ -294,18 +315,12 @@ int cryptonight_extra_cpu_init(nvid_ctx *ctx, xmrig::Algo algo, size_t hashMemSi
         break;
     };
 
-    const int gpuArch = ctx->device_arch[0] * 10 + ctx->device_arch[1];
-
-    /* Disable L1 cache for GPUs before Volta.
-    * L1 speed is increased and latency reduced with Volta.
-    */
-    if (gpuArch < 70) {
-        CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
-    }
+    CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferShared));
 
     size_t wsize = ctx->device_blocks * ctx->device_threads;
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
     size_t ctx_b_size = 4 * sizeof(uint32_t) * wsize;
+
     if (algo == xmrig::CRYPTONIGHT_HEAVY) {
         // extent ctx_b to hold the state of idx0
         ctx_b_size += sizeof(uint32_t) * wsize;
@@ -313,48 +328,49 @@ int cryptonight_extra_cpu_init(nvid_ctx *ctx, xmrig::Algo algo, size_t hashMemSi
         CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state2, 50 * sizeof(uint32_t) * wsize));
     }
     else {
+        ctx_b_size *= 3;
         ctx->d_ctx_state2 = ctx->d_ctx_state;
     }
 
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_text, 32 * sizeof(uint32_t) * wsize));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_a, 4 * sizeof(uint32_t) * wsize));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b, ctx_b_size));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1,     40 * sizeof(uint32_t) * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2,     40 * sizeof(uint32_t) * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_text,     32 * sizeof(uint32_t) * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_a,        4  * sizeof(uint32_t) * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b,        ctx_b_size));
     // POW block format http://monero.wikia.com/wiki/PoW_Block_Header_Format
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input, 21 * sizeof (uint32_t ) ));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof (uint32_t ) ));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t ) ));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state, hashMemSize * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input,        21 * sizeof (uint32_t)));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof (uint32_t)));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t)));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state,   hashMemSize * wsize));
 
     return 1;
 }
 
 
-void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrig::Algo algo)
+void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint32_t startNonce, xmrig::Algo algo, xmrig::Variant variant)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
 
-    dim3 grid( ( wsize + threadsperblock - 1 ) / threadsperblock );
-    dim3 block( threadsperblock );
+    dim3 grid((wsize + threadsperblock - 1) / threadsperblock);
+    dim3 block(threadsperblock);
 
-    if(algo == xmrig::CRYPTONIGHT_HEAVY)
-    {
-        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT_HEAVY><<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
-            ctx->d_ctx_state,ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2 ));
-    }
-    else
-    {
-        /* pass two times d_ctx_state because the second state is used later in phase1,
-         * the first is used than in phase3
-         */
-        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT><<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
-            ctx->d_ctx_state, ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2 ));
+    /* pass two times d_ctx_state because the second state is used later in phase1,
+     * the first is used than in phase3
+     */
+    if (algo == xmrig::CRYPTONIGHT_HEAVY) {
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT_HEAVY, xmrig::VARIANT_AUTO><<<grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
+            ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
+    } else if (variant == xmrig::VARIANT_2) {
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT, xmrig::VARIANT_2><<<grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
+            ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
+    } else {
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT, xmrig::VARIANT_AUTO><<<grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
+            ctx->d_ctx_state, ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
     }
 }
 
-void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce, xmrig::Algo algo)
+void cryptonight_extra_cpu_final(nvid_ctx *ctx, uint32_t startNonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, xmrig::Algo algo)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -385,6 +401,24 @@ void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t ta
 
     for (int i = 0; i < *rescount; i++) {
         resnonce[i] += startNonce;
+    }
+}
+
+void cryptonight_extra_cpu_free(nvid_ctx *ctx, xmrig::Algo algo)
+{
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key1));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key2));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_text));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_a));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_b));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_input));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_result_count));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_result_nonce));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_long_state));
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_state));
+
+    if (algo == xmrig::CRYPTONIGHT_HEAVY) {
+        CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_state2));
     }
 }
 

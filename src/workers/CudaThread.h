@@ -75,6 +75,10 @@ public:
     inline void setSyncMode(uint32_t syncMode) { m_syncMode = syncMode > 3 ? 3 : syncMode; }
 
 protected:
+#   ifdef APP_DEBUG
+    void print() const override;
+#   endif
+
 #   ifndef XMRIG_NO_API
     rapidjson::Value toAPI(rapidjson::Document &doc) const override;
 #   endif

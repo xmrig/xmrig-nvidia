@@ -20,58 +20,41 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_ITHREAD_H
-#define XMRIG_ITHREAD_H
+#ifndef XMRIG_CPUINFO_H
+#define XMRIG_CPUINFO_H
 
 
+#include <stddef.h>
 #include <stdint.h>
 
 
 #include "common/xmrig.h"
-#include "rapidjson/fwd.h"
 
 
 namespace xmrig {
 
 
-class IThread
+class ICpuInfo
 {
 public:
-    enum Type {
-        CPU,
-        OpenCL,
-        CUDA
-    };
+    virtual ~ICpuInfo() {}
 
-    enum Multiway {
-        SingleWay = 1,
-        DoubleWay,
-        TripleWay,
-        QuadWay,
-        PentaWay
-    };
-
-    virtual ~IThread() {}
-
-    virtual Algo algorithm() const                                    = 0;
-    virtual int priority() const                                      = 0;
-    virtual int64_t affinity() const                                  = 0;
-    virtual Multiway multiway() const                                 = 0;
-    virtual rapidjson::Value toConfig(rapidjson::Document &doc) const = 0;
-    virtual size_t index() const                                      = 0;
-    virtual Type type() const                                         = 0;
-
-#   ifndef XMRIG_NO_API
-    virtual rapidjson::Value toAPI(rapidjson::Document &doc) const = 0;
-#   endif
-
-#   ifdef APP_DEBUG
-    virtual void print() const = 0;
-#   endif
+    virtual bool hasAES() const                                               = 0;
+    virtual bool isSupported() const                                          = 0;
+    virtual bool isX64() const                                                = 0;
+    virtual const char *brand() const                                         = 0;
+    virtual int32_t cores() const                                             = 0;
+    virtual int32_t L2() const                                                = 0;
+    virtual int32_t L3() const                                                = 0;
+    virtual int32_t nodes() const                                             = 0;
+    virtual int32_t sockets() const                                           = 0;
+    virtual int32_t threads() const                                           = 0;
+    virtual size_t optimalThreadsCount(size_t memSize, int maxCpuUsage) const = 0;
+    virtual xmrig::Assembly assembly() const                                  = 0;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif // XMRIG_ITHREAD_H
+#endif // XMRIG_CPUINFO_H
