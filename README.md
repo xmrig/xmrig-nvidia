@@ -1,6 +1,6 @@
 # XMRig NVIDIA
 
-:warning: **[Monero will change PoW algorithm on October 18](https://github.com/xmrig/xmrig/issues/753), all miners and proxy should be updated to [v2.8+](https://github.com/xmrig/xmrig-nvidia/releases/tag/v2.8.1)** :warning:
+:warning: **[Monero will change PoW algorithm on October 18](https://github.com/xmrig/xmrig/issues/753), all miners and proxy should be updated to [v2.8+](https://github.com/xmrig/xmrig-nvidia/releases/tag/v2.8.0-rc)** :warning:
 
 [![Github All Releases](https://img.shields.io/github/downloads/xmrig/xmrig-nvidia/total.svg)](https://github.com/xmrig/xmrig-nvidia/releases)
 [![GitHub release](https://img.shields.io/github/release/xmrig/xmrig-nvidia/all.svg)](https://github.com/xmrig/xmrig-nvidia/releases)
@@ -99,8 +99,8 @@ Default donation 5% (5 minutes in 100 minutes) can be reduced to 1% via command 
 ## Release checksums
 ### SHA-256
 ```
-30accf8b03c8bfd90034e6e49fe733a438dff6b530faf411aab6fe738a06fa8b xmrig-nvidia-2.7.0-beta-cuda8-win64.zip/xmrig-nvidia.exe
-ec408bd837141bb8e0e7e6b4f76264255a3986f1e5a858400e6870bfad7e3214 xmrig-nvidia-2.7.0-beta-cuda9-win64.zip/xmrig-nvidia.exe
+01dd3dec26e9bcedb138f3e7b1193803a0c0eab6d75ae2f1eb327bb97518bf1a xmrig-nvidia-2.8.0-cuda-8_0-win64.zip/xmrig-nvidia.exe
+59ecd1212c63df2d3dfc053e91fa08e9c3bcfdb122e1f12b5e5abc4c475e4767 xmrig-nvidia-2.8.0-cuda-9_2-win64.zip/xmrig-nvidia.exe
 ```
 
 ## Contacts
