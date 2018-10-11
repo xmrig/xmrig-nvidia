@@ -3,6 +3,7 @@
     "api": {
         "port": 0,
         "access-token": null,
+        "id": null,
         "worker-id": null,
         "ipv6": false,
         "restricted": true
@@ -16,13 +17,15 @@
     "log-file": null,
     "pools": [
         {
-            "url": "proxy.fee.xmrig.com:9999",
+            "url": "donate.v2.xmrig.com:3333",
             "user": "YOUR_WALLET",
             "pass": "x",
             "rig-id": null,
             "nicehash": false,
             "keepalive": true,
-            "variant": 1
+            "variant": -1,
+            "tls": false,
+            "tls-fingerprint": null
         }
     ],
     "print-time": 60,
