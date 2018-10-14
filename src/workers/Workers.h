@@ -74,6 +74,7 @@ public:
 
 private:
     static void onReady(void *arg);
+    static void onReport(uv_timer_t *handle);
     static void onResult(uv_async_t *handle);
     static void onTick(uv_timer_t *handle);
     static void start(IWorker *worker);
@@ -92,6 +93,7 @@ private:
     static uv_async_t m_async;
     static uv_mutex_t m_mutex;
     static uv_rwlock_t m_rwlock;
+    static uv_timer_t m_reportTimer;
     static uv_timer_t m_timer;
     static xmrig::Controller *m_controller;
 };

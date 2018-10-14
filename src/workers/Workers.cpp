@@ -55,6 +55,7 @@ uint64_t Workers::m_ticks = 0;
 uv_async_t Workers::m_async;
 uv_mutex_t Workers::m_mutex;
 uv_rwlock_t Workers::m_rwlock;
+uv_timer_t Workers::m_reportTimer;
 uv_timer_t Workers::m_timer;
 xmrig::Controller *Workers::m_controller = nullptr;
 
@@ -241,12 +242,22 @@ bool Workers::start(xmrig::Controller *controller)
         controller->config()->save();
     }
 
+    const uint64_t printTime = static_cast<uint64_t>(m_controller->config()->printTime());
+    if (printTime > 0) {
+        uv_timer_init(uv_default_loop(), &m_reportTimer);
+        uv_timer_start(&m_reportTimer, Workers::onReport, (printTime + 4) * 1000, printTime * 1000);
+    }
+
     return true;
 }
 
 
 void Workers::stop()
 {
+    if (m_controller->config()->printTime() > 0) {
+        uv_timer_stop(&m_reportTimer);
+    }
+
     uv_timer_stop(&m_timer);
     m_hashrate->stop();
 
@@ -285,6 +296,16 @@ void Workers::onReady(void *arg)
     handle->setWorker(worker);
 
     start(worker);
+}
+
+
+void Workers::onReport(uv_timer_t *)
+{
+    m_hashrate->print();
+
+    if (NvmlApi::isAvailable()) {
+        printHealth();
+    }
 }
 
 

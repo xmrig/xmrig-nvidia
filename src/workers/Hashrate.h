@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HASHRATE_H__
-#define __HASHRATE_H__
+#ifndef XMRIG_HASHRATE_H
+#define XMRIG_HASHRATE_H
 
 
 #include <stdint.h>
@@ -57,8 +57,6 @@ public:
     static const char *format(double h, char *buf, size_t size);
 
 private:
-    static void onReport(uv_timer_t *handle);
-
     constexpr static size_t kBucketSize = 2 << 11;
     constexpr static size_t kBucketMask = kBucketSize - 1;
 
@@ -67,7 +65,6 @@ private:
     uint32_t* m_top;
     uint64_t** m_counts;
     uint64_t** m_timestamps;
-    uv_timer_t m_timer;
     xmrig::Controller *m_controller;
 };
 
