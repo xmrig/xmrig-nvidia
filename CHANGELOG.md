@@ -1,4 +1,8 @@
 # v2.8.1
+- [#167](https://github.com/xmrig/xmrig-amd/issues/167) Fixed wrong hashrate in `GET /1/threads` endpoint.
+- [#204](https://github.com/xmrig/xmrig-nvidia/issues/204) Fixed regression, periodical health reports was not shown since v2.7.0-beta.
+
+# v2.8.0
 - **[#753](https://github.com/xmrig/xmrig/issues/753) Added new algorithm [CryptoNight variant 2](https://github.com/xmrig/xmrig/issues/753) for Monero fork, thanks [@SChernykh](https://github.com/SChernykh).**
 - **[#758](https://github.com/xmrig/xmrig/issues/758) Added SSL/TLS support for secure connections to pools.**
   - Added per pool options `"tls"` and `"tls-fingerprint"` and command line equivalents.  
