@@ -60,15 +60,6 @@ Hashrate::Hashrate(size_t threads, xmrig::Controller *controller) :
         m_timestamps[i] = new uint64_t[kBucketSize]();
         m_top[i]        = 0;
     }
-
-    const int printTime = controller->config()->printTime();
-
-    if (printTime > 0) {
-        uv_timer_init(uv_default_loop(), &m_timer);
-        m_timer.data = this;
-
-       uv_timer_start(&m_timer, Hashrate::onReport, (printTime + 4) * 1000, printTime * 1000);
-    }
 }
 
 
@@ -171,7 +162,6 @@ void Hashrate::print() const
 
 void Hashrate::stop()
 {
-    uv_timer_stop(&m_timer);
 }
 
 
@@ -187,10 +177,4 @@ void Hashrate::updateHighest()
 const char *Hashrate::format(double h, char *buf, size_t size)
 {
     return ::format(h, buf, size);
-}
-
-
-void Hashrate::onReport(uv_timer_t *handle)
-{
-    static_cast<Hashrate*>(handle->data)->print();
 }
