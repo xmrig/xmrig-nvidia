@@ -48,8 +48,8 @@ class Config : public CommonConfig
 public:
     Config();
 
+    bool isCNv2() const;
     bool reload(const char *json);
-
     void getJSON(rapidjson::Document &doc) const override;
 
     inline bool isShouldSave() const                     { return m_shouldSave; }
