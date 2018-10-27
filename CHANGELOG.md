@@ -1,3 +1,7 @@
+# v2.8.4
+- Improved `cn/2` performance for old GPUs.
+- Better `cn/2` autoconfig for old GPUs if variant `-1` or `2` selected.
+
 # v2.8.3
 - [#197](https://github.com/xmrig/xmrig/issues/197) Fixed wrong default value for option `sync_mode`.
 - [#813](https://github.com/xmrig/xmrig/issues/813) Fixed critical bug with Minergate pool and variant 2.
