@@ -1,3 +1,7 @@
+# v2.8.3
+- [#197](https://github.com/xmrig/xmrig/issues/197) Fixed wrong default value for option `sync_mode`.
+- [#813](https://github.com/xmrig/xmrig/issues/813) Fixed critical bug with Minergate pool and variant 2.
+
 # v2.8.1
 - [#167](https://github.com/xmrig/xmrig-amd/issues/167) Fixed wrong hashrate in `GET /1/threads` endpoint.
 - [#204](https://github.com/xmrig/xmrig-nvidia/issues/204) Fixed regression, periodical health reports was not shown since v2.7.0-beta.
