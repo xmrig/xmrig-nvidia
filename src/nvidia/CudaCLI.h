@@ -42,8 +42,8 @@ class CudaCLI
 public:
     CudaCLI();
 
-    bool setup(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo);
-    void autoConf(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo);
+    bool setup(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo, bool isCNv2);
+    void autoConf(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo, bool isCNv2);
     void parseDevices(const char *arg);
     void parseLaunch(const char *arg);
 

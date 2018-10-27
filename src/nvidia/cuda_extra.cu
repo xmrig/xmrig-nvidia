@@ -451,7 +451,7 @@ int cuda_get_runtime_version()
  *         4 = not enough memory
  *         5 = architecture not supported (not compiled for the gpu architecture)
  */
-int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo)
+int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo, bool isCNv2)
 {
     cudaError_t err;
     int version;
@@ -603,6 +603,18 @@ int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo)
         if (props.major == 2 && ctx->device_threads > 64) {
             // Fermi gpus only support 512 threads per block (we need start 4 * configured threads)
             ctx->device_threads = 64;
+        }
+
+        if (isCNv2 && props.major < 6) {
+            // 4 based on my test maybe it must be adjusted later
+            size_t threads = 4;
+            // 8 is chosen by checking the occupancy calculator
+            size_t blockOptimal = 8 * ctx->device_mpcount;
+
+            if (blockOptimal * threads * hashMemSize < limitedMemory) {
+                ctx->device_threads = threads;
+                ctx->device_blocks = blockOptimal;
+            }
         }
 
     }

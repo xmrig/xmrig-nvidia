@@ -132,7 +132,7 @@ bool CudaThread::init(xmrig::Algo algorithm)
     ctx.device_bsleep  = m_bsleep;
     ctx.syncMode       = m_syncMode;
 
-    if (cuda_get_deviceinfo(&ctx, algorithm) != 0) {
+    if (cuda_get_deviceinfo(&ctx, algorithm, false) != 0) {
         return false;
     }
 

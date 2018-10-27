@@ -38,7 +38,7 @@ CudaCLI::CudaCLI() :
 }
 
 
-bool CudaCLI::setup(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo)
+bool CudaCLI::setup(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo, bool isCNv2)
 {
     if (isEmpty() || m_count == 0) {
         return false;
@@ -59,7 +59,7 @@ bool CudaCLI::setup(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo)
         ctx.device_bsleep  = bsleep(i);
         ctx.syncMode       = 3;
 
-        if (cuda_get_deviceinfo(&ctx, algo) != 0) {
+        if (cuda_get_deviceinfo(&ctx, algo, isCNv2) != 0) {
             continue;
         }
 
@@ -70,7 +70,7 @@ bool CudaCLI::setup(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo)
 }
 
 
-void CudaCLI::autoConf(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo)
+void CudaCLI::autoConf(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo, bool isCNv2)
 {
     if (m_count == 0) {
         return;
@@ -85,7 +85,7 @@ void CudaCLI::autoConf(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo)
         ctx.device_bsleep  = bsleep();
         ctx.syncMode       = 3;
 
-        if (cuda_get_deviceinfo(&ctx, algo) != 0) {
+        if (cuda_get_deviceinfo(&ctx, algo, isCNv2) != 0) {
             continue;
         }
 
