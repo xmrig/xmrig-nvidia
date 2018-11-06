@@ -1,5 +1,5 @@
 # v2.8.4
-- Improved `cn/2` performance for old GPUs.
+- Improved `cn/2` performance especially for old GPUs.
 - Better `cn/2` autoconfig for old GPUs if variant `-1` or `2` selected.
 
 # v2.8.3
