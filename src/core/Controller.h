@@ -46,6 +46,7 @@ public:
     Controller();
     ~Controller() override;
 
+    bool isDone() const;
     bool isReady() const;
     Config *config() const;
     int init(int argc, char **argv);
