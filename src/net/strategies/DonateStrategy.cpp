@@ -43,7 +43,9 @@ DonateStrategy::DonateStrategy(int level, const char *user, xmrig::Algo algo, IS
     m_donateTime(level * 60 * 1000),
     m_idleTime((100 - level) * 60 * 1000),
     m_strategy(nullptr),
-    m_listener(listener)
+    m_listener(listener),
+    m_now(0),
+    m_stop(0)
 {
     uint8_t hash[200];
     char userId[65] = { 0 };
@@ -102,7 +104,14 @@ void DonateStrategy::stop()
 
 void DonateStrategy::tick(uint64_t now)
 {
+    m_now = now;
+
     m_strategy->tick(now);
+
+    if (m_stop && now > m_stop) {
+        m_strategy->stop();
+        m_stop = 0;
+    }
 }
 
 
@@ -142,7 +151,7 @@ void DonateStrategy::idle(uint64_t timeout)
 
 void DonateStrategy::suspend()
 {
-    m_strategy->stop();
+    m_stop = m_now + 5000;
 
     m_active = false;
     m_listener->onPause(this);

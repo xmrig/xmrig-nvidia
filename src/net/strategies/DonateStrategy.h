@@ -44,7 +44,7 @@ class DonateStrategy : public IStrategy, public IStrategyListener
 {
 public:
     DonateStrategy(int level, const char *user, xmrig::Algo algo, IStrategyListener *listener);
-    ~DonateStrategy();
+    ~DonateStrategy() override;
 
 public:
     inline bool isActive() const override  { return m_active; }
@@ -68,11 +68,13 @@ private:
     static void onTimer(uv_timer_t *handle);
 
     bool m_active;
-    const int m_donateTime;
-    const int m_idleTime;
+    const uint64_t m_donateTime;
+    const uint64_t m_idleTime;
     IStrategy *m_strategy;
     IStrategyListener *m_listener;
     std::vector<Pool> m_pools;
+    uint64_t m_now;
+    uint64_t m_stop;
     uv_timer_t m_timer;
 };
 
