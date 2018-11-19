@@ -75,6 +75,7 @@ static inline void compat_usleep(int waitTime)
 #include "cuda_aes.hpp"
 #include "cuda_device.hpp"
 #include "cuda_fast_int_math_v2.hpp"
+#include "cuda_fast_div_heavy.hpp"
 #include "common/xmrig.h"
 #include "crypto/CryptoNight_constants.h"
 
@@ -601,7 +602,7 @@ __global__ void cryptonight_core_gpu_phase2_quad(
             if (ALGO == xmrig::CRYPTONIGHT_HEAVY) {
                 int64_t n = loadGlobal64<uint64_t>( ( (uint64_t *) long_state ) + (( idx0 & MASK ) >> 3));
                 int32_t d = loadGlobal32<uint32_t>( (uint32_t*)(( (uint64_t *) long_state ) + (( idx0 & MASK) >> 3) + 1u ));
-                int64_t q = n / (d | 0x5);
+                int64_t q = fast_div_heavy(n, d | 0x5);
 
                 if (sub & 1) {
                     storeGlobal64<uint64_t>( ( (uint64_t *) long_state ) + (( idx0 & MASK ) >> 3), n ^ q );
