@@ -1,3 +1,6 @@
+# v2.9.1
+- [#899](https://github.com/xmrig/xmrig/issues/899) Added support for new algorithm `cn/half` for Masari and Stellite forks.
+
 # v2.8.4
 - Improved `cn/2` performance especially for old GPUs.
 - Better `cn/2` autoconfig for old GPUs if variant `-1` or `2` selected.
