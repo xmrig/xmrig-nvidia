@@ -126,7 +126,7 @@ void CudaWorker::consumeJob()
 {
     Job job = Workers::job();
     m_sequence = Workers::sequence();
-    if (m_job == job) {
+    if (m_job.id() == job.id() && m_job.clientId() == job.clientId()) {
         return;
     }
 

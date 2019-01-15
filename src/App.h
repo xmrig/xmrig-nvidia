@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __APP_H__
-#define __APP_H__
+#ifndef XMRIG_APP_H
+#define XMRIG_APP_H
 
 
 #include <uv.h>
@@ -46,7 +46,7 @@ class App : public IConsoleListener
 {
 public:
   App(int argc, char **argv);
-  ~App();
+  ~App() override;
 
   int exec();
 
@@ -70,4 +70,4 @@ private:
 };
 
 
-#endif /* __APP_H__ */
+#endif /* XMRIG_APP_H */
