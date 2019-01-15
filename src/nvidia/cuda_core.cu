@@ -440,7 +440,7 @@ __global__ void cryptonight_core_gpu_phase2_double(
 }
 
 
-template<size_t ITERATIONS, uint32_t MEM, uint32_t MASK, xmrig::Algo ALGO, xmrig::Variant VARIANT, bool IS_V1>
+template<size_t ITERATIONS, uint32_t MEM, uint32_t MASK, xmrig::Algo ALGO, xmrig::Variant VARIANT, xmrig::Variant BASE>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 4 )
 #endif
@@ -487,7 +487,7 @@ __global__ void cryptonight_core_gpu_phase2_quad(
     uint32_t t1[2], t2[2], res;
 
     uint32_t tweak1_2[2];
-    if (IS_V1) {
+    if (BASE == xmrig::VARIANT_1) {
         uint32_t * state = d_ctx_state + thread * 50;
         tweak1_2[0] = (d_input[8] >> 24) | (d_input[9] << 8);
         tweak1_2[0] ^= state[48];
@@ -553,7 +553,7 @@ __global__ void cryptonight_core_gpu_phase2_quad(
             t1[0] = shuffle<4>(sPtr,sub, d[x], 0);
 
             const uint32_t z = d[0] ^ d[1];
-            if (IS_V1) {
+            if (BASE == xmrig::VARIANT_1) {
                 const uint32_t table = 0x75310U;
                 const uint32_t index = ((z >> (VARIANT == xmrig::VARIANT_XTL ? 27 : 26)) & 12) | ((z >> 23) & 2);
                 const uint32_t fork_7 = z ^ ((table >> index) & 0x30U) << 24;
@@ -582,7 +582,7 @@ __global__ void cryptonight_core_gpu_phase2_quad(
 
             res = *( (uint64_t *) t2 )  >> ( sub & 1 ? 32 : 0 );
 
-            if (IS_V1) {
+            if (BASE == xmrig::VARIANT_1) {
                 const uint32_t tweaked_res = tweak1_2[sub & 1] ^ res;
                 uint32_t long_state_update = sub2 ? tweaked_res : res;
 
@@ -682,10 +682,10 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 template<xmrig::Algo ALGO, xmrig::Variant VARIANT>
 void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 {
-    constexpr size_t MASK       = xmrig::cn_select_mask<ALGO>();
-    constexpr size_t ITERATIONS = xmrig::cn_select_iter<ALGO, VARIANT>();
-    constexpr size_t MEM        = xmrig::cn_select_memory<ALGO>() / 4;
-    constexpr bool IS_V1        = xmrig::cn_base_variant<VARIANT>() == xmrig::VARIANT_1;
+    constexpr size_t MASK         = xmrig::cn_select_mask<ALGO>();
+    constexpr size_t ITERATIONS   = xmrig::cn_select_iter<ALGO, VARIANT>();
+    constexpr size_t MEM          = xmrig::cn_select_memory<ALGO>() / 4;
+    constexpr xmrig::Variant BASE = xmrig::cn_base_variant<VARIANT>();
 
     dim3 grid(ctx->device_blocks);
     dim3 block(ctx->device_threads);
@@ -723,7 +723,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
     }
 
     for (int i = 0; i < partcount; i++) {
-        if (VARIANT == xmrig::VARIANT_2) {
+        if (BASE == xmrig::VARIANT_2) {
             CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase2_double<ITERATIONS, MEM, MASK, ALGO, VARIANT><<<
                 grid,
                 block2,
@@ -741,7 +741,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
                 )
             );
         } else {
-            CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase2_quad<ITERATIONS, MEM, MASK, ALGO, VARIANT, IS_V1><<<
+            CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase2_quad<ITERATIONS, MEM, MASK, ALGO, VARIANT, BASE><<<
                 grid,
                 block4,
                 block4.x * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)
@@ -810,6 +810,10 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
 
         case VARIANT_2:
             cryptonight_core_gpu_hash<CRYPTONIGHT, VARIANT_2>(ctx, startNonce);
+            break;
+
+        case VARIANT_HALF:
+            cryptonight_core_gpu_hash<CRYPTONIGHT, VARIANT_HALF>(ctx, startNonce);
             break;
 
         default:
