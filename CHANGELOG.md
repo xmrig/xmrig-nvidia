@@ -1,3 +1,6 @@
+# v2.9.3
+- [#232](https://github.com/xmrig/xmrig-nvidia/pull/232) Fixed `cn/half` compute errors.
+
 # v2.9.1
 - [#899](https://github.com/xmrig/xmrig/issues/899) Added support for new algorithm `cn/half` for Masari and Stellite forks.
 
