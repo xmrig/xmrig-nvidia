@@ -1,3 +1,6 @@
+# v2.9.4
+- [#913](https://github.com/xmrig/xmrig/issues/913) Fixed Masari (MSR) support (this update required for upcoming fork).
+
 # v2.9.3
 - [#232](https://github.com/xmrig/xmrig-nvidia/pull/232) Fixed `cn/half` compute errors.
 
