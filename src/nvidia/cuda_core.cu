@@ -852,4 +852,7 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
             break;
         }
     }
+    else if (algo == CRYPTONIGHT_PICO) {
+        cryptonight_core_gpu_hash<CRYPTONIGHT_PICO, VARIANT_TRTL>(ctx, startNonce);
+    }
 }
