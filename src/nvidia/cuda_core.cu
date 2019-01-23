@@ -329,7 +329,7 @@ __global__ void cryptonight_core_gpu_phase2_double(
 
     uint64_t* ptr0;
     for (int i = start; i < end; ++i) {
-        ptr0 = (uint64_t *)&l0[idx0 & 0x1FFFC0];
+        ptr0 = (uint64_t *)&l0[idx0 & (MASK - 0x30)];
 
         ((ulonglong4*)myChunks)[sub] = ((ulonglong4*)ptr0)[sub];
 
@@ -364,7 +364,7 @@ __global__ void cryptonight_core_gpu_phase2_double(
 
         idx0 = shuffle<2>(sPtr, sub, cx_aes.x, 0);
         idx1 = (idx0 & 0x30) >> 3;
-        ptr0 = (uint64_t *)&l0[idx0 & MASK & 0x1FFFC0];
+        ptr0 = (uint64_t *)&l0[idx0 & MASK & (MASK - 0x30)];
 
         ((ulonglong4*)myChunks)[sub] = ((ulonglong4*)ptr0)[sub];
 
@@ -851,5 +851,8 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
         default:
             break;
         }
+    }
+    else if (algo == CRYPTONIGHT_PICO) {
+        cryptonight_core_gpu_hash<CRYPTONIGHT_PICO, VARIANT_TRTL>(ctx, startNonce);
     }
 }
