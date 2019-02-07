@@ -30,22 +30,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#ifdef __CUDACC__
-__constant__
-#else
-const
-#endif
-uint64_t keccakf_rndc[24] ={
-    0x0000000000000001, 0x0000000000008082, 0x800000000000808a,
-    0x8000000080008000, 0x000000000000808b, 0x0000000080000001,
-    0x8000000080008081, 0x8000000000008009, 0x000000000000008a,
-    0x0000000000000088, 0x0000000080008009, 0x000000008000000a,
-    0x000000008000808b, 0x800000000000008b, 0x8000000000008089,
-    0x8000000000008003, 0x8000000000008002, 0x8000000000000080,
-    0x000000000000800a, 0x800000008000000a, 0x8000000080008081,
-    0x8000000000008080, 0x0000000080000001, 0x8000000080008008
-};
-
 typedef unsigned char BitSequence;
 typedef unsigned long long DataLength;
 
@@ -282,6 +266,53 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
 }
 
 
+template<xmrig::Algo ALGO>
+__global__ void cryptonight_gpu_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
+{
+	const int thread = blockDim.x * blockIdx.x + threadIdx.x;
+
+	__shared__ uint32_t sharedMemory[1024];
+
+	cn_aes_gpu_init( sharedMemory );
+	__syncthreads( );
+
+	if ( thread >= threads )
+		return;
+
+	int i;
+	uint32_t * __restrict__ ctx_state = d_ctx_state + thread * 50;
+	uint32_t state[50];
+
+	#pragma unroll
+	for ( i = 0; i < 50; i++ )
+		state[i] = ctx_state[i];
+
+	uint32_t key[40];
+
+	// load keys
+	MEMCPY8( key, d_ctx_key2 + thread * 40, 20 );
+
+	for(int i=0; i < 16; i++)
+	{
+		for(size_t t = 4; t < 12; ++t)
+		{
+			cn_aes_pseudo_round_mut( sharedMemory, state + 4u * t, key );
+		}
+		// scipt first 4 * 128bit blocks = 4 * 4 uint32_t values
+		mix_and_propagate(state + 4 * 4);
+	}
+
+	cn_keccakf2( (uint64_t *) state );
+
+	if ( ((uint64_t*)state)[3] < target )
+	{
+		uint32_t idx = atomicInc( d_res_count, 0xFFFFFFFF );
+
+		if(idx < 10)
+			d_res_nonce[idx] = thread;
+	}
+}
+
 void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, size_t len)
 {
     ctx->inputlen = static_cast<unsigned int>(len);
@@ -370,7 +401,7 @@ void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint32_t startNonce, xmrig::Al
     }
 }
 
-void cryptonight_extra_cpu_final(nvid_ctx *ctx, uint32_t startNonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, xmrig::Algo algo)
+void cryptonight_extra_cpu_final(nvid_ctx *ctx, uint32_t startNonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, xmrig::Algo algo, xmrig::Variant variant)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -384,8 +415,13 @@ void cryptonight_extra_cpu_final(nvid_ctx *ctx, uint32_t startNonce, uint64_t ta
     if (algo == xmrig::CRYPTONIGHT_HEAVY) {
         CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_final<xmrig::CRYPTONIGHT_HEAVY><<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state,ctx->d_ctx_key2 ));
     } else {
-        // fallback for all other algorithms
-        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_final<xmrig::CRYPTONIGHT><<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state,ctx->d_ctx_key2 ));
+        if (variant == xmrig::VARIANT_GPU) {
+            // fallback for all other algorithms
+            CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_gpu_extra_gpu_final<xmrig::CRYPTONIGHT> << <grid, block >> > (wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state, ctx->d_ctx_key2));
+        } else {
+            // fallback for all other algorithms
+            CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_final<xmrig::CRYPTONIGHT> << <grid, block >> > (wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state, ctx->d_ctx_key2));
+        }
     }
 
     CUDA_CHECK(ctx->device_id, cudaMemcpy(rescount, ctx->d_result_count, sizeof(uint32_t), cudaMemcpyDeviceToHost));
