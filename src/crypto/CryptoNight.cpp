@@ -4,9 +4,10 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2017-2019 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -98,6 +99,13 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
 
         nullptr, nullptr, // VARIANT_TRTL
 
+#       ifndef XMRIG_NO_CN_GPU
+        cryptonight_single_hash_gpu<CRYPTONIGHT, false, VARIANT_GPU>,
+        cryptonight_single_hash_gpu<CRYPTONIGHT, true,  VARIANT_GPU>,
+#       else
+        nullptr, nullptr, // VARIANT_GPU
+#       endif
+
 #       ifndef XMRIG_NO_AEON
         cryptonight_single_hash<CRYPTONIGHT_LITE, false, VARIANT_0>,
         cryptonight_single_hash<CRYPTONIGHT_LITE, true,  VARIANT_0>,
@@ -114,13 +122,14 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, // VARIANT_2
         nullptr, nullptr, // VARIANT_HALF
         nullptr, nullptr, // VARIANT_TRTL
+        nullptr, nullptr, // VARIANT_GPU
 #       else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
-        nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
 #       endif
 
 #       ifndef XMRIG_NO_SUMO
@@ -143,13 +152,14 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, // VARIANT_2
         nullptr, nullptr, // VARIANT_HALF
         nullptr, nullptr, // VARIANT_TRTL
+        nullptr, nullptr, // VARIANT_GPU
 #       else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
-        nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
 #       endif
 #       ifndef XMRIG_NO_CN_PICO
         nullptr, nullptr, // VARIANT_0
@@ -165,13 +175,15 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
 
         cryptonight_single_hash<CRYPTONIGHT_PICO, false, VARIANT_TRTL>,
         cryptonight_single_hash<CRYPTONIGHT_PICO, true,  VARIANT_TRTL>,
+
+        nullptr, nullptr, // VARIANT_GPU
     #else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
-        nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
 #       endif
     };
 
@@ -194,8 +206,8 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
 
 cryptonight_ctx *CryptoNight::createCtx(xmrig::Algo algorithm)
 {
-    cryptonight_ctx *ctx = static_cast<cryptonight_ctx *>(_mm_malloc(sizeof(cryptonight_ctx), 16));
-    ctx->memory          = static_cast<uint8_t *>(_mm_malloc(xmrig::cn_select_memory(algorithm), 16));
+    cryptonight_ctx *ctx = static_cast<cryptonight_ctx *>(_mm_malloc(sizeof(cryptonight_ctx), 32));
+    ctx->memory          = static_cast<uint8_t *>(_mm_malloc(xmrig::cn_select_memory(algorithm), 32));
 
     return ctx;
 }
@@ -212,6 +224,9 @@ bool CryptoNight::selfTest() {
     using namespace xmrig;
 
     m_ctx = createCtx(m_algorithm);
+    if (!m_ctx) {
+        return false;
+    }
 
     if (m_algorithm == xmrig::CRYPTONIGHT) {
         return verify(VARIANT_0,    test_output_v0)  &&
@@ -221,6 +236,9 @@ bool CryptoNight::selfTest() {
                verify(VARIANT_MSR,  test_output_msr) &&
                verify(VARIANT_XAO,  test_output_xao) &&
                verify(VARIANT_RTO,  test_output_rto) &&
+#              ifndef XMRIG_NO_CN_GPU
+               verify(VARIANT_GPU,  test_output_gpu) &&
+#              endif
                verify(VARIANT_HALF, test_output_half);
     }
 
@@ -263,6 +281,5 @@ bool CryptoNight::verify(xmrig::Variant variant, const uint8_t *referenceValue)
     }
 
     func(test_input, 76, output, &m_ctx);
-
     return memcmp(output, referenceValue, 32) == 0;
 }
