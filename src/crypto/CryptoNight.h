@@ -35,8 +35,8 @@
 
 
 struct cryptonight_ctx {
-    alignas(16) uint8_t state[224];
-    alignas(16) uint8_t *memory;
+    uint8_t state[224];
+    uint8_t *memory;
 };
 
 
