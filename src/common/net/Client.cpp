@@ -354,6 +354,14 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
         }
     }
 
+    if (params.HasMember("height")) {
+        const rapidjson::Value &variant = params["height"];
+
+        if (variant.IsUint64()) {
+            job.setHeight(variant.GetUint64());
+        }
+    }
+
     if (!verifyAlgorithm(job.algorithm())) {
         *code = 6;
 

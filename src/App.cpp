@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include <uv.h>
+#include <cuda.h>
 
 
 #include "api/Api.h"
@@ -67,6 +68,8 @@ App::App(int argc, char **argv) :
     uv_signal_init(uv_default_loop(), &m_sigHUP);
     uv_signal_init(uv_default_loop(), &m_sigINT);
     uv_signal_init(uv_default_loop(), &m_sigTERM);
+
+    cuInit(0);
 }
 
 

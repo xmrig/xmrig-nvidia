@@ -47,6 +47,11 @@ CudaWorker::CudaWorker(Handle *handle) :
 {
     const CudaThread *thread = static_cast<CudaThread *>(handle->config());
 
+    m_ctx.module = nullptr;
+    m_ctx.kernel = nullptr;
+    m_ctx.kernel_variant = xmrig::VARIANT_AUTO;
+    m_ctx.kernel_height = 0;
+
     m_ctx.device_id      = static_cast<int>(thread->index());
     m_ctx.device_blocks  = thread->blocks();
     m_ctx.device_threads = thread->threads();
@@ -86,9 +91,9 @@ void CudaWorker::start()
         while (!Workers::isOutdated(m_sequence)) {
             uint32_t foundNonce[10];
             uint32_t foundCount;
-  
+
             cryptonight_extra_cpu_prepare(&m_ctx, m_nonce, m_algorithm, m_job.algorithm().variant());
-            cryptonight_gpu_hash(&m_ctx, m_algorithm, m_job.algorithm().variant(), m_nonce);
+            cryptonight_gpu_hash(&m_ctx, m_algorithm, m_job.algorithm().variant(), m_job.height(), m_nonce);
             cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, m_algorithm, m_job.algorithm().variant());
 
             for (size_t i = 0; i < foundCount; i++) {
