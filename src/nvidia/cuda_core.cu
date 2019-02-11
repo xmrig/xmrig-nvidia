@@ -863,7 +863,9 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
     if (algo == CRYPTONIGHT) {
         if (variant == VARIANT_WOW) {
             if ((ctx->kernel_variant != variant) || (ctx->kernel_height != height)) {
+#               ifdef APP_DEBUG
                 const int64_t timeStart = xmrig::steadyTimestamp();
+#               endif
 
                 if (ctx->module) {
                     cuModuleUnload(ctx->module);
@@ -881,8 +883,10 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
 
                 CryptonightR_get_program(ptx, lowered_name, variant, height + 1, ctx->device_arch[0], ctx->device_arch[1], true);
 
+#               ifdef APP_DEBUG
                 const int64_t timeFinish = xmrig::steadyTimestamp();
                 LOG_INFO("GPU #%d updated CryptonightR in %.3fs", ctx->device_id, (timeFinish - timeStart) / 1000.0);
+#               endif
             }
         }
 

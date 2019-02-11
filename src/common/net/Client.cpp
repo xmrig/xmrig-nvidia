@@ -218,6 +218,10 @@ int64_t Client::submit(const JobResult &result)
     }
 #   endif
 
+    if (m_job.algorithm().variant() == xmrig::VARIANT_WOW && m_job.id() != result.jobId) {
+        return -1;
+    }
+
     using namespace rapidjson;
 
 #   ifdef XMRIG_PROXY_PROJECT
