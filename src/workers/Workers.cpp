@@ -39,6 +39,7 @@
 #include "workers/Handle.h"
 #include "workers/Hashrate.h"
 #include "workers/Workers.h"
+#include "Mem.h"
 
 
 bool Workers::m_active = false;
@@ -327,7 +328,8 @@ void Workers::onResult(uv_async_t *)
                 return;
             }
 
-            cryptonight_ctx *ctx = CryptoNight::createCtx(baton->jobs[0].algorithm().algo());
+            cryptonight_ctx *ctx;
+            MemInfo info = Mem::create(&ctx, baton->jobs[0].algorithm().algo(), 1);
 
             for (const Job &job : baton->jobs) {
                 JobResult result(job);
@@ -340,7 +342,7 @@ void Workers::onResult(uv_async_t *)
                 }
             }
 
-            CryptoNight::freeCtx(ctx);
+            Mem::release(&ctx, 1, info);
         },
         [](uv_work_t* req, int) {
             JobBaton *baton = static_cast<JobBaton*>(req->data);

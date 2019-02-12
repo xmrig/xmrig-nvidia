@@ -25,11 +25,13 @@
 
 
 #include <assert.h>
+#include <sstream>
 
 
 #include "common/cpu/Cpu.h"
+#include "common/log/Log.h"
 #include "common/net/Job.h"
-#include "common/utils/mm_malloc.h"
+#include "Mem.h"
 #include "crypto/CryptoNight.h"
 #include "crypto/CryptoNight_test.h"
 #include "crypto/CryptoNight_x86.h"
@@ -40,25 +42,99 @@ alignas(16) cryptonight_ctx *CryptoNight::m_ctx = nullptr;
 xmrig::Algo CryptoNight::m_algorithm = xmrig::CRYPTONIGHT;
 xmrig::AlgoVerify CryptoNight::m_av  = xmrig::VERIFY_HW_AES;
 
-
 bool CryptoNight::hash(const Job &job, JobResult &result, cryptonight_ctx *ctx)
 {
-    fn(job.algorithm().variant())(job.blob(), job.size(), result.result, &ctx);
+    fn(job.algorithm().variant())(job.blob(), job.size(), result.result, &ctx, job.height());
 
     return *reinterpret_cast<uint64_t*>(result.result + 24) < job.target();
 }
 
 
+#ifndef XMRIG_NO_ASM
+xmrig::CpuThread::cn_mainloop_fun cn_half_mainloop_ivybridge_asm = nullptr;
+xmrig::CpuThread::cn_mainloop_fun cn_half_mainloop_ryzen_asm = nullptr;
+xmrig::CpuThread::cn_mainloop_fun cn_half_mainloop_bulldozer_asm = nullptr;
+xmrig::CpuThread::cn_mainloop_double_fun cn_half_double_mainloop_sandybridge_asm = nullptr;
+
+xmrig::CpuThread::cn_mainloop_fun        cn_trtl_mainloop_ivybridge_asm;
+xmrig::CpuThread::cn_mainloop_fun        cn_trtl_mainloop_ryzen_asm;
+xmrig::CpuThread::cn_mainloop_fun        cn_trtl_mainloop_bulldozer_asm;
+xmrig::CpuThread::cn_mainloop_double_fun cn_trtl_double_mainloop_sandybridge_asm;
+
+template<typename T, typename U>
+static void patchCode(T dst, U src, const uint32_t iterations, const uint32_t mask)
+{
+    const uint8_t* p = reinterpret_cast<const uint8_t*>(src);
+
+    // Workaround for Visual Studio placing trampoline in debug builds.
+#   if defined(_MSC_VER)
+    if (p[0] == 0xE9) {
+        p += *(int32_t*)(p + 1) + 5;
+    }
+#   endif
+
+    size_t size = 0;
+    while (*(uint32_t*)(p + size) != 0xDEADC0DE) {
+        ++size;
+    }
+    size += sizeof(uint32_t);
+
+    memcpy((void*)dst, (const void*)src, size);
+
+    uint8_t* patched_data = reinterpret_cast<uint8_t*>(dst);
+    for (size_t i = 0; i + sizeof(uint32_t) <= size; ++i) {
+        switch (*(uint32_t*)(patched_data + i)) {
+        case xmrig::CRYPTONIGHT_ITER:
+            *(uint32_t*)(patched_data + i) = iterations;
+            break;
+
+        case xmrig::CRYPTONIGHT_MASK:
+            *(uint32_t*)(patched_data + i) = mask;
+            break;
+        }
+    }
+}
+
+static void patchAsmVariants()
+{
+    const int allocation_size = 65536;
+    uint8_t *base = static_cast<uint8_t *>(Mem::allocateExecutableMemory(allocation_size));
+
+    cn_half_mainloop_ivybridge_asm              = reinterpret_cast<xmrig::CpuThread::cn_mainloop_fun>         (base + 0x0000);
+    cn_half_mainloop_ryzen_asm                  = reinterpret_cast<xmrig::CpuThread::cn_mainloop_fun>         (base + 0x1000);
+    cn_half_mainloop_bulldozer_asm              = reinterpret_cast<xmrig::CpuThread::cn_mainloop_fun>         (base + 0x2000);
+    cn_half_double_mainloop_sandybridge_asm     = reinterpret_cast<xmrig::CpuThread::cn_mainloop_double_fun>  (base + 0x3000);
+
+    cn_trtl_mainloop_ivybridge_asm              = reinterpret_cast<xmrig::CpuThread::cn_mainloop_fun>         (base + 0x4000);
+    cn_trtl_mainloop_ryzen_asm                  = reinterpret_cast<xmrig::CpuThread::cn_mainloop_fun>         (base + 0x5000);
+    cn_trtl_mainloop_bulldozer_asm              = reinterpret_cast<xmrig::CpuThread::cn_mainloop_fun>         (base + 0x6000);
+    cn_trtl_double_mainloop_sandybridge_asm     = reinterpret_cast<xmrig::CpuThread::cn_mainloop_double_fun>  (base + 0x7000);
+
+    patchCode(cn_half_mainloop_ivybridge_asm,           cnv2_mainloop_ivybridge_asm,            xmrig::CRYPTONIGHT_HALF_ITER,   xmrig::CRYPTONIGHT_MASK);
+    patchCode(cn_half_mainloop_ryzen_asm,               cnv2_mainloop_ryzen_asm,                xmrig::CRYPTONIGHT_HALF_ITER,   xmrig::CRYPTONIGHT_MASK);
+    patchCode(cn_half_mainloop_bulldozer_asm,           cnv2_mainloop_bulldozer_asm,            xmrig::CRYPTONIGHT_HALF_ITER,   xmrig::CRYPTONIGHT_MASK);
+    patchCode(cn_half_double_mainloop_sandybridge_asm,  cnv2_double_mainloop_sandybridge_asm,   xmrig::CRYPTONIGHT_HALF_ITER,   xmrig::CRYPTONIGHT_MASK);
+
+    patchCode(cn_trtl_mainloop_ivybridge_asm,           cnv2_mainloop_ivybridge_asm,            xmrig::CRYPTONIGHT_TRTL_ITER,   xmrig::CRYPTONIGHT_PICO_MASK);
+    patchCode(cn_trtl_mainloop_ryzen_asm,               cnv2_mainloop_ryzen_asm,                xmrig::CRYPTONIGHT_TRTL_ITER,   xmrig::CRYPTONIGHT_PICO_MASK);
+    patchCode(cn_trtl_mainloop_bulldozer_asm,           cnv2_mainloop_bulldozer_asm,            xmrig::CRYPTONIGHT_TRTL_ITER,   xmrig::CRYPTONIGHT_PICO_MASK);
+    patchCode(cn_trtl_double_mainloop_sandybridge_asm,  cnv2_double_mainloop_sandybridge_asm,   xmrig::CRYPTONIGHT_TRTL_ITER,   xmrig::CRYPTONIGHT_PICO_MASK);
+
+    Mem::protectExecutableMemory(base, allocation_size);
+    Mem::flushInstructionCache(base, allocation_size);
+}
+#endif
+
 bool CryptoNight::init(xmrig::Algo algorithm)
 {
+#ifndef XMRIG_NO_ASM
+    patchAsmVariants();
+#endif
+
     m_algorithm = algorithm;
     m_av        = xmrig::Cpu::info()->hasAES() ? xmrig::VERIFY_HW_AES : xmrig::VERIFY_SOFT_AES;
 
-    const bool valid = selfTest();
-    freeCtx(m_ctx);
-    m_ctx = nullptr;
-
-    return valid;
+    return selfTest();
 }
 
 
@@ -91,11 +167,19 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_RTO>,
         cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_RTO>,
 
+#       ifdef XMRIG_NO_ASM
         cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_2>,
-        cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_2>,
+#       else
+        cryptonight_single_hash_asm<CRYPTONIGHT, VARIANT_2, ASM_AUTO>,
+#       endif
+        cryptonight_single_hash<CRYPTONIGHT, true, VARIANT_2>,
 
+#       ifdef XMRIG_NO_ASM
         cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_HALF>,
-        cryptonight_single_hash<CRYPTONIGHT, true,  VARIANT_HALF>,
+#       else
+        cryptonight_single_hash_asm<CRYPTONIGHT, VARIANT_HALF, ASM_AUTO>,
+#       endif
+        cryptonight_single_hash<CRYPTONIGHT, true, VARIANT_HALF>,
 
         nullptr, nullptr, // VARIANT_TRTL
 
@@ -105,6 +189,13 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
 #       else
         nullptr, nullptr, // VARIANT_GPU
 #       endif
+
+#       ifdef XMRIG_NO_ASM
+        cryptonight_single_hash<CRYPTONIGHT, false, VARIANT_WOW>,
+#       else
+        cryptonight_single_hash_asm<CRYPTONIGHT, VARIANT_WOW, ASM_AUTO>,
+#       endif
+        cryptonight_single_hash<CRYPTONIGHT, true, VARIANT_WOW>,
 
 #       ifndef XMRIG_NO_AEON
         cryptonight_single_hash<CRYPTONIGHT_LITE, false, VARIANT_0>,
@@ -123,6 +214,7 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, // VARIANT_HALF
         nullptr, nullptr, // VARIANT_TRTL
         nullptr, nullptr, // VARIANT_GPU
+        nullptr, nullptr, // VARIANT_WOW
 #       else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
@@ -130,6 +222,7 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr,
 #       endif
 
 #       ifndef XMRIG_NO_SUMO
@@ -153,6 +246,7 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, // VARIANT_HALF
         nullptr, nullptr, // VARIANT_TRTL
         nullptr, nullptr, // VARIANT_GPU
+        nullptr, nullptr, // VARIANT_WOW
 #       else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
@@ -160,6 +254,7 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr,
 #       endif
 #       ifndef XMRIG_NO_CN_PICO
         nullptr, nullptr, // VARIANT_0
@@ -173,10 +268,15 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, // VARIANT_2
         nullptr, nullptr, // VARIANT_HALF
 
+#       ifdef XMRIG_NO_ASM
         cryptonight_single_hash<CRYPTONIGHT_PICO, false, VARIANT_TRTL>,
-        cryptonight_single_hash<CRYPTONIGHT_PICO, true,  VARIANT_TRTL>,
+#       else
+        cryptonight_single_hash_asm<CRYPTONIGHT_PICO, VARIANT_TRTL, ASM_AUTO>,
+#       endif
+        cryptonight_single_hash<CRYPTONIGHT_PICO, true, VARIANT_TRTL>,
 
         nullptr, nullptr, // VARIANT_GPU
+        nullptr, nullptr, // VARIANT_WOW
     #else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
@@ -184,6 +284,7 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr,
 #       endif
     };
 
@@ -204,38 +305,23 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
 }
 
 
-cryptonight_ctx *CryptoNight::createCtx(xmrig::Algo algorithm)
-{
-    cryptonight_ctx *ctx = static_cast<cryptonight_ctx *>(_mm_malloc(sizeof(cryptonight_ctx), 32));
-    ctx->memory          = static_cast<uint8_t *>(_mm_malloc(xmrig::cn_select_memory(algorithm), 32));
-
-    return ctx;
-}
-
-
-void CryptoNight::freeCtx(cryptonight_ctx *ctx)
-{
-    _mm_free(ctx->memory);
-    _mm_free(ctx);
-}
-
-
 bool CryptoNight::selfTest() {
     using namespace xmrig;
 
-    m_ctx = createCtx(m_algorithm);
-    if (!m_ctx) {
-        return false;
-    }
+    MemInfo info = Mem::create(&m_ctx, m_algorithm, 1);
 
     if (m_algorithm == xmrig::CRYPTONIGHT) {
-        return verify(VARIANT_0,    test_output_v0)  &&
-               verify(VARIANT_1,    test_output_v1)  &&
-               verify(VARIANT_2,    test_output_v2)  &&
-               verify(VARIANT_XTL,  test_output_xtl) &&
-               verify(VARIANT_MSR,  test_output_msr) &&
-               verify(VARIANT_XAO,  test_output_xao) &&
-               verify(VARIANT_RTO,  test_output_rto) &&
+        if (!verify2(VARIANT_WOW, test_input_WOW)) {
+            LOG_WARN("CryptonightR (Wownero) self-test failed");
+            return false;
+        }
+        return verify(VARIANT_0, test_output_v0)    &&
+               verify(VARIANT_1,   test_output_v1)  &&
+               verify(VARIANT_2,   test_output_v2)  &&
+               verify(VARIANT_XTL, test_output_xtl) &&
+               verify(VARIANT_MSR, test_output_msr) &&
+               verify(VARIANT_XAO, test_output_xao) &&
+               verify(VARIANT_RTO, test_output_rto) &&
 #              ifndef XMRIG_NO_CN_GPU
                verify(VARIANT_GPU,  test_output_gpu) &&
 #              endif
@@ -280,6 +366,60 @@ bool CryptoNight::verify(xmrig::Variant variant, const uint8_t *referenceValue)
         return false;
     }
 
-    func(test_input, 76, output, &m_ctx);
+    func(test_input, 76, output, &m_ctx, 0);
+
     return memcmp(output, referenceValue, 32) == 0;
+}
+
+bool CryptoNight::verify2(xmrig::Variant variant, const char *test_data)
+{
+    cn_hash_fun func = fn(variant);
+    if (!func) {
+        return false;
+    }
+
+    std::stringstream s(test_data);
+    std::string expected_hex;
+    std::string input_hex;
+    uint64_t height;
+    while (!s.eof())
+    {
+        uint8_t referenceValue[32];
+        uint8_t input[256];
+
+        s >> expected_hex;
+        s >> input_hex;
+        s >> height;
+
+        if ((expected_hex.length() != 64) || (input_hex.length() > 512))
+        {
+            return false;
+        }
+
+        bool err = false;
+
+        for (int i = 0; i < 32; ++i)
+        {
+            referenceValue[i] = (hf_hex2bin(expected_hex[i * 2], err) << 4) + hf_hex2bin(expected_hex[i * 2 + 1], err);
+        }
+
+        const size_t input_len = input_hex.length() / 2;
+        for (size_t i = 0; i < input_len; ++i)
+        {
+            input[i] = (hf_hex2bin(input_hex[i * 2], err) << 4) + hf_hex2bin(input_hex[i * 2 + 1], err);
+        }
+
+        if (err)
+        {
+            return false;
+        }
+
+        uint8_t hash[32];
+        func(input, input_len, hash, &m_ctx, height);
+        if (memcmp(hash, referenceValue, sizeof(hash)) != 0)
+        {
+            return false;
+        }
+    }
+    return true;
 }

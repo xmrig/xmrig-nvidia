@@ -29,9 +29,17 @@
 
 
 #include "../common/xmrig.h"
+#include <cuda.h>
 
 
 typedef struct {
+    CUdevice cuDevice;
+    CUcontext cuContext;
+    CUmodule module;
+    CUfunction kernel;
+    xmrig::Variant kernel_variant;
+    uint64_t kernel_height;
+
     int device_id;
     const char *device_name;
     int device_arch[2];
@@ -69,6 +77,6 @@ int cuda_get_deviceinfo(nvid_ctx *ctx, xmrig::Algo algo, bool isCNv2);
 int cryptonight_gpu_init(nvid_ctx *ctx, xmrig::Algo algo);
 void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, size_t len);
 void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint32_t startNonce, xmrig::Algo algo, xmrig::Variant variant);
-void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant variant, uint32_t startNonce);
+void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant variant, uint64_t height, uint32_t startNonce);
 void cryptonight_extra_cpu_final(nvid_ctx *ctx, uint32_t startNonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, xmrig::Algo algo, xmrig::Variant variant);
 void cryptonight_extra_cpu_free(nvid_ctx *ctx, xmrig::Algo algo);

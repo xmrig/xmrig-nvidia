@@ -28,6 +28,9 @@
 #include <string.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include "CudaCryptonightR_gen.h"
+#include "common/log/Log.h"
+#include "common/utils/timestamp.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -319,10 +322,10 @@ __global__ void cryptonight_core_gpu_phase2_double(
     uint8_t *l0              = (uint8_t*)&d_long_state[(IndexType) thread * MEM];
     uint64_t ax0             = ((uint64_t*)(d_ctx_a + thread * 4))[sub];
     uint32_t idx0            = shuffle<2>(sPtr, sub, static_cast<uint32_t>(ax0), 0);
-    uint64_t bx0             = ((uint64_t*)(d_ctx_b + thread * 12))[sub];
-    uint64_t bx1             = ((uint64_t*)(d_ctx_b + thread * 12 + 4))[sub];
-    uint64_t division_result = ((uint64_t*)(d_ctx_b + thread * 12 + 4 * 2))[0];
-    uint32_t sqrt_result     = (d_ctx_b + thread * 12 + 4 * 2 + 2)[0];
+    uint64_t bx0             = ((uint64_t*)(d_ctx_b + thread * 16))[sub];
+    uint64_t bx1             = ((uint64_t*)(d_ctx_b + thread * 16 + 4))[sub];
+    uint64_t division_result = ((uint64_t*)(d_ctx_b + thread * 16 + 4 * 2))[0];
+    uint32_t sqrt_result     = (d_ctx_b + thread * 16 + 4 * 2 + 2)[0];
 
     const int batchsize      = (ITERATIONS * 2) >> ( 1 + bfactor );
     const int start          = partidx * batchsize;
@@ -429,13 +432,13 @@ __global__ void cryptonight_core_gpu_phase2_double(
 
     if (bfactor > 0) {
         ((uint64_t*)(d_ctx_a + thread * 4))[sub]      = ax0;
-        ((uint64_t*)(d_ctx_b + thread * 12))[sub]     = bx0;
-        ((uint64_t*)(d_ctx_b + thread * 12 + 4))[sub] = bx1;
+        ((uint64_t*)(d_ctx_b + thread * 16))[sub]     = bx0;
+        ((uint64_t*)(d_ctx_b + thread * 16 + 4))[sub] = bx1;
 
         if (sub == 1) {
             // must be valid only for `sub == 1`
-            ((uint64_t*)(d_ctx_b + thread * 12 + 4 * 2))[0] = division_result;
-            (d_ctx_b + thread * 12 + 4 * 2 + 2)[0]          = sqrt_result;
+            ((uint64_t*)(d_ctx_b + thread * 16 + 4 * 2))[0] = division_result;
+            (d_ctx_b + thread * 16 + 4 * 2 + 2)[0]          = sqrt_result;
         }
     }
 }
@@ -724,11 +727,22 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
     }
 
     for (int i = 0; i < partcount; i++) {
-        if (BASE == xmrig::VARIANT_2) {
+        if (VARIANT == xmrig::VARIANT_WOW) {
+            int threads = ctx->device_blocks * ctx->device_threads;
+            void* args[] = { &threads, &ctx->device_bfactor, &i, &ctx->d_long_state, &ctx->d_ctx_a, &ctx->d_ctx_b, &ctx->d_ctx_state, &nonce, &ctx->d_input };
+            CU_CHECK(ctx->device_id, cuLaunchKernel(
+                ctx->kernel,
+                grid.x, grid.y, grid.z,
+                block2.x, block2.y, block2.z,
+                sizeof(uint64_t) * block.x * 8 + block.x * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3), nullptr,
+                args, 0
+            ));
+            CU_CHECK(ctx->device_id, cuCtxSynchronize());
+        } else if (BASE == xmrig::VARIANT_2) {
             CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase2_double<ITERATIONS, MEM, MASK, ALGO, VARIANT><<<
                 grid,
                 block2,
-                sizeof(uint64_t) * block2.x * 8 + block2.x * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)
+                sizeof(uint64_t) * block.x * 8 + block.x * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)
             >>>(
                 ctx->device_blocks * ctx->device_threads,
                 ctx->device_bfactor,
@@ -842,11 +856,40 @@ void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce)
 	}
 }
 
-void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant variant, uint32_t startNonce)
+void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant variant, uint64_t height, uint32_t startNonce)
 {
     using namespace xmrig;
 
     if (algo == CRYPTONIGHT) {
+        if (variant == VARIANT_WOW) {
+            if ((ctx->kernel_variant != variant) || (ctx->kernel_height != height)) {
+#               ifdef APP_DEBUG
+                const int64_t timeStart = xmrig::steadyTimestamp();
+#               endif
+
+                if (ctx->module) {
+                    cuModuleUnload(ctx->module);
+                }
+
+                std::vector<char> ptx;
+                std::string lowered_name;
+                CryptonightR_get_program(ptx, lowered_name, variant, height, ctx->device_arch[0], ctx->device_arch[1]);
+
+                CU_CHECK(ctx->device_id, cuModuleLoadDataEx(&ctx->module, ptx.data(), 0, 0, 0));
+                CU_CHECK(ctx->device_id, cuModuleGetFunction(&ctx->kernel, ctx->module, lowered_name.c_str()));
+
+                ctx->kernel_variant = variant;
+                ctx->kernel_height = height;
+
+                CryptonightR_get_program(ptx, lowered_name, variant, height + 1, ctx->device_arch[0], ctx->device_arch[1], true);
+
+#               ifdef APP_DEBUG
+                const int64_t timeFinish = xmrig::steadyTimestamp();
+                LOG_INFO("GPU #%d updated CryptonightR in %.3fs", ctx->device_id, (timeFinish - timeStart) / 1000.0);
+#               endif
+            }
+        }
+
         switch (variant) {
         case VARIANT_0:
             cryptonight_core_gpu_hash<CRYPTONIGHT, VARIANT_0>(ctx, startNonce);
@@ -882,6 +925,10 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
 
         case VARIANT_GPU:
             cryptonight_core_gpu_hash_gpu<CRYPTONIGHT, VARIANT_GPU>(ctx, startNonce);
+            break;
+
+        case VARIANT_WOW:
+            cryptonight_core_gpu_hash<CRYPTONIGHT, VARIANT_WOW>(ctx, startNonce);
             break;
 
         default:
