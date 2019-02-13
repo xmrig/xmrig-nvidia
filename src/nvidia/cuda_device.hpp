@@ -27,3 +27,15 @@
 #define CUDA_CHECK_KERNEL(id, ...)      \
     __VA_ARGS__;                        \
     CUDA_CHECK(id, cudaGetLastError())
+
+#define CU_CHECK(id, ...) {                                                                             \
+    CUresult result = __VA_ARGS__;                                                                      \
+    if(result != CUDA_SUCCESS){                                                                         \
+        const char* s;                                                                                  \
+        cuGetErrorString(result, &s);                                                                   \
+        std::cerr << "[CUDA] Error gpu " << ctx->device_id << ": <" << __FUNCTION__ << ">:" << __LINE__ << " \"" << (s ? s : "unknown error") << "\"" << std::endl; \
+        throw std::runtime_error(std::string("[CUDA] Error: ") + std::string(s ? s : "unknown error")); \
+    }                                                                                                   \
+}                                                                                                       \
+( (void) 0 )
+
