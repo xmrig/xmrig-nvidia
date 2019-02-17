@@ -727,7 +727,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
     }
 
     for (int i = 0; i < partcount; i++) {
-        if (VARIANT == xmrig::VARIANT_WOW) {
+        if ((VARIANT == xmrig::VARIANT_WOW) || (VARIANT == xmrig::VARIANT_4)) {
             int threads = ctx->device_blocks * ctx->device_threads;
             void* args[] = { &threads, &ctx->device_bfactor, &i, &ctx->d_long_state, &ctx->d_ctx_a, &ctx->d_ctx_b, &ctx->d_ctx_state, &nonce, &ctx->d_input };
             CU_CHECK(ctx->device_id, cuLaunchKernel(
@@ -805,7 +805,7 @@ void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce)
 	dim3 block4( ctx->device_threads << 2 );
 	dim3 block8( ctx->device_threads << 3 );
 
-	size_t intensity = ctx->device_blocks * ctx->device_threads;
+	const uint32_t intensity = ctx->device_blocks * ctx->device_threads;
 
 	CUDA_CHECK_KERNEL(
 		ctx->device_id,
@@ -861,7 +861,7 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
     using namespace xmrig;
 
     if (algo == CRYPTONIGHT) {
-        if (variant == VARIANT_WOW) {
+        if ((variant == VARIANT_WOW) || (variant == VARIANT_4)) {
             if ((ctx->kernel_variant != variant) || (ctx->kernel_height != height)) {
 #               ifdef APP_DEBUG
                 const int64_t timeStart = xmrig::steadyTimestamp();
@@ -929,6 +929,10 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
 
         case VARIANT_WOW:
             cryptonight_core_gpu_hash<CRYPTONIGHT, VARIANT_WOW>(ctx, startNonce);
+            break;
+
+        case VARIANT_4:
+            cryptonight_core_gpu_hash<CRYPTONIGHT, VARIANT_4>(ctx, startNonce);
             break;
 
         default:

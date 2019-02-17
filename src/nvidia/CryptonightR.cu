@@ -1,5 +1,8 @@
 R"===(
 
+#define VARIANT_WOW  12 // CryptoNightR (Wownero)
+#define VARIANT_4    13 // CryptoNightR
+
 typedef unsigned char uint8_t;
 typedef unsigned int uint32_t;
 typedef unsigned long long int uint64_t;
@@ -339,6 +342,14 @@ struct u64 : public uint2
         return *this;
     }
 
+    __forceinline__ __device__ u64 operator^=(const uint64_t& other)
+    {
+        uint2::x ^= static_cast<uint32_t>(other);
+        uint2::y ^= static_cast<uint32_t>(other >> 32);
+
+        return *this;
+    }
+
     __forceinline__ __device__ u64 operator+(const u64& other) const
     {
         u64 tmp;
@@ -457,6 +468,10 @@ __global__ void CryptonightR_phase2(
             const uint64_t chunk2 = myChunks[idx1 ^ 4 + sub];
             const uint64_t chunk3 = myChunks[idx1 ^ 6 + sub];
 
+#if (VARIANT == VARIANT_4)
+            cx_aes ^= chunk1 ^ chunk2 ^ chunk3;
+#endif
+
 #           if (__CUDACC_VER_MAJOR__ >= 9)
             __syncwarp();
 #           else
@@ -492,20 +507,44 @@ __global__ void CryptonightR_phase2(
         const uint32_t r7 = shuffle<2>(sPtr, sub, static_cast<uint32_t>(bx1), 0);
 #endif
 
+        const uint64_t ax0_saved = ax0;
+
         if (sub == 1) {
 #ifdef RANDOM_MATH_64_BIT
             myChunks[idx1] ^= (r0 + r1) ^ (r2 + r3);
 
             const uint64_t r5 = ax0;
+#if (VARIANT == VARIANT_4)
+            const uint64_t r8 = bx1;
+#endif
 #else
             ((uint32_t*)&myChunks[idx1])[0] ^= r0 + r1;
             ((uint32_t*)&myChunks[idx1])[1] ^= r2 + r3;
 
             const uint32_t r5 = static_cast<uint32_t>(ax0);
+#if (VARIANT == VARIANT_4)
+            const uint32_t r8 = static_cast<uint32_t>(bx1);
+#endif
 #endif
 
             XMRIG_INCLUDE_RANDOM_MATH
         }
+
+#if (VARIANT == VARIANT_4)
+#ifdef RANDOM_MATH_64_BIT
+        r0 = shuffle64<2>(sPtr, sub, r0, 1, 1);
+        r1 = shuffle64<2>(sPtr, sub, r1, 1, 1);
+        r2 = shuffle64<2>(sPtr, sub, r2, 1, 1);
+        r3 = shuffle64<2>(sPtr, sub, r3, 1, 1);
+        ax0 ^= (sub == 0) ? (r2 ^ r3) : (r0 ^ r1);
+#else
+        r0 = shuffle<2>(sPtr, sub, r0, 1);
+        r1 = shuffle<2>(sPtr, sub, r1, 1);
+        r2 = shuffle<2>(sPtr, sub, r2, 1);
+        r3 = shuffle<2>(sPtr, sub, r3, 1);
+        ax0 ^= (sub == 0) ? (r2 | ((uint64_t)(r3) << 32)) : (r0 | ((uint64_t)(r1) << 32));
+#endif
+#endif
 
 #       if (__CUDACC_VER_MAJOR__ >= 9)
         __syncwarp();
@@ -520,10 +559,20 @@ __global__ void CryptonightR_phase2(
             // sub 0 -> hi, sub 1 -> lo
             uint64_t res = sub == 0 ? __umul64hi( cx_mul, cl ) : cx_mul * cl;
 
-            const uint64_t chunk1 = myChunks[ idx1 ^ 2 + sub ] ^ res;
+            const uint64_t chunk1 = myChunks[ idx1 ^ 2 + sub ]
+#if (VARIANT == VARIANT_WOW)
+            ^ res
+#endif
+            ;
             uint64_t chunk2       = myChunks[ idx1 ^ 4 + sub ];
+#if (VARIANT == VARIANT_WOW)
             res ^= ((uint64_t*)&chunk2)[0];
+#endif
             const uint64_t chunk3 = myChunks[ idx1 ^ 6 + sub ];
+
+#if (VARIANT == VARIANT_4)
+            cx_aes ^= chunk1 ^ chunk2 ^ chunk3;
+#endif
 
 #           if (__CUDACC_VER_MAJOR__ >= 9)
             __syncwarp();
@@ -533,7 +582,7 @@ __global__ void CryptonightR_phase2(
 
             myChunks[idx1 ^ 2 + sub] = chunk3 + bx1;
             myChunks[idx1 ^ 4 + sub] = chunk1 + bx0;
-            myChunks[idx1 ^ 6 + sub] = chunk2 + ax0;
+            myChunks[idx1 ^ 6 + sub] = chunk2 + ax0_saved;
 
             ax0 += res;
         }
