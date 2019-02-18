@@ -47,6 +47,9 @@ namespace xmrig {
         typedef void(*cn_mainloop_fun)(cryptonight_ctx*);
         typedef void(*cn_mainloop_double_fun)(cryptonight_ctx*, cryptonight_ctx*);
     }
+
+    class Job;
+    class JobResult;
 }
 
 typedef void(*cn_mainloop_fun_ms_abi)(cryptonight_ctx*) ABI_ATTRIBUTE;
@@ -62,10 +65,6 @@ struct cryptonight_ctx {
 };
 
 
-class Job;
-class JobResult;
-
-
 class CryptoNight
 {
 public:
@@ -73,7 +72,7 @@ public:
 
     static inline cn_hash_fun fn(xmrig::Variant variant) { return fn(m_algorithm, m_av, variant); }
 
-    static bool hash(const Job &job, JobResult &result, cryptonight_ctx *ctx);
+    static bool hash(const xmrig::Job &job, xmrig::JobResult &result, cryptonight_ctx *ctx);
     static bool init(xmrig::Algo algorithm);
     static cn_hash_fun fn(xmrig::Algo algorithm, xmrig::AlgoVerify av, xmrig::Variant variant);
 

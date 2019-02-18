@@ -25,10 +25,9 @@
 #define XMRIG_CONTROLLER_H
 
 
-#include "common/interfaces/IWatcherListener.h"
+#include "base/kernel/interfaces/IConfigListener.h"
 
 
-class Network;
 class StatsData;
 
 
@@ -38,20 +37,22 @@ namespace xmrig {
 class Config;
 class ControllerPrivate;
 class IControllerListener;
+class Network;
+class Process;
 
 
-class Controller : public IWatcherListener
+class Controller : public IConfigListener
 {
 public:
-    Controller();
+    Controller(Process *process);
     ~Controller() override;
 
-    bool isDone() const;
     bool isReady() const;
     Config *config() const;
-    int init(int argc, char **argv);
+    int init();
     Network *network() const;
     void addListener(IControllerListener *listener);
+    void save();
 
 protected:
     void onNewConfig(IConfig *config) override;

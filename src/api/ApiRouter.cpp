@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -72,6 +73,11 @@ ApiRouter::ApiRouter(xmrig::Controller *controller) :
 }
 
 
+ApiRouter::~ApiRouter()
+{
+}
+
+
 void ApiRouter::ApiRouter::get(const xmrig::HttpRequest &req, xmrig::HttpReply &reply) const
 {
     rapidjson::Document doc;
@@ -117,7 +123,7 @@ void ApiRouter::exec(const xmrig::HttpRequest &req, xmrig::HttpReply &reply)
 }
 
 
-void ApiRouter::tick(const NetworkState &network)
+void ApiRouter::tick(const xmrig::NetworkState &network)
 {
     m_network = network;
 }
@@ -162,8 +168,8 @@ void ApiRouter::genId(const char *id)
         if (!interfaces[i].is_internal && interfaces[i].address.address4.sin_family == AF_INET) {
             uint8_t hash[200];
             const size_t addrSize = sizeof(interfaces[i].phys_addr);
-            const size_t inSize = strlen(APP_KIND) + addrSize + sizeof(uint16_t);
-            const uint16_t port = static_cast<uint16_t>(m_controller->config()->apiPort());
+            const size_t inSize   = strlen(APP_KIND) + addrSize + sizeof(uint16_t);
+            const uint16_t port   = static_cast<uint16_t>(m_controller->config()->apiPort());
 
             uint8_t *input = new uint8_t[inSize]();
             memcpy(input, &port, sizeof(uint16_t));
@@ -171,7 +177,7 @@ void ApiRouter::genId(const char *id)
             memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, strlen(APP_KIND));
 
             xmrig::keccak(input, inSize, hash);
-            Job::toHex(hash, 8, m_id);
+            xmrig::Job::toHex(hash, 8, m_id);
 
             delete[] input;
             break;
