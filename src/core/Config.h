@@ -40,7 +40,8 @@ namespace xmrig {
 
 class ConfigLoader;
 class IThread;
-class IWatcherListener;
+class IConfigListener;
+class Process;
 
 
 class Config : public CommonConfig
@@ -56,7 +57,7 @@ public:
     inline const std::vector<IThread *> &threads() const { return m_threads; }
     inline int maxGpuThreads() const                     { return m_maxGpuThreads; }
 
-    static Config *load(int argc, char **argv, IWatcherListener *listener);
+    static Config *load(Process *process, IConfigListener *listener);
 
 protected:
     bool finalize() override;

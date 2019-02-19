@@ -29,7 +29,6 @@
 
 #include "common/cpu/Cpu.h"
 #include "common/log/Log.h"
-#include "common/net/Pool.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "Summary.h"

@@ -21,6 +21,18 @@ include (cmake/cpu.cmake)
 set(HEADERS
     src/api/NetworkState.h
     src/App.h
+    src/base/io/Json.h
+    src/base/io/Watcher.h
+    src/base/kernel/Entry.h
+    src/base/kernel/interfaces/IConfigListener.h
+    src/base/kernel/interfaces/ISignalListener.h
+    src/base/kernel/interfaces/IWatcherListener.h
+    src/base/kernel/Process.h
+    src/base/kernel/Signals.h
+    src/base/net/Pool.h
+    src/base/net/Pools.h
+    src/base/tools/Arguments.h
+    src/base/tools/Handle.h
     src/base/tools/String.h
     src/common/config/CommonConfig.h
     src/common/config/ConfigLoader.h
@@ -39,7 +51,6 @@ set(HEADERS
     src/common/interfaces/ILogBackend.h
     src/common/interfaces/IStrategy.h
     src/common/interfaces/IStrategyListener.h
-    src/common/interfaces/IWatcherListener.h
     src/common/log/BasicLog.h
     src/common/log/ConsoleLog.h
     src/common/log/FileLog.h
@@ -47,7 +58,6 @@ set(HEADERS
     src/common/net/Client.h
     src/common/net/Id.h
     src/common/net/Job.h
-    src/common/net/Pool.h
     src/common/net/Storage.h
     src/common/net/strategies/FailoverStrategy.h
     src/common/net/strategies/SinglePoolStrategy.h
@@ -59,6 +69,7 @@ set(HEADERS
     src/common/xmrig.h
     src/core/ConfigLoader_platform.h
     src/core/Controller.h
+    src/core/usage.h
     src/interfaces/IJobResultListener.h
     src/interfaces/IThread.h
     src/interfaces/IWorker.h
@@ -101,6 +112,15 @@ endif()
 set(SOURCES
     src/api/NetworkState.cpp
     src/App.cpp
+    src/base/io/Json.cpp
+    src/base/io/Watcher.cpp
+    src/base/kernel/Entry.cpp
+    src/base/kernel/Process.cpp
+    src/base/kernel/Signals.cpp
+    src/base/net/Pool.cpp
+    src/base/net/Pools.cpp
+    src/base/tools/Arguments.cpp
+    src/base/tools/Handle.cpp
     src/base/tools/String.cpp
     src/common/config/CommonConfig.cpp
     src/common/config/ConfigLoader.cpp
@@ -116,7 +136,6 @@ set(SOURCES
     src/common/log/Log.cpp
     src/common/net/Client.cpp
     src/common/net/Job.cpp
-    src/common/net/Pool.cpp
     src/common/net/strategies/FailoverStrategy.cpp
     src/common/net/strategies/SinglePoolStrategy.cpp
     src/common/net/SubmitResult.cpp
@@ -154,6 +173,7 @@ if (WIN32)
     set(SOURCES_OS
         res/app.rc
         src/App_win.cpp
+        src/base/io/Json_win.cpp
         src/common/Platform_win.cpp
         src/Mem_win.cpp
         )
@@ -163,12 +183,14 @@ if (WIN32)
 elseif (APPLE)
     set(SOURCES_OS
         src/App_unix.cpp
+        src/base/io/Json_unix.cpp
         src/common/Platform_mac.cpp
         src/Mem_unix.cpp
         )
 else()
     set(SOURCES_OS
         src/App_unix.cpp
+        src/base/io/Json_unix.cpp
         src/common/Platform_unix.cpp
         src/Mem_unix.cpp
         )

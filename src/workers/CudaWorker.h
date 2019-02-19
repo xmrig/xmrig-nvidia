@@ -53,17 +53,17 @@ protected:
     void start() override;
 
 private:
-    bool resume(const Job &job);
+    bool resume(const xmrig::Job &job);
     void consumeJob();
-    void save(const Job &job);
+    void save(const xmrig::Job &job);
     void setJob();
     void storeStats();
 
     const size_t m_id;
     const size_t m_threads;
     const xmrig::Algo m_algorithm;
-    Job m_job;
-    Job m_pausedJob;
+    xmrig::Job m_job;
+    xmrig::Job m_pausedJob;
     nvid_ctx m_ctx;
     std::atomic<uint64_t> m_hashCount;
     std::atomic<uint64_t> m_timestamp;
@@ -71,7 +71,7 @@ private:
     uint32_t m_pausedNonce;
     uint64_t m_count;
     uint64_t m_sequence;
-    uint8_t m_blob[Job::kMaxBlobSize];
+    uint8_t m_blob[xmrig::Job::kMaxBlobSize];
 };
 
 

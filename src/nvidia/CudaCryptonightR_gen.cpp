@@ -193,11 +193,14 @@ static void CryptonightR_build_program(
         return;
     }
 
-    char buf[64];
-    sprintf(buf, "--gpu-architecture=compute_%d%d", arch_major, arch_minor);
+    char opt0[64];
+    sprintf(opt0, "--gpu-architecture=compute_%d%d", arch_major, arch_minor);
 
-    const char* opts[2] = { buf, is_64bit(variant) ? "--define-macro=RANDOM_MATH_64_BIT" : nullptr };
-    result = nvrtcCompileProgram(prog, is_64bit(variant) ? 2 : 1, opts);
+    char opt1[64];
+    sprintf(opt1, "-DVARIANT=%d", static_cast<int>(variant));
+
+    const char* opts[3] = { opt0, opt1, is_64bit(variant) ? "-DRANDOM_MATH_64_BIT" : nullptr };
+    result = nvrtcCompileProgram(prog, is_64bit(variant) ? 3 : 2, opts);
     if (result != NVRTC_SUCCESS) {
         LOG_ERR("nvrtcCompileProgram failed: %s", nvrtcGetErrorString(result));
 
@@ -259,12 +262,6 @@ void CryptonightR_get_program(std::vector<char>& ptx, std::string& lowered_name,
 
     ptx.clear();
 
-    if (variant != xmrig::VARIANT_WOW)
-    {
-        LOG_ERR("CryptonightR_get_program: invalid variant %d", variant);
-        return;
-    }
-
     const char* source_code_template =
         #include "CryptonightR.cu"
     ;
@@ -277,7 +274,19 @@ void CryptonightR_get_program(std::vector<char>& ptx, std::string& lowered_name,
     }
 
     V4_Instruction code[256];
-    const int code_size = v4_random_math_init(code, height);
+    int code_size;
+    switch (variant)
+    {
+    case xmrig::VARIANT_WOW:
+        code_size = v4_random_math_init<xmrig::VARIANT_WOW>(code, height);
+        break;
+    case xmrig::VARIANT_4:
+        code_size = v4_random_math_init<xmrig::VARIANT_4>(code, height);
+        break;
+    default:
+        LOG_ERR("CryptonightR_get_program: invalid variant %d", variant);
+        return;
+    }
 
     std::string source_code(source_code_template, offset);
     source_code.append(get_code(code, code_size));
