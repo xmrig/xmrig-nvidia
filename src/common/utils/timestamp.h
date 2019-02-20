@@ -34,7 +34,11 @@ namespace xmrig {
 static inline int64_t steadyTimestamp()
 {
     using namespace std::chrono;
-    return time_point_cast<milliseconds>(high_resolution_clock::is_steady ? high_resolution_clock::now() : steady_clock::now()).time_since_epoch().count();
+    if (high_resolution_clock::is_steady) {
+        return time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+    }
+
+    return time_point_cast<milliseconds>(steady_clock::now()).time_since_epoch().count();
 }
 
 
