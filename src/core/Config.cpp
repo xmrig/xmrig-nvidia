@@ -49,12 +49,18 @@ xmrig::Config::Config() : xmrig::CommonConfig(),
 
 bool xmrig::Config::isCNv2() const
 {
+    if (algorithm().algo() == CRYPTONIGHT_PICO) {
+        return true;
+    }
+
     if (algorithm().algo() != CRYPTONIGHT) {
         return false;
     }
 
-    for (const Pool &pool : pools()) {
-        if (pool.algorithm().variant() == VARIANT_2 || pool.algorithm().variant() == VARIANT_AUTO) {
+    for (const Pool &pool : m_pools.data()) {
+        const Variant variant = pool.algorithm().variant();
+
+        if (variant == VARIANT_2 || variant == VARIANT_AUTO || variant == VARIANT_HALF || variant == VARIANT_WOW) {
             return true;
         }
     }
@@ -95,17 +101,10 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("cuda-max-threads", m_maxGpuThreads, allocator);
     doc.AddMember("donate-level",     donateLevel(), allocator);
     doc.AddMember("log-file",         logFile() ? Value(StringRef(logFile())).Move() : Value(kNullType).Move(), allocator);
-
-    Value pools(kArrayType);
-
-    for (const Pool &pool : m_activePools) {
-        pools.PushBack(pool.toJSON(doc), allocator);
-    }
-
-    doc.AddMember("pools",         pools, allocator);
-    doc.AddMember("print-time",    printTime(), allocator);
-    doc.AddMember("retries",       retries(), allocator);
-    doc.AddMember("retry-pause",   retryPause(), allocator);
+    doc.AddMember("pools",            m_pools.toJSON(doc), allocator);
+    doc.AddMember("print-time",       printTime(), allocator);
+    doc.AddMember("retries",          m_pools.retries(), allocator);
+    doc.AddMember("retry-pause",      m_pools.retryPause(), allocator);
 
     Value threads(kArrayType);
     for (const IThread *thread : m_threads) {
@@ -119,9 +118,9 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
 }
 
 
-xmrig::Config *xmrig::Config::load(int argc, char **argv, IWatcherListener *listener)
+xmrig::Config *xmrig::Config::load(Process *process, IConfigListener *listener)
 {
-    return static_cast<Config*>(ConfigLoader::load(argc, argv, new ConfigCreator(), listener));
+    return static_cast<Config*>(ConfigLoader::load(process, new ConfigCreator(), listener));
 }
 
 
@@ -223,6 +222,8 @@ bool xmrig::Config::parseUint64(int key, uint64_t arg)
 
 void xmrig::Config::parseJSON(const rapidjson::Document &doc)
 {
+    CommonConfig::parseJSON(doc);
+
     const rapidjson::Value &threads = doc["threads"];
 
     if (threads.IsArray()) {

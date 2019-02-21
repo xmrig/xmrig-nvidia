@@ -162,7 +162,7 @@ __global__ void cryptonight_extra_gpu_prepare(
     XOR_BLOCKS_DST(ctx_state + 4, ctx_state + 12, ctx_b);
     memcpy(d_ctx_a + thread * 4, ctx_a, 4 * 4);
 
-    if (VARIANT == xmrig::VARIANT_WOW) {
+    if ((VARIANT == xmrig::VARIANT_WOW) || (VARIANT == xmrig::VARIANT_4)) {
         memcpy(d_ctx_b + thread * 16, ctx_b, 4 * 4);
         // bx1
         XOR_BLOCKS_DST(ctx_state + 16, ctx_state + 20, ctx_b);
@@ -404,6 +404,9 @@ void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint32_t startNonce, xmrig::Al
             ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
     } else if (variant == xmrig::VARIANT_WOW) {
         CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT, xmrig::VARIANT_WOW> << <grid, block >> > (wsize, ctx->d_input, ctx->inputlen, startNonce,
+            ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
+    } else if (variant == xmrig::VARIANT_4) {
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT, xmrig::VARIANT_4> << <grid, block >> > (wsize, ctx->d_input, ctx->inputlen, startNonce,
             ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
     } else if (variant == xmrig::VARIANT_2 || variant == xmrig::VARIANT_HALF || variant == xmrig::VARIANT_TRTL) {
         CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT, xmrig::VARIANT_2><<<grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
