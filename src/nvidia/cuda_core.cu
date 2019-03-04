@@ -357,8 +357,8 @@ __global__ void cryptonight_core_gpu_phase2_double(
             __syncthreads();
 #           endif
 
-            myChunks[idx1 ^ 2 + sub] = chunk3 + bx1;
-            myChunks[idx1 ^ 4 + sub] = chunk1 + bx0;
+            myChunks[idx1 ^ 2 + sub] = ((VARIANT == xmrig::VARIANT_RWZ) ? chunk1 : chunk3) + bx1;
+            myChunks[idx1 ^ 4 + sub] = ((VARIANT == xmrig::VARIANT_RWZ) ? chunk3 : chunk1) + bx0;
             myChunks[idx1 ^ 6 + sub] = chunk2 + ax0;
         }
 
@@ -412,8 +412,8 @@ __global__ void cryptonight_core_gpu_phase2_double(
             __syncthreads( );
 #           endif
 
-            myChunks[idx1 ^ 2 + sub] = chunk3 + bx1;
-            myChunks[idx1 ^ 4 + sub] = chunk1 + bx0;
+            myChunks[idx1 ^ 2 + sub] = ((VARIANT == xmrig::VARIANT_RWZ) ? chunk1 : chunk3) + bx1;
+            myChunks[idx1 ^ 4 + sub] = ((VARIANT == xmrig::VARIANT_RWZ) ? chunk3 : chunk1) + bx0;
             myChunks[idx1 ^ 6 + sub] = chunk2 + ax0;
 
             ax0 += res;
@@ -933,6 +933,10 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
 
         case VARIANT_4:
             cryptonight_core_gpu_hash<CRYPTONIGHT, VARIANT_4>(ctx, startNonce);
+            break;
+
+        case VARIANT_RWZ:
+            cryptonight_core_gpu_hash<CRYPTONIGHT, VARIANT_RWZ>(ctx, startNonce);
             break;
 
         default:
