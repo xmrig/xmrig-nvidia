@@ -24,6 +24,7 @@
             "nicehash": false,
             "keepalive": true,
             "variant": -1,
+            "enabled": true,
             "tls": false,
             "tls-fingerprint": null
         }
@@ -34,5 +35,5 @@
     "threads": null,
     "user-agent": null,
     "syslog": false,
-    "watch": false
+    "watch": true
 }
