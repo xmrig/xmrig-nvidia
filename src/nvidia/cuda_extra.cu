@@ -408,7 +408,7 @@ void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint32_t startNonce, xmrig::Al
     } else if (variant == xmrig::VARIANT_4) {
         CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT, xmrig::VARIANT_4> << <grid, block >> > (wsize, ctx->d_input, ctx->inputlen, startNonce,
             ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
-    } else if (variant == xmrig::VARIANT_2 || variant == xmrig::VARIANT_HALF || variant == xmrig::VARIANT_TRTL || variant == xmrig::VARIANT_RWZ) {
+    } else if (variant == xmrig::VARIANT_2 || variant == xmrig::VARIANT_HALF || variant == xmrig::VARIANT_TRTL || variant == xmrig::VARIANT_RWZ || variant == xmrig::VARIANT_ZLS || variant == xmrig::VARIANT_DOUBLE) {
         CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT, xmrig::VARIANT_2><<<grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
             ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
     } else {

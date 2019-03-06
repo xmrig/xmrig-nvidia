@@ -939,6 +939,14 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
             cryptonight_core_gpu_hash<CRYPTONIGHT, VARIANT_RWZ>(ctx, startNonce);
             break;
 
+        case VARIANT_ZLS:
+            cryptonight_core_gpu_hash<CRYPTONIGHT, VARIANT_ZLS>(ctx, startNonce);
+            break;
+
+        case VARIANT_DOUBLE:
+            cryptonight_core_gpu_hash<CRYPTONIGHT, VARIANT_DOUBLE>(ctx, startNonce);
+            break;
+
         default:
             break;
         }
