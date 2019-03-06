@@ -65,6 +65,10 @@ struct cryptonight_r_data {
 struct cryptonight_ctx {
     alignas(16) uint8_t state[224];
     alignas(16) uint8_t *memory;
+
+    uint8_t unused[40];
+    const uint32_t* saes_table;
+
     cn_mainloop_fun_ms_abi generated_code;
     cn_mainloop_double_fun_ms_abi generated_code_double;
     cryptonight_r_data generated_code_data;
@@ -86,7 +90,7 @@ public:
 private:
     static bool selfTest();
     static bool verify(xmrig::Variant variant, const uint8_t *referenceValue);
-    static bool verify2(xmrig::Variant variant, const char *test_data);
+    static bool verify2(xmrig::Variant variant, const uint8_t *test_data);
 
     alignas(16) static cryptonight_ctx *m_ctx;
     static xmrig::Algo m_algorithm;
