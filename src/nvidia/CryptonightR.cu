@@ -380,8 +380,23 @@ __device__ __forceinline__ static uint64_t rotate_right(uint64_t a, uint64_t b)
 
 #else
 
-__device__ __forceinline__ static uint32_t rotate_left(uint32_t a, uint32_t b) { return __funnelshift_l(a, a, b); }
-__device__ __forceinline__ static uint32_t rotate_right(uint32_t a, uint32_t b) { return __funnelshift_r(a, a, b); }
+__device__ __forceinline__ static uint32_t rotate_left(uint32_t a, uint32_t b) {
+#   if __CUDA_ARCH__ < 350
+    const uint32_t shift = b & 31;
+    return (a << shift) | (a >> (32 - shift));
+#   else
+    return __funnelshift_l(a, a, b);
+#   endif
+}
+
+__device__ __forceinline__ static uint32_t rotate_right(uint32_t a, uint32_t b) {
+    #if __CUDA_ARCH__ < 350
+    const uint32_t shift = b & 31;
+    return (a >> shift) | (a << (32 - shift));
+#   else
+    return __funnelshift_r(a, a, b);
+#   endif
+}
 
 #endif
 
