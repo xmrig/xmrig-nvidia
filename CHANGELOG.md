@@ -1,3 +1,6 @@
+# v2.14.1
+- [#246](https://github.com/xmrig/xmrig-nvidia/issues/246) Fixed compatibility with old GPUs (compute capability < 3.5).
+
 # v2.14.0
 - **[#242](https://github.com/xmrig/xmrig-nvidia/pull/242) Added new algorithm `cryptonight/rwz`, short alias `cn/rwz` (also known as CryptoNight ReverseWaltz), for upcoming [Graft](https://www.graft.network/) fork.**
 - **[#931](https://github.com/xmrig/xmrig/issues/931) Added new algorithm `cryptonight/zls`, short alias `cn/zls` for [Zelerius Network](https://zelerius.org) fork.**
