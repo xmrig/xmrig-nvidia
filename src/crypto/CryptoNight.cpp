@@ -55,22 +55,22 @@ bool CryptoNight::hash(const xmrig::Job &job, xmrig::JobResult &result, cryptoni
 xmrig::CpuThread::cn_mainloop_fun        cn_half_mainloop_ivybridge_asm             = nullptr;
 xmrig::CpuThread::cn_mainloop_fun        cn_half_mainloop_ryzen_asm                 = nullptr;
 xmrig::CpuThread::cn_mainloop_fun        cn_half_mainloop_bulldozer_asm             = nullptr;
-xmrig::CpuThread::cn_mainloop_double_fun cn_half_double_mainloop_sandybridge_asm    = nullptr;
+xmrig::CpuThread::cn_mainloop_fun        cn_half_double_mainloop_sandybridge_asm    = nullptr;
 
 xmrig::CpuThread::cn_mainloop_fun        cn_trtl_mainloop_ivybridge_asm             = nullptr;
 xmrig::CpuThread::cn_mainloop_fun        cn_trtl_mainloop_ryzen_asm                 = nullptr;
 xmrig::CpuThread::cn_mainloop_fun        cn_trtl_mainloop_bulldozer_asm             = nullptr;
-xmrig::CpuThread::cn_mainloop_double_fun cn_trtl_double_mainloop_sandybridge_asm    = nullptr;
+xmrig::CpuThread::cn_mainloop_fun        cn_trtl_double_mainloop_sandybridge_asm    = nullptr;
 
 xmrig::CpuThread::cn_mainloop_fun        cn_zls_mainloop_ivybridge_asm              = nullptr;
 xmrig::CpuThread::cn_mainloop_fun        cn_zls_mainloop_ryzen_asm                  = nullptr;
 xmrig::CpuThread::cn_mainloop_fun        cn_zls_mainloop_bulldozer_asm              = nullptr;
-xmrig::CpuThread::cn_mainloop_double_fun cn_zls_double_mainloop_sandybridge_asm     = nullptr;
+xmrig::CpuThread::cn_mainloop_fun        cn_zls_double_mainloop_sandybridge_asm     = nullptr;
 
 xmrig::CpuThread::cn_mainloop_fun        cn_double_mainloop_ivybridge_asm           = nullptr;
 xmrig::CpuThread::cn_mainloop_fun        cn_double_mainloop_ryzen_asm               = nullptr;
 xmrig::CpuThread::cn_mainloop_fun        cn_double_mainloop_bulldozer_asm           = nullptr;
-xmrig::CpuThread::cn_mainloop_double_fun cn_double_double_mainloop_sandybridge_asm  = nullptr;
+xmrig::CpuThread::cn_mainloop_fun        cn_double_double_mainloop_sandybridge_asm  = nullptr;
 
 template<typename T, typename U>
 static void patchCode(T dst, U src, const uint32_t iterations, const uint32_t mask)
@@ -116,22 +116,22 @@ static void patchAsmVariants()
     cn_half_mainloop_ivybridge_asm              = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0x0000);
     cn_half_mainloop_ryzen_asm                  = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0x1000);
     cn_half_mainloop_bulldozer_asm              = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0x2000);
-    cn_half_double_mainloop_sandybridge_asm     = reinterpret_cast<CpuThread::cn_mainloop_double_fun>  (base + 0x3000);
+    cn_half_double_mainloop_sandybridge_asm     = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0x3000);
 
     cn_trtl_mainloop_ivybridge_asm              = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0x4000);
     cn_trtl_mainloop_ryzen_asm                  = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0x5000);
     cn_trtl_mainloop_bulldozer_asm              = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0x6000);
-    cn_trtl_double_mainloop_sandybridge_asm     = reinterpret_cast<CpuThread::cn_mainloop_double_fun>  (base + 0x7000);
+    cn_trtl_double_mainloop_sandybridge_asm     = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0x7000);
 
     cn_zls_mainloop_ivybridge_asm               = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0x8000);
     cn_zls_mainloop_ryzen_asm                   = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0x9000);
     cn_zls_mainloop_bulldozer_asm               = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0xA000);
-    cn_zls_double_mainloop_sandybridge_asm      = reinterpret_cast<CpuThread::cn_mainloop_double_fun>  (base + 0xB000);
+    cn_zls_double_mainloop_sandybridge_asm      = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0xB000);
 
     cn_double_mainloop_ivybridge_asm            = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0xC000);
     cn_double_mainloop_ryzen_asm                = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0xD000);
     cn_double_mainloop_bulldozer_asm            = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0xE000);
-    cn_double_double_mainloop_sandybridge_asm   = reinterpret_cast<CpuThread::cn_mainloop_double_fun>  (base + 0xF000);
+    cn_double_double_mainloop_sandybridge_asm   = reinterpret_cast<CpuThread::cn_mainloop_fun>         (base + 0xF000);
 
     patchCode(cn_half_mainloop_ivybridge_asm,            cnv2_mainloop_ivybridge_asm,           CRYPTONIGHT_HALF_ITER,   CRYPTONIGHT_MASK);
     patchCode(cn_half_mainloop_ryzen_asm,                cnv2_mainloop_ryzen_asm,               CRYPTONIGHT_HALF_ITER,   CRYPTONIGHT_MASK);
