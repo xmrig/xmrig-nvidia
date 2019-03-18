@@ -293,14 +293,11 @@ add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURC
 target_link_libraries(${CMAKE_PROJECT_NAME} xmrig-cuda ${XMRIG_ASM_LIBRARY} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${MHD_LIBRARY} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})
 
 if (WIN32)
-    if (CUDA_VERSION_MAJOR EQUAL 10)
-      add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-          COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvrtc64_100_0.dll" $<TARGET_FILE_DIR:xmrig-nvidia>)
-    else()
-        add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvrtc64_${CUDA_VERSION_MAJOR}${CUDA_VERSION_MINOR}.dll" $<TARGET_FILE_DIR:xmrig-nvidia>)
-    endif()
-
+    file(GLOB NVRTCDLL "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvrtc64*.dll")
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvrtc-builtins64_${CUDA_VERSION_MAJOR}${CUDA_VERSION_MINOR}.dll" $<TARGET_FILE_DIR:xmrig-nvidia>)
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${NVRTCDLL}" $<TARGET_FILE_DIR:xmrig-nvidia>)
+
+    file(GLOB NVRTCBUILTINDLL "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvrtc-builtins64*.dll")
+    add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${NVRTCBUILTINDLL}" $<TARGET_FILE_DIR:xmrig-nvidia>)
 endif()
