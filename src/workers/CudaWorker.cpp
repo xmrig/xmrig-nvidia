@@ -68,8 +68,8 @@ CudaWorker::CudaWorker(Handle *handle) :
 void CudaWorker::start()
 {
     if (cuda_get_deviceinfo(&m_ctx, m_algorithm, false) != 0 || cryptonight_gpu_init(&m_ctx, m_algorithm) != 1) {
-        LOG_ERR("Setup failed for GPU %zu. Exitting.", m_id);
-        return;
+        LOG_ERR("Setup failed for GPU %zu. Exiting.", m_id);
+        exit(1);
     }
 
     while (Workers::sequence() > 0) {
