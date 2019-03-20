@@ -35,6 +35,8 @@ CudaThread::CudaThread() :
     m_bsleep(0),
     m_clockRate(0),
     m_memoryClockRate(0),
+    m_memoryTotal(0),
+    m_memoryFree(0),
     m_nvmlId(-1),
     m_smx(0),
     m_threads(0),
@@ -58,6 +60,8 @@ CudaThread::CudaThread(const nvid_ctx &ctx, int64_t affinity, xmrig::Algo algori
     m_bsleep(ctx.device_bsleep),
     m_clockRate(ctx.device_clockRate),
     m_memoryClockRate(ctx.device_memoryClockRate),
+    m_memoryTotal(ctx.device_memoryTotal),
+    m_memoryFree(ctx.device_memoryFree),
     m_nvmlId(-1),
     m_smx(ctx.device_mpcount),
     m_threads(ctx.device_threads),
@@ -145,6 +149,8 @@ bool CudaThread::init(xmrig::Algo algorithm)
 
     m_clockRate       = ctx.device_clockRate;
     m_memoryClockRate = ctx.device_memoryClockRate;
+    m_memoryTotal     = ctx.device_memoryTotal;
+    m_memoryFree      = ctx.device_memoryFree;
     m_pciBusID        = ctx.device_pciBusID;
     m_pciDeviceID     = ctx.device_pciDeviceID;
     m_pciDomainID     = ctx.device_pciDomainID;

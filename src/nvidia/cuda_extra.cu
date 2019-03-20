@@ -529,6 +529,28 @@ int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo, bool isCNv2)
         return 1;
     }
 
+    // a device must be selected to get the right memory usage later on
+    if (cudaSetDevice(ctx->device_id) != cudaSuccess) {
+        printf("WARNING: NVIDIA GPU %d: cannot be selected.\n", ctx->device_id);
+        return 2;
+    }
+
+    // trigger that a context on the gpu will be allocated
+    int* tmp;
+    if (cudaMalloc(&tmp, 256) != cudaSuccess) {
+        printf("WARNING: NVIDIA GPU %d: context cannot be created.\n", ctx->device_id);
+        return 3;
+    }
+
+    size_t freeMemory  = 0;
+    size_t totalMemory = 0;
+
+    CUDA_CHECK(ctx->device_id, cudaMemGetInfo(&freeMemory, &totalMemory));
+    CUDA_CHECK(ctx->device_id, cudaFree(tmp));
+    CUDA_CHECK(ctx->device_id, cudaDeviceReset());
+    ctx->device_memoryFree = freeMemory;
+    ctx->device_memoryTotal = totalMemory;
+
     cudaDeviceProp props;
     err = cudaGetDeviceProperties(&props, ctx->device_id);
     if (err != cudaSuccess) {
@@ -592,26 +614,6 @@ int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo, bool isCNv2)
             // limit memory usage for sm 20 GPUs
             maxMemUsage = size_t(1024u) * byteToMiB;
         }
-
-        // a device must be selected to get the right memory usage later on
-        if (cudaSetDevice(ctx->device_id) != cudaSuccess) {
-            printf("WARNING: NVIDIA GPU %d: cannot be selected.\n", ctx->device_id);
-            return 2;
-        }
-
-        // trigger that a context on the gpu will be allocated
-        int* tmp;
-        if (cudaMalloc(&tmp, 256) != cudaSuccess) {
-            printf("WARNING: NVIDIA GPU %d: context cannot be created.\n", ctx->device_id);
-            return 3;
-        }
-
-        size_t freeMemory  = 0;
-        size_t totalMemory = 0;
-
-        CUDA_CHECK(ctx->device_id, cudaMemGetInfo(&freeMemory, &totalMemory));
-        CUDA_CHECK(ctx->device_id, cudaFree(tmp));
-        CUDA_CHECK(ctx->device_id, cudaDeviceReset());
 
         const size_t hashMemSize = xmrig::cn_select_memory(algo);
 #       ifdef _WIN32

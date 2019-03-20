@@ -48,6 +48,8 @@ public:
     inline int bsleep() const             { return m_bsleep; }
     inline int clockRate() const          { return m_clockRate; }
     inline int memoryClockRate() const    { return m_memoryClockRate; }
+    inline size_t memoryTotal() const     { return m_memoryTotal; }
+    inline size_t memoryFree() const      { return m_memoryFree; }
     inline int nvmlId() const             { return m_nvmlId; }
     inline int smx() const                { return m_smx; }
     inline int threads() const            { return m_threads; }
@@ -99,6 +101,8 @@ private:
     int64_t m_affinity;
     size_t m_index;
     size_t m_threadId;
+    size_t m_memoryTotal;
+    size_t m_memoryFree;
     uint32_t m_pciBusID;
     uint32_t m_pciDeviceID;
     uint32_t m_pciDomainID;

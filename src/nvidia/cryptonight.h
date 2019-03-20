@@ -50,6 +50,8 @@ typedef struct {
     int device_bsleep;
     int device_clockRate;
     int device_memoryClockRate;
+    size_t device_memoryTotal;
+    size_t device_memoryFree;
     uint32_t device_pciBusID;
     uint32_t device_pciDeviceID;
     uint32_t device_pciDomainID;

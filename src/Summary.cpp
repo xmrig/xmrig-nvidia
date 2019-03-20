@@ -65,10 +65,11 @@ static void print_algo(xmrig::Config *config)
 
 static void print_gpu(xmrig::Config *config)
 {
+    constexpr size_t byteToMiB = 1024u * 1024u;
     for (const xmrig::IThread *t : config->threads()) {
-        auto thread = static_cast<const CudaThread *>(t);
-        Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("GPU #%-8zu") YELLOW("PCI:%04x:%02x:%02x") GREEN(" %s @ %d/%d MHz") " \x1B[1;30m%dx%d %dx%d arch:%d%d SMX:%d"
-                                          : " * GPU #%-8zuPCI:%04x:%02x:%02x %s @ %d/%d MHz %dx%d %dx%d arch:%d%d SMX:%d",
+        auto thread = dynamic_cast<const CudaThread *>(t);
+        Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("GPU #%-8zu") YELLOW("PCI:%04x:%02x:%02x") GREEN(" %s @ %d/%d MHz") " \x1B[1;30m%dx%d %dx%d arch:%d%d SMX:%d MEM:%zu/%zu MiB"
+                                          : " * GPU #%-8zuPCI:%04x:%02x:%02x %s @ %d/%d MHz %dx%d %dx%d arch:%d%d SMX:%d MEM:%zu/%zu MiB",
                        thread->index(),
                        thread->pciDomainID(),
                        thread->pciBusID(),
@@ -82,7 +83,9 @@ static void print_gpu(xmrig::Config *config)
                        thread->bsleep(),
                        thread->arch()[0],
                        thread->arch()[1],
-                       thread->smx()
+                       thread->smx(),
+                       thread->memoryFree() / byteToMiB,
+                       thread->memoryTotal() / byteToMiB
         );
     }
 }
