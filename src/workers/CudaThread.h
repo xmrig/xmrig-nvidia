@@ -5,7 +5,9 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2019      Spudz76     <https://github.com/Spudz76>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -100,9 +102,9 @@ private:
     int m_threads;
     int64_t m_affinity;
     size_t m_index;
-    size_t m_threadId;
-    size_t m_memoryTotal;
     size_t m_memoryFree;
+    size_t m_memoryTotal;
+    size_t m_threadId;
     uint32_t m_pciBusID;
     uint32_t m_pciDeviceID;
     uint32_t m_pciDomainID;
