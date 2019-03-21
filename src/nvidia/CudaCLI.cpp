@@ -153,6 +153,34 @@ void CudaCLI::parseLaunch(const char *arg)
 }
 
 
+void CudaCLI::parseTempLow(const char *arg)
+{
+    char *value = strdup(arg);
+    char *pch   = strtok(value, ",");
+
+    while (pch != nullptr) {
+        m_temp_low.push_back(static_cast<int>(strtoul(pch, nullptr, 10)));
+        pch = strtok(nullptr, ",");
+    }
+
+    free(value);
+}
+
+
+void CudaCLI::parseTempHigh(const char *arg)
+{
+    char *value = strdup(arg);
+    char *pch   = strtok(value, ",");
+
+    while (pch != nullptr) {
+        m_temp_high.push_back(static_cast<int>(strtoul(pch, nullptr, 10)));
+        pch = strtok(nullptr, ",");
+    }
+
+    free(value);
+}
+
+
 int CudaCLI::get(const std::vector<int> &vector, int index, int defaultValue) const
 {
     if (vector.empty()) {

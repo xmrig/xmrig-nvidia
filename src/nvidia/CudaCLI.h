@@ -28,6 +28,7 @@
 #include <vector>
 
 
+#include "defaults.h"
 #include "common/xmrig.h"
 
 
@@ -46,6 +47,8 @@ public:
     void autoConf(std::vector<xmrig::IThread *> &threads, xmrig::Algo algo, bool isCNv2);
     void parseDevices(const char *arg);
     void parseLaunch(const char *arg);
+    void parseTempLow(const char *arg);
+    void parseTempHigh(const char *arg);
 
     inline void addBFactor(int bfactor)        { m_bfactors.push_back(bfactor); }
     inline void addBSleep(int bsleep)          { m_bsleeps.push_back(bsleep); }
@@ -71,6 +74,9 @@ public:
 #       endif
     }
 
+    inline int temp_low(int index = 0) const  { return get(m_temp_low, index, DFL_nvmlTempL); }
+    inline int temp_high(int index = 0) const { return get(m_temp_high, index, DFL_nvmlTempH); }
+
 private:
     inline int affinity(int index) const { return get(m_affinity, index, -1); }
     inline int blocks(int index) const   { return get(m_blocks, index, -1); }
@@ -87,6 +93,8 @@ private:
     std::vector<int> m_bsleeps;
     std::vector<int> m_devices;
     std::vector<int> m_threads;
+    std::vector<int> m_temp_low;
+    std::vector<int> m_temp_high;
 };
 
 

@@ -4,8 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,42 +20,12 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HEALTH_H__
-#define __HEALTH_H__
+#ifndef __DEFAULTS_H__
+#define __DEFAULTS_H__
 
+//temperature display points
+// (below L is green, between is yellow, above H is red)
+#define DFL_nvmlTempL 45
+#define DFL_nvmlTempH 65
 
-#include <stdint.h>
-
-#define PROBED_UNSUPPORTED 0x8675309
-
-class Health
-{
-public:
-    Health() :
-        temperature(0),
-        power(0),
-        fanSpeed(0),
-        clock(0),
-        memClock(0)
-    {}
-
-
-    inline void reset()
-    {
-        temperature = 0;
-        power       = 0;
-        fanSpeed    = 0;
-        clock       = 0;
-        memClock    = 0;
-    }
-
-
-    uint32_t temperature;
-    uint32_t power;
-    uint32_t fanSpeed;
-    uint32_t clock;
-    uint32_t memClock;
-};
-
-
-#endif /* __HEALTH_H__ */
+#endif /* __DEFAULTS_H__ */

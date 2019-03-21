@@ -61,6 +61,8 @@ static struct option const options[] = {
     { "cuda-max-threads",  1, nullptr, xmrig::IConfig::CudaMaxThreadsKey },
     { "max-gpu-threads",   1, nullptr, xmrig::IConfig::CudaMaxThreadsKey }, // deprecated, use --cuda-max-threads instead.
     { "max-gpu-usage",     1, nullptr, xmrig::IConfig::CudaMaxUsageKey   }, // deprecated.
+    { "temp-low",          1, nullptr, xmrig::IConfig::NvmlTempL         },
+    { "temp-high",         1, nullptr, xmrig::IConfig::NvmlTempH         },
     { "config",            1, nullptr, xmrig::IConfig::ConfigKey         },
     { "donate-level",      1, nullptr, xmrig::IConfig::DonateLevelKey    },
     { "dry-run",           0, nullptr, xmrig::IConfig::DryRunKey         },
@@ -106,6 +108,8 @@ static struct option const config_options[] = {
     { "cuda-max-threads",  1, nullptr, xmrig::IConfig::CudaMaxThreadsKey },
     { "max-gpu-threads",   1, nullptr, xmrig::IConfig::CudaMaxThreadsKey }, // deprecated, use --cuda-max-threads instead.
     { "max-gpu-usage",     1, nullptr, xmrig::IConfig::CudaMaxUsageKey   }, // deprecated.
+    { "temp-low",          1, nullptr, xmrig::IConfig::NvmlTempL         },
+    { "temp-high",         1, nullptr, xmrig::IConfig::NvmlTempH         },
     { nullptr,             0, nullptr, 0                                 }
 };
 
