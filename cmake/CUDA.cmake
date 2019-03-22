@@ -32,7 +32,7 @@ set(DEFAULT_CUDA_ARCH "30;50")
 
 # Fermi GPUs are only supported with CUDA < 9.0
 if (CUDA_VERSION VERSION_LESS 9.0)
-    list(APPEND DEFAULT_CUDA_ARCH "20 21")
+    list(APPEND DEFAULT_CUDA_ARCH "20;21")
 endif()
 
 # add Pascal support for CUDA >= 8.0
