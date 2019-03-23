@@ -150,8 +150,7 @@ void Hashrate::print() const
     char num3[8] = { 0 };
     char num4[8] = { 0 };
 
-    LOG_INFO(m_controller->config()->isColors() ? WHITE_BOLD("speed") " 10s/60s/15m " CYAN_BOLD("%s") CYAN(" %s %s ") CYAN_BOLD("H/s") " max " CYAN_BOLD("%s H/s")
-                                                : "speed 10s/60s/15m %s %s %s H/s max %s H/s",
+    LOG_INFO(WHITE_BOLD("speed") " 10s/60s/15m " CYAN_BOLD("%s") " " CYAN("%s %s") " " CYAN_BOLD("H/s") " max " CYAN_BOLD("%s H/s"),
              format(calc(ShortInterval),  num1, sizeof(num1)),
              format(calc(MediumInterval), num2, sizeof(num2)),
              format(calc(LargeInterval),  num3, sizeof(num3)),

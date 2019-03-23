@@ -35,6 +35,10 @@ public:
 
     void message(Level level, const char *fmt, va_list args) override;
     void text(const char *fmt, va_list args) override;
+    void stripColor();
+
+private:
+    char m_fmt[256];
 };
 
 #endif /* __SYSLOG_BACKEND_H__ */

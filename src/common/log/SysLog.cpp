@@ -26,6 +26,7 @@
 
 
 #include "common/log/SysLog.h"
+#include "common/log/Log.h"
 #include "version.h"
 
 
@@ -35,9 +36,26 @@ SysLog::SysLog()
 }
 
 
+void SysLog::stripColor()
+{
+    // strip ANSI CSI sequences
+    std::string txt(m_fmt);
+    std::string::size_type i, j;
+    while ((i = txt.find(CSI)) != std::string::npos) {
+        j = txt.find('m', i);
+        txt.erase(i, j-i+1);
+    }
+    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s", txt.c_str());
+}
+
+
 void SysLog::message(Level level, const char *fmt, va_list args)
 {
-    vsyslog(static_cast<int>(level), fmt, args);
+    char buf[kBufferSize];
+    vsnprintf(buf, sizeof(buf) - 1, m_fmt, args);
+    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s", buf);
+    SysLog::stripColor();
+    vsyslog(static_cast<int>(level), m_fmt, args);
 }
 
 

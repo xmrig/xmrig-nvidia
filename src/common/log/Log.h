@@ -45,8 +45,8 @@ public:
     void message(ILogBackend::Level level, const char* fmt, ...);
     void text(const char* fmt, ...);
 
-    static const char *colorByLevel(ILogBackend::Level level, bool isColors = true);
-    static const char *endl(bool isColors = true);
+    static const char *colorByLevel(ILogBackend::Level level);
+    static const char *endl();
     static void defaultInit();
 
     static bool colors;
@@ -68,19 +68,48 @@ private:
 };
 
 
-#define RED_BOLD(x)     "\x1B[1;31m" x "\x1B[0m"
-#define RED(x)          "\x1B[0;31m" x "\x1B[0m"
-#define GREEN_BOLD(x)   "\x1B[1;32m" x "\x1B[0m"
-#define GREEN(x)        "\x1B[0;32m" x "\x1B[0m"
-#define YELLOW(x)       "\x1B[0;33m" x "\x1B[0m"
-#define YELLOW_BOLD(x)  "\x1B[1;33m" x "\x1B[0m"
-#define MAGENTA_BOLD(x) "\x1B[1;35m" x "\x1B[0m"
-#define MAGENTA(x)      "\x1B[0;35m" x "\x1B[0m"
-#define CYAN_BOLD(x)    "\x1B[1;36m" x "\x1B[0m"
-#define CYAN(x)         "\x1B[0;36m" x "\x1B[0m"
-#define WHITE_BOLD(x)   "\x1B[1;37m" x "\x1B[0m"
-#define WHITE(x)        "\x1B[0;37m" x "\x1B[0m"
-#define GRAY(x)         "\x1B[1;30m" x "\x1B[0m"
+#   ifdef _WIN32
+#define ENDL "\r\n"
+#   else
+#define ENDL "\n"
+#   endif
+
+#define CSI            "\x1B["     // Control Sequence Introducer (ANSI spec name)
+#define CLEAR          CSI "0m"    // all attributes off
+#define BRIGHT_BLACK_S CSI "90m"   // somewhat MD.GRAY
+#define BLACK_S        CSI "0;30m"
+#define BLACK_BOLD_S   CSI "1;30m" // another name for GRAY
+#define RED_S          CSI "0;31m"
+#define RED_BOLD_S     CSI "1;31m"
+#define GREEN_S        CSI "0;32m"
+#define GREEN_BOLD_S   CSI "1;32m"
+#define YELLOW_S       CSI "0;33m"
+#define YELLOW_BOLD_S  CSI "1;33m"
+#define BLUE_S         CSI "0;34m"
+#define BLUE_BOLD_S    CSI "1;34m"
+#define MAGENTA_S      CSI "0;35m"
+#define MAGENTA_BOLD_S CSI "1;35m"
+#define CYAN_S         CSI "0;36m"
+#define CYAN_BOLD_S    CSI "1;36m"
+#define WHITE_S        CSI "0;37m" // another name for LT.GRAY
+#define WHITE_BOLD_S   CSI "1;37m" // actually white
+//color wrappings
+#define BLACK(x)        BLACK_S x CLEAR
+#define BLACK_BOLD(x)   BLACK_BOLD_S x CLEAR
+#define RED(x)          RED_S x CLEAR
+#define RED_BOLD(x)     RED_BOLD_S x CLEAR
+#define GREEN(x)        GREEN_S x CLEAR
+#define GREEN_BOLD(x)   GREEN_BOLD_S x CLEAR
+#define YELLOW(x)       YELLOW_S x CLEAR
+#define YELLOW_BOLD(x)  YELLOW_BOLD_S x CLEAR
+#define BLUE(x)         BLUE_S x CLEAR
+#define BLUE_BOLD(x)    BLUE_BOLD_S x CLEAR
+#define MAGENTA(x)      MAGENTA_S x CLEAR
+#define MAGENTA_BOLD(x) MAGENTA_BOLD_S x CLEAR
+#define CYAN(x)         CYAN_S x CLEAR
+#define CYAN_BOLD(x)    CYAN_BOLD_S x CLEAR
+#define WHITE(x)        WHITE_S x CLEAR
+#define WHITE_BOLD(x)   WHITE_BOLD_S x CLEAR
 
 
 #define LOG_ERR(x, ...)    Log::i()->message(ILogBackend::ERR,     x, ##__VA_ARGS__)
