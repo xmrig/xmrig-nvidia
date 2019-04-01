@@ -5,7 +5,9 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2019      Spudz76     <https://github.com/Spudz76>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -40,6 +42,8 @@ CudaThread::CudaThread() :
     m_threads(0),
     m_affinity(-1),
     m_index(0),
+    m_memoryFree(0),
+    m_memoryTotal(0),
     m_threadId(0),
     m_pciBusID(0),
     m_pciDeviceID(0),
@@ -63,6 +67,8 @@ CudaThread::CudaThread(const nvid_ctx &ctx, int64_t affinity, xmrig::Algo algori
     m_threads(ctx.device_threads),
     m_affinity(affinity),
     m_index(static_cast<size_t>(ctx.device_id)),
+    m_memoryFree(ctx.device_memoryFree),
+    m_memoryTotal(ctx.device_memoryTotal),
     m_threadId(0),
     m_pciBusID(ctx.device_pciBusID),
     m_pciDeviceID(ctx.device_pciDeviceID),
@@ -145,6 +151,8 @@ bool CudaThread::init(xmrig::Algo algorithm)
 
     m_clockRate       = ctx.device_clockRate;
     m_memoryClockRate = ctx.device_memoryClockRate;
+    m_memoryTotal     = ctx.device_memoryTotal;
+    m_memoryFree      = ctx.device_memoryFree;
     m_pciBusID        = ctx.device_pciBusID;
     m_pciDeviceID     = ctx.device_pciDeviceID;
     m_pciDomainID     = ctx.device_pciDomainID;

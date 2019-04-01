@@ -32,7 +32,7 @@ set(DEFAULT_CUDA_ARCH "30;50")
 
 # Fermi GPUs are only supported with CUDA < 9.0
 if (CUDA_VERSION VERSION_LESS 9.0)
-    list(APPEND DEFAULT_CUDA_ARCH "20")
+    list(APPEND DEFAULT_CUDA_ARCH "20;21")
 endif()
 
 # add Pascal support for CUDA >= 8.0
@@ -61,6 +61,7 @@ foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
                             "Use '20' (for compute architecture 2.0) or higher.")
     endif()
 endforeach()
+list(SORT CUDA_ARCH)
 
 option(CUDA_SHOW_REGISTER "Show registers used for each kernel and compute architecture" OFF)
 option(CUDA_KEEP_FILES "Keep all intermediate files that are generated during internal compilation steps" OFF)
@@ -89,11 +90,20 @@ elseif("${CUDA_COMPILER}" STREQUAL "nvcc")
     if (CUDA_VERSION VERSION_LESS 8.0)
         add_definitions(-D_FORCE_INLINES)
         add_definitions(-D_MWAITXINTRIN_H_INCLUDED)
+    elseif(CUDA_VERSION VERSION_LESS 9.0)
+        set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} "-Wno-deprecated-gpu-targets")
     endif()
     foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
         # set flags to create device code for the given architecture
-        set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
-            "-Wno-deprecated-gpu-targets --generate-code arch=compute_${CUDA_ARCH_ELEM},code=sm_${CUDA_ARCH_ELEM} --generate-code arch=compute_${CUDA_ARCH_ELEM},code=compute_${CUDA_ARCH_ELEM}")
+        if("${CUDA_ARCH_ELEM}" STREQUAL "21")
+            # "2.1" actually does run faster when compiled as itself, versus in "2.0" compatible mode
+            # strange virtual code type on top of compute_20, with no compute_21 (so the normal rule fails)
+            set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
+                    "--generate-code arch=compute_20,code=sm_21")
+        else()
+            set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
+                    "--generate-code arch=compute_${CUDA_ARCH_ELEM},code=sm_${CUDA_ARCH_ELEM} --generate-code arch=compute_${CUDA_ARCH_ELEM},code=compute_${CUDA_ARCH_ELEM}")
+        endif()
     endforeach()
 
     # give each thread an independent default stream
