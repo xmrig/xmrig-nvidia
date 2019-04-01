@@ -5,7 +5,9 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2019      Spudz76     <https://github.com/Spudz76>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -65,10 +67,11 @@ static void print_algo(xmrig::Config *config)
 
 static void print_gpu(xmrig::Config *config)
 {
+    constexpr size_t byteToMiB = 1024u * 1024u;
     for (const xmrig::IThread *t : config->threads()) {
         auto thread = static_cast<const CudaThread *>(t);
-        Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("GPU #%-8zu") YELLOW("PCI:%04x:%02x:%02x") GREEN(" %s @ %d/%d MHz") " \x1B[1;30m%dx%d %dx%d arch:%d%d SMX:%d"
-                                          : " * GPU #%-8zuPCI:%04x:%02x:%02x %s @ %d/%d MHz %dx%d %dx%d arch:%d%d SMX:%d",
+        Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("GPU #%-8zu") YELLOW("PCI:%04x:%02x:%02x") GREEN(" %s @ %d/%d MHz") " \x1B[1;30m%dx%d %dx%d arch:%d%d SMX:%d MEM:%zu/%zu MiB"
+                                          : " * GPU #%-8zuPCI:%04x:%02x:%02x %s @ %d/%d MHz %dx%d %dx%d arch:%d%d SMX:%d MEM:%zu/%zu MiB",
                        thread->index(),
                        thread->pciDomainID(),
                        thread->pciBusID(),
@@ -82,7 +85,9 @@ static void print_gpu(xmrig::Config *config)
                        thread->bsleep(),
                        thread->arch()[0],
                        thread->arch()[1],
-                       thread->smx()
+                       thread->smx(),
+                       thread->memoryFree() / byteToMiB,
+                       thread->memoryTotal() / byteToMiB
         );
     }
 }
