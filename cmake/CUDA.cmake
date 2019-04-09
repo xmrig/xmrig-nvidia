@@ -145,9 +145,14 @@ set(CUDA_SOURCES
     src/nvidia/cuda_skein.hpp
 )
 
+# add c++11 for cuda
+if(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
+endif()
+
 if("${CUDA_COMPILER}" STREQUAL "clang")
     add_library(xmrig-cuda STATIC ${CUDA_SOURCES})
-    
+
     set_target_properties(xmrig-cuda PROPERTIES COMPILE_FLAGS ${CLANG_BUILD_FLAGS})
     set_target_properties(xmrig-cuda PROPERTIES LINKER_LANGUAGE CXX)
     set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
