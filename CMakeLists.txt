@@ -128,7 +128,6 @@ set(SOURCES
     src/common/config/ConfigLoader.cpp
     src/common/config/ConfigWatcher.cpp
     src/common/Console.cpp
-    src/common/cpu/BasicCpuInfo.cpp
     src/common/cpu/Cpu.cpp
     src/common/crypto/Algorithm.cpp
     src/common/crypto/keccak.cpp
@@ -158,6 +157,13 @@ set(SOURCES
     src/xmrig.cpp
    )
 
+if (XMRIG_ARM)
+    set(SOURCES ${SOURCES} src/common/cpu/BasicCpuInfo_arm.cpp)
+else()
+    set(SOURCES ${SOURCES} src/common/cpu/BasicCpuInfo.cpp)
+endif()
+
+
 set(SOURCES_CRYPTO
     src/crypto/c_groestl.c
     src/crypto/c_blake256.c
@@ -166,7 +172,7 @@ set(SOURCES_CRYPTO
     src/crypto/CryptoNight.cpp
    )
 
-if (WITH_ASM)
+if (WITH_ASM AND NOT XMRIG_ARM)
     set(HEADERS_CRYPTO "${HEADERS_CRYPTO}" src/crypto/asm/CryptonightR_template.h)
     set(SOURCES_CRYPTO "${SOURCES_CRYPTO}" src/crypto/CryptonightR_gen.cpp)
 endif()

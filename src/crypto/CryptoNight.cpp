@@ -34,8 +34,13 @@
 #include "Mem.h"
 #include "crypto/CryptoNight.h"
 #include "crypto/CryptoNight_test.h"
-#include "crypto/CryptoNight_x86.h"
 #include "net/JobResult.h"
+
+#ifdef XMRIG_ARM
+    #include "crypto/CryptoNight_arm.h"
+#else
+    #include "crypto/CryptoNight_x86.h"
+#endif
 
 
 alignas(16) cryptonight_ctx *CryptoNight::m_ctx = nullptr;

@@ -12,10 +12,19 @@ set(CMAKE_CXX_STANDARD 11)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -maes -Wall")
+    if (XMRIG_ARM)
+         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+    else()
+         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -maes -Wall")
+    endif()
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wno-strict-aliasing")
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -maes -Wall")
+    if (XMRIG_ARM)
+         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -flax-vector-conversions")
+    else()
+	 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -maes -Wall")
+    endif()
+
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s -Wno-sign-compare")
 
     if (WIN32)
@@ -38,9 +47,18 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
 
 elseif (CMAKE_CXX_COMPILER_ID MATCHES Clang)
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -maes -Wall")
+    if (XMRIG_ARM)
+         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+    else()
+         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -maes -Wall")
+    endif()
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -maes -Wall -fno-exceptions -fno-rtti")
+    if (XMRIG_ARM)
+         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fno-exceptions -fno-rtti")
+    else()
+         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -maes -Wall -fno-exceptions -fno-rtti")
+    endif()
+
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 
 endif()
