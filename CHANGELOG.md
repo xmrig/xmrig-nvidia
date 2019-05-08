@@ -1,5 +1,7 @@
+# v2.14.3
+- [#260](https://github.com/xmrig/xmrig-nvidia/issues/260) Added workaround for CUDA bug, thanks [@psychocrypt](https://github.com/psychocrypt).
+
 # v2.14.2
-- [#260](https://github.com/xmrig/xmrig-nvidia/issues/260) :warning: For `cn/r` algorithm only supported version of CUDA is 10.1.
 - [#253](https://github.com/xmrig/xmrig-nvidia/pull/253) Fixed NVRTC dll copy when build miner.
 - [#255](https://github.com/xmrig/xmrig-nvidia/pull/255) Fixed CUDA8 support and added memory size display in summary.
 

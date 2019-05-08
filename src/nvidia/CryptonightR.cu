@@ -453,10 +453,17 @@ __global__ void CryptonightR_phase2(
     uint64_t r2 = ((uint64_t*)(d_ctx_b + thread * 16 + 4 * 2))[2];
     uint64_t r3 = ((uint64_t*)(d_ctx_b + thread * 16 + 4 * 2))[3];
 #else
+#   if (__CUDACC_VER_MAJOR__ < 10 || (__CUDACC_VER_MAJOR__ == 10 && __CUDACC_VER_MINOR__ < 1))
+    volatile uint32_t r0 = d_ctx_b[thread * 16 + 4 * 2];
+    volatile uint32_t r1 = d_ctx_b[thread * 16 + 4 * 2 + 1];
+    volatile uint32_t r2 = d_ctx_b[thread * 16 + 4 * 2 + 2];
+    volatile uint32_t r3 = d_ctx_b[thread * 16 + 4 * 2 + 3];
+#   else
     uint32_t r0 = d_ctx_b[thread * 16 + 4 * 2];
     uint32_t r1 = d_ctx_b[thread * 16 + 4 * 2 + 1];
     uint32_t r2 = d_ctx_b[thread * 16 + 4 * 2 + 2];
     uint32_t r3 = d_ctx_b[thread * 16 + 4 * 2 + 3];
+#   endif
 #endif
 
     const int batchsize      = (ITERATIONS * 2) >> ( 1 + bfactor );
