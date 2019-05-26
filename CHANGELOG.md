@@ -1,3 +1,10 @@
+# v2.14.4
+- [#260](https://github.com/xmrig/xmrig-nvidia/issues/260) Fixed `cn/r` algorithm slowdown with CUDA 10.1+.
+- [#268](https://github.com/xmrig/xmrig-nvidia/pull/268) Added support for NVIDIA Jetson.
+- In HTTP API for unknown hashrate now used `null` instead of `0.0`.
+- Fixed MSVC 2019 version detection.
+- Removed obsolete automatic variants.
+ 
 # v2.14.3
 - [#260](https://github.com/xmrig/xmrig-nvidia/issues/260) Added workaround for CUDA bug, thanks [@psychocrypt](https://github.com/psychocrypt).
 
