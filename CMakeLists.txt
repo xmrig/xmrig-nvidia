@@ -128,7 +128,6 @@ set(SOURCES
     src/common/config/ConfigLoader.cpp
     src/common/config/ConfigWatcher.cpp
     src/common/Console.cpp
-    src/common/cpu/BasicCpuInfo.cpp
     src/common/cpu/Cpu.cpp
     src/common/crypto/Algorithm.cpp
     src/common/crypto/keccak.cpp
@@ -158,6 +157,13 @@ set(SOURCES
     src/xmrig.cpp
    )
 
+if (XMRIG_ARM)
+    set(SOURCES ${SOURCES} src/common/cpu/BasicCpuInfo_arm.cpp)
+else()
+    set(SOURCES ${SOURCES} src/common/cpu/BasicCpuInfo.cpp)
+endif()
+
+
 set(SOURCES_CRYPTO
     src/crypto/c_groestl.c
     src/crypto/c_blake256.c
@@ -166,7 +172,7 @@ set(SOURCES_CRYPTO
     src/crypto/CryptoNight.cpp
    )
 
-if (WITH_ASM)
+if (WITH_ASM AND NOT XMRIG_ARM)
     set(HEADERS_CRYPTO "${HEADERS_CRYPTO}" src/crypto/asm/CryptonightR_template.h)
     set(SOURCES_CRYPTO "${SOURCES_CRYPTO}" src/crypto/CryptonightR_gen.cpp)
 endif()
@@ -295,9 +301,9 @@ target_link_libraries(${CMAKE_PROJECT_NAME} xmrig-cuda ${XMRIG_ASM_LIBRARY} ${OP
 if (WIN32)
     file(GLOB NVRTCDLL "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvrtc64*.dll")
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${NVRTCDLL}" $<TARGET_FILE_DIR:xmrig-nvidia>)
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${NVRTCDLL}" $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>)
 
     file(GLOB NVRTCBUILTINDLL "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvrtc-builtins64*.dll")
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${NVRTCBUILTINDLL}" $<TARGET_FILE_DIR:xmrig-nvidia>)
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${NVRTCBUILTINDLL}" $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>)
 endif()
