@@ -350,6 +350,8 @@ void Workers::onResult(uv_async_t *)
 
 #               ifdef XMRIG_ALGO_RANDOMX
                 if (job.algorithm().variant() == xmrig::VARIANT_RX_WOW) {
+                    uv_rwlock_wrlock(&m_rx_dataset_lock);
+
                     if (!m_rx_vm) {
                         int flags = RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_FULL_MEM | RANDOMX_FLAG_JIT;
                         if (!xmrig::Cpu::info()->hasAES()) {
@@ -362,6 +364,9 @@ void Workers::onResult(uv_async_t *)
                         }
                     }
                     randomx_calculate_hash(m_rx_vm, job.blob(), job.size(), result.result);
+
+                    uv_rwlock_wrunlock(&m_rx_dataset_lock);
+
                     ok = *reinterpret_cast<uint64_t*>(result.result + 24) < job.target();
                 }
                 else
@@ -463,6 +468,10 @@ randomx_dataset* Workers::getDataset(const uint8_t* seed_hash)
     }
     for (uint32_t i = 0; i < num_threads; ++i) {
         threads[i].join();
+    }
+
+    if (m_rx_vm) {
+        randomx_vm_set_dataset(m_rx_vm, m_rx_dataset);
     }
 
     LOG_INFO("Finished updating RandomX dataset (%u threads)", num_threads);
