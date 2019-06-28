@@ -129,6 +129,16 @@ else()
     message(FATAL_ERROR "selected CUDA compiler '${CUDA_COMPILER}' is not supported")
 endif()
 
+if (WITH_RANDOMX)
+    set(CUDA_RANDOMX_SOURCES
+        src/nvidia/RandomWOW/random_wow.cu
+        src/nvidia/RandomWOW/aes_cuda.hpp
+        src/nvidia/RandomWOW/blake2b_cuda.hpp
+        src/nvidia/RandomWOW/randomx_cuda.hpp
+    )
+else()
+    set(CUDA_RANDOMX_SOURCES "")
+endif()
 
 set(CUDA_SOURCES
     src/nvidia/cryptonight.h
@@ -146,11 +156,11 @@ set(CUDA_SOURCES
 )
 
 if("${CUDA_COMPILER}" STREQUAL "clang")
-    add_library(xmrig-cuda STATIC ${CUDA_SOURCES})
+    add_library(xmrig-cuda STATIC ${CUDA_SOURCES} ${CUDA_RANDOMX_SOURCES})
     
     set_target_properties(xmrig-cuda PROPERTIES COMPILE_FLAGS ${CLANG_BUILD_FLAGS})
     set_target_properties(xmrig-cuda PROPERTIES LINKER_LANGUAGE CXX)
-    set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
+    set_source_files_properties(${CUDA_SOURCES} ${CUDA_RANDOMX_SOURCES} PROPERTIES LANGUAGE CXX)
 else()
-    cuda_add_library(xmrig-cuda STATIC ${CUDA_SOURCES})
+    cuda_add_library(xmrig-cuda STATIC ${CUDA_SOURCES} ${CUDA_RANDOMX_SOURCES})
 endif()

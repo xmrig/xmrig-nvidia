@@ -30,6 +30,10 @@
 #include <uv.h>
 #include <vector>
 
+#ifdef XMRIG_ALGO_RANDOMX
+#   include <randomx.h>
+#endif
+
 #include "common/net/Job.h"
 #include "net/JobResult.h"
 #include "rapidjson/fwd.h"
@@ -72,6 +76,10 @@ public:
     static void threadsSummary(rapidjson::Document &doc);
 #   endif
 
+#   ifdef XMRIG_ALGO_RANDOMX
+    static randomx_dataset* getDataset(const uint8_t* seed_hash);
+#   endif
+
 private:
     static void onReady(void *arg);
     static void onReport(uv_timer_t *handle);
@@ -96,6 +104,15 @@ private:
     static xmrig::Controller *m_controller;
     static xmrig::IJobResultListener *m_listener;
     static xmrig::Job m_job;
+
+#   ifdef XMRIG_ALGO_RANDOMX
+    static uv_rwlock_t m_rx_dataset_lock;
+    static randomx_cache *m_rx_cache;
+    static randomx_dataset *m_rx_dataset;
+    static randomx_vm *m_rx_vm;
+    static uint8_t m_rx_seed_hash[32];
+    static std::atomic<uint32_t> m_rx_dataset_init_thread_counter;
+#   endif
 };
 
 

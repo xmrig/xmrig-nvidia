@@ -59,6 +59,13 @@ CudaWorker::CudaWorker(Handle *handle) :
     m_ctx.device_bsleep  = thread->bsleep();
     m_ctx.syncMode       = thread->syncMode();
 
+    memset(m_ctx.rx_dataset_seedhash, 0, sizeof(m_ctx.rx_dataset_seedhash));
+    m_ctx.d_rx_dataset = nullptr;
+    m_ctx.d_rx_hashes = nullptr;
+    m_ctx.d_rx_entropy = nullptr;
+    m_ctx.d_rx_vm_states = nullptr;
+    m_ctx.d_rx_rounding = nullptr;
+
     if (thread->affinity() >= 0) {
         Platform::setThreadAffinity(static_cast<uint64_t>(thread->affinity()));
     }
@@ -68,7 +75,7 @@ CudaWorker::CudaWorker(Handle *handle) :
 void CudaWorker::start()
 {
     if (cuda_get_deviceinfo(&m_ctx, m_algorithm, false) != 0 || cryptonight_gpu_init(&m_ctx, m_algorithm) != 1) {
-        LOG_ERR("Setup failed for GPU %zu. Exitting.", m_id);
+        LOG_ERR("Setup failed for GPU %zu. Exiting.", m_id);
         return;
     }
 
@@ -88,21 +95,36 @@ void CudaWorker::start()
 
         cryptonight_extra_cpu_set_data(&m_ctx, m_blob, m_job.size());
 
+        uint32_t batch_size = m_ctx.device_blocks * m_ctx.device_threads;
+
+#       ifdef XMRIG_ALGO_RANDOMX
+        batch_size -= batch_size % 32;
+#       endif
+
         while (!Workers::isOutdated(m_sequence)) {
             uint32_t foundNonce[10];
             uint32_t foundCount;
 
-            cryptonight_extra_cpu_prepare(&m_ctx, m_nonce, m_algorithm, m_job.algorithm().variant());
-            cryptonight_gpu_hash(&m_ctx, m_algorithm, m_job.algorithm().variant(), m_job.height(), m_nonce);
-            cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, m_algorithm, m_job.algorithm().variant());
+#           ifdef XMRIG_ALGO_RANDOMX
+            if (m_job.algorithm().variant() == xmrig::VARIANT_RX_WOW) {
+                randomx_prepare(&m_ctx, m_job.seed_hash(), batch_size);
+                randomx_hash(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, batch_size);
+            }
+            else
+#           endif
+            {
+                cryptonight_extra_cpu_prepare(&m_ctx, m_nonce, m_algorithm, m_job.algorithm().variant());
+                cryptonight_gpu_hash(&m_ctx, m_algorithm, m_job.algorithm().variant(), m_job.height(), m_nonce);
+                cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, m_algorithm, m_job.algorithm().variant());
+            }
 
             for (size_t i = 0; i < foundCount; i++) {
                 *m_job.nonce() = foundNonce[i];
                 Workers::submit(m_job);
             }
 
-            m_count += m_ctx.device_blocks * m_ctx.device_threads;
-            m_nonce += m_ctx.device_blocks * m_ctx.device_threads;
+            m_count += batch_size;
+            m_nonce += batch_size;
 
             storeStats();
             std::this_thread::yield();

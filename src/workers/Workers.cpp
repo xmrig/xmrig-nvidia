@@ -27,6 +27,7 @@
 
 #include "api/Api.h"
 #include "common/log/Log.h"
+#include "common/cpu/Cpu.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "crypto/CryptoNight.h"
@@ -59,6 +60,15 @@ uv_timer_t Workers::m_timer;
 xmrig::Controller *Workers::m_controller = nullptr;
 xmrig::IJobResultListener *Workers::m_listener = nullptr;
 xmrig::Job Workers::m_job;
+
+#ifdef XMRIG_ALGO_RANDOMX
+uv_rwlock_t Workers::m_rx_dataset_lock;
+randomx_cache *Workers::m_rx_cache = nullptr;
+randomx_dataset *Workers::m_rx_dataset = nullptr;
+randomx_vm *Workers::m_rx_vm = nullptr;
+uint8_t Workers::m_rx_seed_hash[32] = {};
+std::atomic<uint32_t> Workers::m_rx_dataset_init_thread_counter = {};
+#endif
 
 
 struct JobBaton
@@ -221,6 +231,10 @@ bool Workers::start(xmrig::Controller *controller)
     m_sequence     = 1;
     m_paused       = 1;
 
+#   ifdef XMRIG_ALGO_RANDOMX
+    uv_rwlock_init(&m_rx_dataset_lock);
+#   endif
+
     uv_mutex_init(&m_mutex);
     uv_rwlock_init(&m_rwlock);
     uv_async_init(uv_default_loop(), &m_async, Workers::onResult);
@@ -326,13 +340,40 @@ void Workers::onResult(uv_async_t *)
                 return;
             }
 
-            cryptonight_ctx *ctx;
-            MemInfo info = Mem::create(&ctx, baton->jobs[0].algorithm().algo(), 1);
+            cryptonight_ctx *ctx = nullptr;
+            MemInfo info;
 
             for (const xmrig::Job &job : baton->jobs) {
                 xmrig::JobResult result(job);
 
-                if (CryptoNight::hash(job, result, ctx)) {
+                bool ok;
+
+#               ifdef XMRIG_ALGO_RANDOMX
+                if (job.algorithm().variant() == xmrig::VARIANT_RX_WOW) {
+                    if (!m_rx_vm) {
+                        int flags = RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_FULL_MEM | RANDOMX_FLAG_JIT;
+                        if (!xmrig::Cpu::info()->hasAES()) {
+                            flags |= RANDOMX_FLAG_HARD_AES;
+                        }
+
+                        m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags), nullptr, m_rx_dataset);
+                        if (!m_rx_vm) {
+                            m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags - RANDOMX_FLAG_LARGE_PAGES), nullptr, m_rx_dataset);
+                        }
+                    }
+                    randomx_calculate_hash(m_rx_vm, job.blob(), job.size(), result.result);
+                    ok = *reinterpret_cast<uint64_t*>(result.result + 24) < job.target();
+                }
+                else
+#               endif
+                {
+                    if (!ctx) {
+                        info = Mem::create(&ctx, baton->jobs[0].algorithm().algo(), 1);
+                    }
+                    ok = CryptoNight::hash(job, result, ctx);
+                }
+
+                if (ok) {
                     baton->results.push_back(result);
                 }
                 else {
@@ -340,7 +381,9 @@ void Workers::onResult(uv_async_t *)
                 }
             }
 
-            Mem::release(&ctx, 1, info);
+            if (ctx) {
+                Mem::release(&ctx, 1, info);
+            }
         },
         [](uv_work_t* req, int) {
             JobBaton *baton = static_cast<JobBaton*>(req->data);
@@ -379,3 +422,53 @@ void Workers::start(IWorker *worker)
 {
     worker->start();
 }
+
+#ifdef XMRIG_ALGO_RANDOMX
+randomx_dataset* Workers::getDataset(const uint8_t* seed_hash)
+{
+    uv_rwlock_wrlock(&m_rx_dataset_lock);
+
+    // Check if we need to update cache and dataset
+    if (m_rx_dataset && (memcmp(m_rx_seed_hash, seed_hash, sizeof(m_rx_seed_hash)) == 0)) {
+        uv_rwlock_wrunlock(&m_rx_dataset_lock);
+        return m_rx_dataset;
+    }
+
+    if (!m_rx_dataset) {
+        randomx_dataset* dataset = randomx_alloc_dataset(RANDOMX_FLAG_LARGE_PAGES);
+        if (!dataset) {
+            dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
+        }
+        m_rx_cache = randomx_alloc_cache(static_cast<randomx_flags>(RANDOMX_FLAG_JIT | RANDOMX_FLAG_LARGE_PAGES));
+        if (!m_rx_cache) {
+            m_rx_cache = randomx_alloc_cache(RANDOMX_FLAG_JIT);
+        }
+        m_rx_dataset = dataset;
+    }
+
+    const uint32_t num_threads = std::thread::hardware_concurrency();
+    LOG_INFO("Started updating RandomX dataset (%u threads)", num_threads);
+
+    if (memcmp(m_rx_seed_hash, seed_hash, sizeof(m_rx_seed_hash)) != 0) {
+        memcpy(m_rx_seed_hash, seed_hash, sizeof(m_rx_seed_hash));
+        randomx_init_cache(m_rx_cache, m_rx_seed_hash, sizeof(m_rx_seed_hash));
+    }
+
+    std::vector<std::thread> threads;
+    threads.reserve(num_threads);
+    for (uint32_t i = 0; i < num_threads; ++i) {
+        const uint32_t a = (randomx_dataset_item_count() * i) / num_threads;
+        const uint32_t b = (randomx_dataset_item_count() * (i + 1)) / num_threads;
+        threads.emplace_back(randomx_init_dataset, m_rx_dataset, m_rx_cache, a, b - a);
+    }
+    for (uint32_t i = 0; i < num_threads; ++i) {
+        threads[i].join();
+    }
+
+    LOG_INFO("Finished updating RandomX dataset (%u threads)", num_threads);
+
+    uv_rwlock_wrunlock(&m_rx_dataset_lock);
+
+    return m_rx_dataset;
+}
+#endif

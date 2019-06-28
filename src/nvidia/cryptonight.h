@@ -71,7 +71,13 @@ typedef struct {
     uint32_t *d_ctx_key1;
     uint32_t *d_ctx_key2;
     uint32_t *d_ctx_text;
-    uint32_t *d_tweak1_2;
+
+    uint8_t rx_dataset_seedhash[32];
+    uint32_t *d_rx_dataset;
+    uint32_t *d_rx_hashes;
+    uint32_t *d_rx_entropy;
+    uint32_t *d_rx_vm_states;
+    uint32_t *d_rx_rounding;
 } nvid_ctx;
 
 
@@ -84,3 +90,6 @@ void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint32_t startNonce, xmrig::Al
 void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant variant, uint64_t height, uint32_t startNonce);
 void cryptonight_extra_cpu_final(nvid_ctx *ctx, uint32_t startNonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, xmrig::Algo algo, xmrig::Variant variant);
 void cryptonight_extra_cpu_free(nvid_ctx *ctx, xmrig::Algo algo);
+
+void randomx_prepare(nvid_ctx *ctx, const uint8_t* seed_hash, uint32_t batch_size);
+void randomx_hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size);
