@@ -383,7 +383,7 @@ int cryptonight_extra_cpu_init(nvid_ctx *ctx, xmrig::Algo algo, size_t hashMemSi
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input,        32 * sizeof (uint32_t)));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof (uint32_t)));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t)));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state,   hashMemSize * wsize));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state,   (hashMemSize + 64) * wsize));
 
     return 1;
 }

@@ -248,6 +248,8 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         cryptonight_single_hash_wrapper<CRYPTONIGHT, VARIANT_DOUBLE>,
         cryptonight_single_hash<CRYPTONIGHT, true, VARIANT_DOUBLE>,
 
+        nullptr, nullptr, // VARIANT_RX_WOW
+
 #       ifndef XMRIG_NO_AEON
         cryptonight_single_hash<CRYPTONIGHT_LITE, false, VARIANT_0>,
         cryptonight_single_hash<CRYPTONIGHT_LITE, true,  VARIANT_0>,
@@ -270,6 +272,7 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, // VARIANT_RWZ
         nullptr, nullptr, // VARIANT_ZLS
         nullptr, nullptr, // VARIANT_DOUBLE
+        nullptr, nullptr, // VARIANT_RX_WOW
 #       else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
@@ -279,7 +282,7 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
-        nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
 #       endif
 
 #       ifndef XMRIG_NO_SUMO
@@ -308,6 +311,7 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, // VARIANT_RWZ
         nullptr, nullptr, // VARIANT_ZLS
         nullptr, nullptr, // VARIANT_DOUBLE
+        nullptr, nullptr, // VARIANT_RX_WOW
 #       else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
@@ -317,7 +321,7 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
-        nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
 #       endif
 #       ifndef XMRIG_NO_CN_PICO
         nullptr, nullptr, // VARIANT_0
@@ -344,7 +348,8 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, // VARIANT_RWZ
         nullptr, nullptr, // VARIANT_ZLS
         nullptr, nullptr, // VARIANT_DOUBLE
-    #else
+        nullptr, nullptr, // VARIANT_RX_WOW
+#       else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
@@ -353,8 +358,17 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
-        nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
 #       endif
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
     };
 
     static_assert((VARIANT_MAX * 2 * ALGO_MAX) == sizeof(func_table) / sizeof(func_table[0]), "func_table size mismatch");
@@ -423,6 +437,12 @@ bool CryptoNight::selfTest() {
 #   ifndef XMRIG_NO_CN_PICO
     if (m_algorithm == xmrig::CRYPTONIGHT_PICO) {
         return verify(VARIANT_TRTL, test_output_pico_trtl);
+    }
+#   endif
+
+#   ifdef XMRIG_ALGO_RANDOMX
+    if (m_algorithm == xmrig::RANDOM_X) {
+        return  true;
     }
 #   endif
 

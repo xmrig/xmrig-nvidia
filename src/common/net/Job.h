@@ -54,12 +54,14 @@ public:
     bool setTarget(const char *target);
     void setAlgorithm(const char *algo);
     void setHeight(uint64_t height);
+    bool setSeedHash(const char *hash);
 
     inline bool isNicehash() const                    { return m_nicehash; }
     inline bool isValid() const                       { return m_size > 0 && m_diff > 0; }
     inline bool setId(const char *id)                 { return m_id.setId(id); }
     inline const uint32_t *nonce() const              { return reinterpret_cast<const uint32_t*>(m_blob + 39); }
     inline const uint8_t *blob() const                { return m_blob; }
+    inline const uint8_t *seed_hash() const           { return m_seedHash; }
     inline const Algorithm &algorithm() const         { return m_algorithm; }
     inline const Id &clientId() const                 { return m_clientId; }
     inline const Id &id() const                       { return m_id; }
@@ -104,6 +106,7 @@ private:
     size_t m_size;
     uint64_t m_diff;
     uint64_t m_target;
+    uint8_t m_seedHash[32];
     uint8_t m_blob[kMaxBlobSize];
     uint64_t m_height;
     xmrig::Algorithm m_algorithm;

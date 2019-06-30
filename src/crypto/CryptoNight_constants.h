@@ -78,6 +78,7 @@ inline size_t cn_select_memory(Algo algorithm)
         return CRYPTONIGHT_MEMORY;
 
     case CRYPTONIGHT_LITE:
+    case RANDOM_X:
         return CRYPTONIGHT_LITE_MEMORY;
 
     case CRYPTONIGHT_HEAVY:

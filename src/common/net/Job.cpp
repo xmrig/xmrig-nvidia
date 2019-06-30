@@ -66,6 +66,7 @@ xmrig::Job::Job() :
     m_size(0),
     m_diff(0),
     m_target(0),
+    m_seedHash(),
     m_blob(),
     m_height(0)
 {
@@ -80,6 +81,7 @@ xmrig::Job::Job(int poolId, bool nicehash, const Algorithm &algorithm, const Id 
     m_size(0),
     m_diff(0),
     m_target(0),
+    m_seedHash(),
     m_blob(),
     m_height(0),
     m_algorithm(algorithm),
@@ -191,6 +193,15 @@ void xmrig::Job::setAlgorithm(const char *algo)
 void xmrig::Job::setHeight(uint64_t height)
 {
     m_height = height;
+}
+
+
+bool xmrig::Job::setSeedHash(const char *hash)
+{
+    if (!hash || (strlen(hash) != sizeof(m_seedHash) * 2))
+        return false;
+
+    return fromHex(hash, sizeof(m_seedHash) * 2, m_seedHash);
 }
 
 

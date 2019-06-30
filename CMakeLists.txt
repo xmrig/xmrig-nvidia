@@ -5,6 +5,7 @@ option(WITH_AEON      "CryptoNight-Lite support" ON)
 option(WITH_SUMO      "CryptoNight-Heavy support" ON)
 option(WITH_CN_PICO   "CryptoNight-Pico support" ON)
 option(WITH_CN_GPU    "CryptoNight-GPU support" ON)
+option(WITH_RANDOMX   "RandomX support" ON)
 option(WITH_HTTPD     "HTTP REST API" ON)
 option(WITH_DEBUG_LOG "Enable debug log output" OFF)
 option(WITH_TLS       "Enable OpenSSL support" ON)
@@ -215,6 +216,17 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 find_package(UV REQUIRED)
 
+if (WITH_RANDOMX)
+    find_package(RandomX REQUIRED)
+    include_directories(${RANDOMX_INCLUDE_DIR})
+
+    add_definitions(/DXMRIG_ALGO_RANDOMX)
+else()
+    set(RANDOMX_LIBRARIES "")
+
+    remove_definitions(/DXMRIG_ALGO_RANDOMX)
+endif()
+
 if (NOT WITH_AEON)
     add_definitions(/DXMRIG_NO_AEON)
 endif()
@@ -296,7 +308,7 @@ if (WITH_DEBUG_LOG)
 endif()
 
 add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_NVML} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${HTTPD_SOURCES} ${TLS_SOURCES} ${CN_GPU_SOURCES} ${XMRIG_ASM_SOURCES})
-target_link_libraries(${CMAKE_PROJECT_NAME} xmrig-cuda ${XMRIG_ASM_LIBRARY} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${MHD_LIBRARY} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})
+target_link_libraries(${CMAKE_PROJECT_NAME} xmrig-cuda ${XMRIG_ASM_LIBRARY} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${RANDOMX_LIBRARIES} ${MHD_LIBRARY} ${LIBS} ${EXTRA_LIBS} ${CPUID_LIB})
 
 if (WIN32)
     file(GLOB NVRTCDLL "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvrtc64*.dll")
