@@ -349,7 +349,7 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, // VARIANT_ZLS
         nullptr, nullptr, // VARIANT_DOUBLE
         nullptr, nullptr, // VARIANT_RX_WOW
-    #else
+#       else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
@@ -360,6 +360,15 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
 #       endif
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr,
     };
 
     static_assert((VARIANT_MAX * 2 * ALGO_MAX) == sizeof(func_table) / sizeof(func_table[0]), "func_table size mismatch");
@@ -428,6 +437,12 @@ bool CryptoNight::selfTest() {
 #   ifndef XMRIG_NO_CN_PICO
     if (m_algorithm == xmrig::CRYPTONIGHT_PICO) {
         return verify(VARIANT_TRTL, test_output_pico_trtl);
+    }
+#   endif
+
+#   ifdef XMRIG_ALGO_RANDOMX
+    if (m_algorithm == xmrig::RANDOM_X) {
+        return  true;
     }
 #   endif
 
