@@ -64,6 +64,7 @@ typedef struct {
     uint32_t *d_result_count;
     uint32_t *d_result_nonce;
     uint32_t *d_long_state;
+    uint64_t d_scratchpads_size;
     uint32_t *d_ctx_state;
     uint32_t *d_ctx_state2;
     uint32_t *d_ctx_a;
@@ -92,5 +93,9 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
 void cryptonight_extra_cpu_final(nvid_ctx *ctx, uint32_t startNonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, xmrig::Algo algo, xmrig::Variant variant);
 void cryptonight_extra_cpu_free(nvid_ctx *ctx, xmrig::Algo algo);
 
+#ifdef XMRIG_ALGO_RANDOMX
 void randomx_prepare(nvid_ctx *ctx, const uint8_t* seed_hash, xmrig::Variant variant, uint32_t batch_size);
-void randomx_hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size);
+
+namespace RandomX_Wownero { void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size); }
+namespace RandomX_Loki    { void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size); }
+#endif

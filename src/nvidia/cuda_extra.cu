@@ -374,16 +374,21 @@ int cryptonight_extra_cpu_init(nvid_ctx *ctx, xmrig::Algo algo, size_t hashMemSi
         ctx->d_ctx_state2 = ctx->d_ctx_state;
     }
 
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1,     40 * sizeof(uint32_t) * wsize));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2,     40 * sizeof(uint32_t) * wsize));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_text,     32 * sizeof(uint32_t) * wsize));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_a,        4  * sizeof(uint32_t) * wsize));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b,        ctx_b_size));
     // POW block format http://monero.wikia.com/wiki/PoW_Block_Header_Format
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input,        32 * sizeof (uint32_t)));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof (uint32_t)));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t)));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state,   (hashMemSize + 64) * wsize));
+
+    // Allocate buffers for Cryptonight
+    if (hashMemSize) {
+        CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize));
+        CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize));
+        CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_text, 32 * sizeof(uint32_t) * wsize));
+        CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_a, 4 * sizeof(uint32_t) * wsize));
+        CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b, ctx_b_size));
+        ctx->d_scratchpads_size = hashMemSize * wsize;
+        CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state, ctx->d_scratchpads_size));
+    }
 
     return 1;
 }
@@ -459,15 +464,18 @@ void cryptonight_extra_cpu_final(nvid_ctx *ctx, uint32_t startNonce, uint64_t ta
 
 void cryptonight_extra_cpu_free(nvid_ctx *ctx, xmrig::Algo algo)
 {
-    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key1));
-    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key2));
-    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_text));
-    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_a));
-    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_b));
+    if (ctx->d_ctx_key1) {
+        CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key1));
+        CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key2));
+        CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_text));
+        CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_a));
+        CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_b));
+    }
+    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_long_state));
+
     CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_input));
     CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_result_count));
     CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_result_nonce));
-    CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_long_state));
     CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_state));
 
     if (algo == xmrig::CRYPTONIGHT_HEAVY) {
@@ -680,5 +688,5 @@ int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo, bool isCNv2)
 
 int cryptonight_gpu_init(nvid_ctx *ctx, xmrig::Algo algo)
 {
-    return cryptonight_extra_cpu_init(ctx, algo, xmrig::cn_select_memory(algo));
+    return cryptonight_extra_cpu_init(ctx, algo, (algo == xmrig::RANDOM_X) ? 0 : xmrig::cn_select_memory(algo));
 }

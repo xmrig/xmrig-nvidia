@@ -350,8 +350,24 @@ void Workers::onResult(uv_async_t *)
                 bool ok;
 
 #               ifdef XMRIG_ALGO_RANDOMX
-                if (job.algorithm().variant() == xmrig::VARIANT_RX_WOW) {
+                if (job.algorithm().algo() == xmrig::RANDOM_X) {
                     uv_rwlock_wrlock(&m_rx_dataset_lock);
+
+                    if (m_rx_variant != job.algorithm().variant()) {
+                        m_rx_variant = job.algorithm().variant();
+
+                        switch (job.algorithm().variant()) {
+                        case xmrig::VARIANT_RX_WOW:
+                            randomx_apply_config(RandomX_WowneroConfig);
+                            break;
+                        case xmrig::VARIANT_RX_LOKI:
+                            randomx_apply_config(RandomX_LokiConfig);
+                            break;
+                        default:
+                            randomx_apply_config(RandomX_MoneroConfig);
+                            break;
+                        }
+                    }
 
                     if (!m_rx_vm) {
                         int flags = RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_FULL_MEM | RANDOMX_FLAG_JIT;
@@ -459,6 +475,9 @@ randomx_dataset* Workers::getDataset(const uint8_t* seed_hash, xmrig::Variant va
         switch (variant) {
             case xmrig::VARIANT_RX_WOW:
                 randomx_apply_config(RandomX_WowneroConfig);
+                break;
+            case xmrig::VARIANT_RX_LOKI:
+                randomx_apply_config(RandomX_LokiConfig);
                 break;
             default:
                 randomx_apply_config(RandomX_MoneroConfig);
