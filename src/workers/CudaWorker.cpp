@@ -60,6 +60,7 @@ CudaWorker::CudaWorker(Handle *handle) :
     m_ctx.syncMode       = thread->syncMode();
 
     memset(m_ctx.rx_dataset_seedhash, 0, sizeof(m_ctx.rx_dataset_seedhash));
+    m_ctx.rx_variant = xmrig::VARIANT_MAX;
     m_ctx.d_rx_dataset = nullptr;
     m_ctx.d_rx_hashes = nullptr;
     m_ctx.d_rx_entropy = nullptr;
@@ -105,17 +106,19 @@ void CudaWorker::start()
             uint32_t foundNonce[10];
             uint32_t foundCount;
 
+            const xmrig::Algorithm& algorithm = m_job.algorithm();
+
 #           ifdef XMRIG_ALGO_RANDOMX
-            if (m_job.algorithm().variant() == xmrig::VARIANT_RX_WOW) {
-                randomx_prepare(&m_ctx, m_job.seed_hash(), batch_size);
+            if (algorithm.algo() == xmrig::RANDOM_X) {
+                randomx_prepare(&m_ctx, m_job.seed_hash(), algorithm.variant(), batch_size);
                 randomx_hash(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, batch_size);
             }
             else
 #           endif
             {
-                cryptonight_extra_cpu_prepare(&m_ctx, m_nonce, m_algorithm, m_job.algorithm().variant());
-                cryptonight_gpu_hash(&m_ctx, m_algorithm, m_job.algorithm().variant(), m_job.height(), m_nonce);
-                cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, m_algorithm, m_job.algorithm().variant());
+                cryptonight_extra_cpu_prepare(&m_ctx, m_nonce, m_algorithm, algorithm.variant());
+                cryptonight_gpu_hash(&m_ctx, m_algorithm, algorithm.variant(), m_job.height(), m_nonce);
+                cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, m_algorithm, algorithm.variant());
             }
 
             for (size_t i = 0; i < foundCount; i++) {

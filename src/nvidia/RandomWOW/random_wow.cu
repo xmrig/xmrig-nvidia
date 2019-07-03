@@ -53,7 +53,7 @@ namespace randomx {
 #include "aes_cuda.hpp"
 #include "randomx_cuda.hpp"
 
-void randomx_prepare(nvid_ctx *ctx, const uint8_t* seed_hash, uint32_t batch_size)
+void randomx_prepare(nvid_ctx *ctx, const uint8_t* seed_hash, xmrig::Variant variant, uint32_t batch_size)
 {
     const size_t dataset_size = randomx_dataset_item_count() * RANDOMX_DATASET_ITEM_SIZE;
     if (!ctx->d_rx_dataset) {
@@ -72,9 +72,10 @@ void randomx_prepare(nvid_ctx *ctx, const uint8_t* seed_hash, uint32_t batch_siz
         CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_rx_rounding, batch_size * sizeof(uint32_t)));
     }
 
-    randomx_dataset* dataset = Workers::getDataset(seed_hash);
-    if (memcmp(ctx->rx_dataset_seedhash, seed_hash, sizeof(ctx->rx_dataset_seedhash)) != 0) {
+    randomx_dataset* dataset = Workers::getDataset(seed_hash, variant);
+    if ((memcmp(ctx->rx_dataset_seedhash, seed_hash, sizeof(ctx->rx_dataset_seedhash)) != 0) || (ctx->rx_variant != variant)) {
         memcpy(ctx->rx_dataset_seedhash, seed_hash, sizeof(ctx->rx_dataset_seedhash));
+        ctx->rx_variant = variant;
         CUDA_CHECK(ctx->device_id, cudaMemcpy(ctx->d_rx_dataset, randomx_get_dataset_memory(dataset), dataset_size, cudaMemcpyHostToDevice));
     }
 }

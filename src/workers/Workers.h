@@ -77,7 +77,7 @@ public:
 #   endif
 
 #   ifdef XMRIG_ALGO_RANDOMX
-    static randomx_dataset* getDataset(const uint8_t* seed_hash);
+    static randomx_dataset* getDataset(const uint8_t* seed_hash, xmrig::Variant variant);
 #   endif
 
 private:
@@ -111,6 +111,7 @@ private:
     static randomx_dataset *m_rx_dataset;
     static randomx_vm *m_rx_vm;
     static uint8_t m_rx_seed_hash[32];
+    static xmrig::Variant m_rx_variant;
     static std::atomic<uint32_t> m_rx_dataset_init_thread_counter;
 #   endif
 };
