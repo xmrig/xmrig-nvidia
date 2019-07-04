@@ -1439,9 +1439,10 @@ __global__ void __launch_bounds__(32, 16) init_vm(void* entropy_data, void* vm_s
 				inst.x = (dst << DST_OFFSET) | (src << SRC_OFFSET) | (7 << OPCODE_OFFSET);
 				if (src == dst)
 				{
-					const uint32_t shift = static_cast<uint32_t>((opcode < RANDOMX_FREQ_IROR_R) ? inst.y : -inst.y) & 63;
-					inst.x |= (shift << IMM_OFFSET);
-				}
+                    inst.x |= (imm_index << IMM_OFFSET) | (1 << SRC_IS_IMM32_OFFSET);
+                    if (imm_index < IMM_INDEX_COUNT)
+                        imm_buf[imm_index++] = inst.y;
+                }
 				else if (opcode >= RANDOMX_FREQ_IROR_R)
 				{
 					inst.x |= (1 << NEGATIVE_SRC_OFFSET);
@@ -1956,11 +1957,15 @@ __device__ void inner_loop(
 				else if (opcode == 7)
 				{
 					asm("// IROR_R, IROL_R (10/256) ------>");
-					uint32_t shift1 = src & 63;
-					if (src_offset == dst_offset) shift1 = imm_offset;
+#if RANDOMX_FREQ_IROL_R > 0
+					const uint32_t shift1 = src & 63;
 					const uint32_t shift2 = 64 - shift1;
 					const bool is_rol = (inst & (1 << NEGATIVE_SRC_OFFSET));
 					dst = (dst >> (is_rol ? shift2 : shift1)) | (dst << (is_rol ? shift1 : shift2));
+#else
+                    const uint32_t shift = src & 63;
+                    dst = (dst >> shift) | (dst << (64 - shift));
+#endif
 					asm("// <------ IROR_R, IROL_R (10/256)");
 				}
 				else if (opcode == 14)
