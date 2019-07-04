@@ -24,6 +24,7 @@ constexpr size_t HASH_SIZE = 64;
 constexpr size_t ENTROPY_SIZE = 128 + RANDOMX_PROGRAM_SIZE * 8;
 constexpr size_t REGISTERS_SIZE = 256;
 constexpr size_t IMM_BUF_SIZE = RANDOMX_PROGRAM_SIZE * 4 - REGISTERS_SIZE;
+constexpr size_t IMM_INDEX_COUNT = (IMM_BUF_SIZE / 4) - 2;
 constexpr size_t VM_STATE_SIZE = REGISTERS_SIZE + IMM_BUF_SIZE + RANDOMX_PROGRAM_SIZE * 4;
 
 constexpr uint32_t CacheLineSize = 64;
@@ -140,8 +141,6 @@ template<> struct get_power_of_2<1> { enum { Value = 0 }; };
 #define LOC_L1 (32 - get_power_of_2<RANDOMX_SCRATCHPAD_L1>::Value)
 #define LOC_L2 (32 - get_power_of_2<RANDOMX_SCRATCHPAD_L2>::Value)
 #define LOC_L3 (32 - get_power_of_2<RANDOMX_SCRATCHPAD_L3>::Value)
-
-#define IMM_INDEX_COUNT 190
 
 __device__ uint64_t imul_rcp_value(uint32_t divisor)
 {
@@ -425,12 +424,12 @@ template<int WORKERS_PER_HASH>
 __global__ void __launch_bounds__(32, 16) init_vm(void* entropy_data, void* vm_states)
 {
 #if RANDOMX_PROGRAM_SIZE <= 256
-    typedef uint8_t exec_t;
+	typedef uint8_t exec_t;
 #else
-    typedef uint16_t exec_t;
+	typedef uint16_t exec_t;
 #endif
 
-    __shared__ uint32_t execution_plan_buf[RANDOMX_PROGRAM_SIZE * WORKERS_PER_HASH * (32 / 8) * sizeof(exec_t) / sizeof(uint32_t)];
+	__shared__ uint32_t execution_plan_buf[RANDOMX_PROGRAM_SIZE * WORKERS_PER_HASH * (32 / 8) * sizeof(exec_t) / sizeof(uint32_t)];
 
 	set_buffer(execution_plan_buf, 0);
 	__syncwarp();
@@ -439,7 +438,7 @@ __global__ void __launch_bounds__(32, 16) init_vm(void* entropy_data, void* vm_s
 	const uint32_t idx = global_index / 8;
 	const uint32_t sub = global_index % 8;
 
-    exec_t* execution_plan = (exec_t*)(execution_plan_buf + (threadIdx.x / 8) * RANDOMX_PROGRAM_SIZE * WORKERS_PER_HASH * sizeof(exec_t) / sizeof(uint32_t));
+	exec_t* execution_plan = (exec_t*)(execution_plan_buf + (threadIdx.x / 8) * RANDOMX_PROGRAM_SIZE * WORKERS_PER_HASH * sizeof(exec_t) / sizeof(uint32_t));
 
 	uint64_t* R = ((uint64_t*) vm_states) + idx * VM_STATE_SIZE / sizeof(uint64_t);
 	R[sub] = 0;
@@ -454,10 +453,10 @@ __global__ void __launch_bounds__(32, 16) init_vm(void* entropy_data, void* vm_s
 		uint2* src_program = (uint2*)(entropy + 128 / sizeof(uint64_t));
 
 #if RANDOMX_PROGRAM_SIZE <= 256
-        uint64_t registerLastChanged = 0;
+		uint64_t registerLastChanged = 0;
 		uint64_t registerWasChanged = 0;
 #else
-        int32_t registerLastChanged[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+		int32_t registerLastChanged[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 #endif
 
 		// Initialize CBRANCH instructions
@@ -476,10 +475,10 @@ __global__ void __launch_bounds__(32, 16) init_vm(void* entropy_data, void* vm_s
 			if (opcode < RANDOMX_FREQ_IADD_RS + RANDOMX_FREQ_IADD_M + RANDOMX_FREQ_ISUB_R + RANDOMX_FREQ_ISUB_M + RANDOMX_FREQ_IMUL_R + RANDOMX_FREQ_IMUL_M + RANDOMX_FREQ_IMULH_R + RANDOMX_FREQ_IMULH_M + RANDOMX_FREQ_ISMULH_R + RANDOMX_FREQ_ISMULH_M)
 			{
 #if RANDOMX_PROGRAM_SIZE <= 256
-                set_byte(registerLastChanged, dst, i);
+				set_byte(registerLastChanged, dst, i);
 				set_byte(registerWasChanged, dst, 1);
 #else
-                registerLastChanged[dst] = i;
+				registerLastChanged[dst] = i;
 #endif
 				continue;
 			}
@@ -490,12 +489,12 @@ __global__ void __launch_bounds__(32, 16) init_vm(void* entropy_data, void* vm_s
 				if (inst.y & (inst.y - 1))
 				{
 #if RANDOMX_PROGRAM_SIZE <= 256
-                    set_byte(registerLastChanged, dst, i);
-                    set_byte(registerWasChanged, dst, 1);
+					set_byte(registerLastChanged, dst, i);
+					set_byte(registerWasChanged, dst, 1);
 #else
-                    registerLastChanged[dst] = i;
+					registerLastChanged[dst] = i;
 #endif
-                }
+				}
 				continue;
 			}
 			opcode -= RANDOMX_FREQ_IMUL_RCP;
@@ -503,12 +502,12 @@ __global__ void __launch_bounds__(32, 16) init_vm(void* entropy_data, void* vm_s
 			if (opcode < RANDOMX_FREQ_INEG_R + RANDOMX_FREQ_IXOR_R + RANDOMX_FREQ_IXOR_M + RANDOMX_FREQ_IROR_R + RANDOMX_FREQ_IROL_R)
 			{
 #if RANDOMX_PROGRAM_SIZE <= 256
-                set_byte(registerLastChanged, dst, i);
-                set_byte(registerWasChanged, dst, 1);
+				set_byte(registerLastChanged, dst, i);
+				set_byte(registerWasChanged, dst, 1);
 #else
-                registerLastChanged[dst] = i;
+				registerLastChanged[dst] = i;
 #endif
-                continue;
+				continue;
 			}
 			opcode -= RANDOMX_FREQ_INEG_R + RANDOMX_FREQ_IXOR_R + RANDOMX_FREQ_IXOR_M + RANDOMX_FREQ_IROR_R + RANDOMX_FREQ_IROL_R;
 
@@ -517,13 +516,13 @@ __global__ void __launch_bounds__(32, 16) init_vm(void* entropy_data, void* vm_s
 				if (src != dst)
 				{
 #if RANDOMX_PROGRAM_SIZE <= 256
-                    set_byte(registerLastChanged, dst, i);
-                    set_byte(registerWasChanged, dst, 1);
-                    set_byte(registerLastChanged, src, i);
-                    set_byte(registerWasChanged, src, 1);
+					set_byte(registerLastChanged, dst, i);
+					set_byte(registerWasChanged, dst, 1);
+					set_byte(registerLastChanged, src, i);
+					set_byte(registerWasChanged, src, 1);
 #else
-                    registerLastChanged[dst] = i;
-                    registerLastChanged[src] = i;
+					registerLastChanged[dst] = i;
+					registerLastChanged[src] = i;
 #endif
 				}
 				continue;
@@ -542,32 +541,36 @@ __global__ void __launch_bounds__(32, 16) init_vm(void* entropy_data, void* vm_s
 			{
 				const uint32_t creg = dst;
 #if RANDOMX_PROGRAM_SIZE <= 256
-                const uint32_t change = get_byte(registerLastChanged, dst);
-                const int32_t lastChanged = (get_byte(registerWasChanged, dst) == 0) ? -1 : static_cast<int32_t>(change);
-#else
-                const int32_t lastChanged = registerLastChanged[dst];
-#endif
+				const uint32_t change = get_byte(registerLastChanged, dst);
+				const int32_t lastChanged = (get_byte(registerWasChanged, dst) == 0) ? -1 : static_cast<int32_t>(change);
 
-                // Store condition register in CBRANCH instruction
-                *(uint32_t*)(src_program + i) = (src_inst.x & 0xFF0000FFU) | ((creg | 0x10) << 8);
+				// Store condition register and branch target in CBRANCH instruction
+				*(uint32_t*)(src_program + i) = (src_inst.x & 0xFF0000FFU) | ((creg | ((lastChanged == -1) ? 0x90 : 0x10)) << 8) | ((static_cast<uint32_t>(lastChanged) & 0xFF) << 16);
+#else
+				const int32_t lastChanged = registerLastChanged[dst];
+
+				// Store condition register in CBRANCH instruction
+				*(uint32_t*)(src_program + i) = (src_inst.x & 0xFF0000FFU) | ((creg | 0x10) << 8);
+#endif
 
 				// Mark branch target instruction (src |= 0x40)
 				*(uint32_t*)(src_program + lastChanged + 1) |= 0x40 << 8;
 
 #if RANDOMX_PROGRAM_SIZE <= 256
-                uint32_t tmp = i | (i << 8);
+				uint32_t tmp = i | (i << 8);
 				registerLastChanged = tmp | (tmp << 16);
 				registerLastChanged = registerLastChanged | (registerLastChanged << 32);
+
 				registerWasChanged = 0x0101010101010101ULL;
 #else
-                registerLastChanged[0] = i;
-                registerLastChanged[1] = i;
-                registerLastChanged[2] = i;
-                registerLastChanged[3] = i;
-                registerLastChanged[4] = i;
-                registerLastChanged[5] = i;
-                registerLastChanged[6] = i;
-                registerLastChanged[7] = i;
+				registerLastChanged[0] = i;
+				registerLastChanged[1] = i;
+				registerLastChanged[2] = i;
+				registerLastChanged[3] = i;
+				registerLastChanged[4] = i;
+				registerLastChanged[5] = i;
+				registerLastChanged[6] = i;
+				registerLastChanged[7] = i;
 #endif
 			}
 		}
@@ -1439,11 +1442,11 @@ __global__ void __launch_bounds__(32, 16) init_vm(void* entropy_data, void* vm_s
 				inst.x = (dst << DST_OFFSET) | (src << SRC_OFFSET) | (7 << OPCODE_OFFSET);
 				if (src == dst)
 				{
-                    inst.x |= (imm_index << IMM_OFFSET) | (1 << SRC_IS_IMM32_OFFSET);
-                    if (imm_index < IMM_INDEX_COUNT)
-                        imm_buf[imm_index++] = inst.y;
-                }
-				else if (opcode >= RANDOMX_FREQ_IROR_R)
+					inst.x |= (imm_index << IMM_OFFSET) | (1 << SRC_IS_IMM32_OFFSET);
+					if (imm_index < IMM_INDEX_COUNT)
+						imm_buf[imm_index++] = inst.y;
+				}
+				if (opcode >= RANDOMX_FREQ_IROR_R)
 				{
 					inst.x |= (1 << NEGATIVE_SRC_OFFSET);
 				}
@@ -1831,12 +1834,12 @@ __device__ void inner_loop(
 )
 {
 	const int32_t sub2 = sub >> 1;
-	imm_buf[191] = fprc;
+	imm_buf[IMM_INDEX_COUNT + 1] = fprc;
 
 	#pragma unroll(1)
 	for (int32_t ip = 0; ip < program_length;)
 	{
-		imm_buf[190] = ip;
+		imm_buf[IMM_INDEX_COUNT] = ip;
 
 		uint32_t inst = compiled_program[ip];
 		const int32_t num_workers = (inst >> NUM_INSTS_OFFSET) & (WORKERS_PER_HASH - 1);
@@ -1950,21 +1953,20 @@ __device__ void inner_loop(
 					dst += static_cast<int32_t>(imm.x);
 					if ((static_cast<uint32_t>(dst) & (randomx::ConditionMask << (imm.y & 31))) == 0)
 					{
-						imm_buf[190] = static_cast<uint32_t>((static_cast<int32_t>(imm.y) >> 5) - num_insts);
+						imm_buf[IMM_INDEX_COUNT] = static_cast<uint32_t>((static_cast<int32_t>(imm.y) >> 5) - num_insts);
 					}
 					asm("// <------ CBRANCH (16/256)");
 				}
 				else if (opcode == 7)
 				{
 					asm("// IROR_R, IROL_R (10/256) ------>");
+					uint32_t shift1 = src & 63;
 #if RANDOMX_FREQ_IROL_R > 0
-					const uint32_t shift1 = src & 63;
 					const uint32_t shift2 = 64 - shift1;
 					const bool is_rol = (inst & (1 << NEGATIVE_SRC_OFFSET));
 					dst = (dst >> (is_rol ? shift2 : shift1)) | (dst << (is_rol ? shift1 : shift2));
 #else
-                    const uint32_t shift = src & 63;
-                    dst = (dst >> shift) | (dst << (64 - shift));
+					dst = (dst >> shift1) | (dst << (64 - shift1));
 #endif
 					asm("// <------ IROR_R, IROL_R (10/256)");
 				}
@@ -2018,7 +2020,7 @@ __device__ void inner_loop(
 				else if (ROUNDING_MODE < 0)
 				{
 					asm("// CFROUND (1/256) ------>");
-					imm_buf[191] = ((src >> imm_offset) | (src << (64 - imm_offset))) & 3;
+					imm_buf[IMM_INDEX_COUNT + 1] = ((src >> imm_offset) | (src << (64 - imm_offset))) & 3;
 					asm("// <------ CFROUND (1/256)");
 					goto execution_end;
 				}
@@ -2033,8 +2035,8 @@ __device__ void inner_loop(
 			asm("// SYNCHRONIZATION OF INSTRUCTION POINTER AND ROUNDING MODE BEGIN");
 
 			__syncwarp(workers_mask);
-			ip = imm_buf[190];
-			fprc = imm_buf[191];
+			ip = imm_buf[IMM_INDEX_COUNT];
+			fprc = imm_buf[IMM_INDEX_COUNT + 1];
 
 			asm("// SYNCHRONIZATION OF INSTRUCTION POINTER AND ROUNDING MODE END");
 
@@ -2205,17 +2207,4 @@ __global__ void __launch_bounds__((WORKERS_PER_HASH == 16) ? 32 : 16, 16) execut
 		((uint32_t*)(p + 16))[0] = ma;
 		((uint32_t*)(p + 16))[1] = mx;
 	}
-}
-
-__global__ void find_shares(const void* hashes, uint64_t target, uint32_t* shares)
-{
-    const uint32_t global_index = blockIdx.x * blockDim.x + threadIdx.x;
-    const uint64_t* p = (const uint64_t*)hashes;
-
-    if (p[global_index * 4 + 3] < target) {
-        const uint32_t idx = atomicInc(shares, 0xFFFFFFFF) + 1;
-        if (idx < 10) {
-            shares[idx] = global_index;
-        }
-    }
 }

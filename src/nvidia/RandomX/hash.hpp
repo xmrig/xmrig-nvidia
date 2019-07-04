@@ -19,6 +19,19 @@ You should have received a copy of the GNU General Public License
 along with RandomX CUDA.  If not, see<http://www.gnu.org/licenses/>.
 */
 
+__global__ void find_shares(const void* hashes, uint64_t target, uint32_t* shares)
+{
+    const uint32_t global_index = blockIdx.x * blockDim.x + threadIdx.x;
+    const uint64_t* p = (const uint64_t*)hashes;
+
+    if (p[global_index * 4 + 3] < target) {
+        const uint32_t idx = atomicInc(shares, 0xFFFFFFFF) + 1;
+        if (idx < 10) {
+            shares[idx] = global_index;
+        }
+    }
+}
+
 void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size)
 {
     CUDA_CHECK_KERNEL(ctx->device_id, blake2b_initial_hash<<<batch_size / 32, 32>>>(ctx->d_rx_hashes, ctx->d_input, ctx->inputlen, nonce));
