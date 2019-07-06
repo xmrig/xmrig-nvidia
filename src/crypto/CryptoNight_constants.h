@@ -75,10 +75,10 @@ inline size_t cn_select_memory(Algo algorithm)
     switch(algorithm)
     {
     case CRYPTONIGHT:
+    case RANDOM_X:
         return CRYPTONIGHT_MEMORY;
 
     case CRYPTONIGHT_LITE:
-    case RANDOM_X:
         return CRYPTONIGHT_LITE_MEMORY;
 
     case CRYPTONIGHT_HEAVY:
@@ -92,6 +92,11 @@ inline size_t cn_select_memory(Algo algorithm)
     }
 
     return 0;
+}
+
+inline size_t rx_select_memory(Variant variant)
+{
+    return ((variant == xmrig::VARIANT_RX_WOW) ? 1048576 : 2097152);
 }
 
 

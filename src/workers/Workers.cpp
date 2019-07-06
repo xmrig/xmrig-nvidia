@@ -67,6 +67,7 @@ randomx_cache *Workers::m_rx_cache = nullptr;
 randomx_dataset *Workers::m_rx_dataset = nullptr;
 randomx_vm *Workers::m_rx_vm = nullptr;
 uint8_t Workers::m_rx_seed_hash[32] = {};
+xmrig::Variant Workers::m_rx_variant = xmrig::VARIANT_MAX;
 std::atomic<uint32_t> Workers::m_rx_dataset_init_thread_counter = {};
 #endif
 
@@ -349,8 +350,24 @@ void Workers::onResult(uv_async_t *)
                 bool ok;
 
 #               ifdef XMRIG_ALGO_RANDOMX
-                if (job.algorithm().variant() == xmrig::VARIANT_RX_WOW) {
+                if (job.algorithm().algo() == xmrig::RANDOM_X) {
                     uv_rwlock_wrlock(&m_rx_dataset_lock);
+
+                    if (m_rx_variant != job.algorithm().variant()) {
+                        m_rx_variant = job.algorithm().variant();
+
+                        switch (job.algorithm().variant()) {
+                        case xmrig::VARIANT_RX_WOW:
+                            randomx_apply_config(RandomX_WowneroConfig);
+                            break;
+                        case xmrig::VARIANT_RX_LOKI:
+                            randomx_apply_config(RandomX_LokiConfig);
+                            break;
+                        default:
+                            randomx_apply_config(RandomX_MoneroConfig);
+                            break;
+                        }
+                    }
 
                     if (!m_rx_vm) {
                         int flags = RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_FULL_MEM | RANDOMX_FLAG_JIT;
@@ -429,12 +446,12 @@ void Workers::start(IWorker *worker)
 }
 
 #ifdef XMRIG_ALGO_RANDOMX
-randomx_dataset* Workers::getDataset(const uint8_t* seed_hash)
+randomx_dataset* Workers::getDataset(const uint8_t* seed_hash, xmrig::Variant variant)
 {
     uv_rwlock_wrlock(&m_rx_dataset_lock);
 
     // Check if we need to update cache and dataset
-    if (m_rx_dataset && (memcmp(m_rx_seed_hash, seed_hash, sizeof(m_rx_seed_hash)) == 0)) {
+    if (m_rx_dataset && ((memcmp(m_rx_seed_hash, seed_hash, sizeof(m_rx_seed_hash)) == 0) && (m_rx_variant == variant))) {
         uv_rwlock_wrunlock(&m_rx_dataset_lock);
         return m_rx_dataset;
     }
@@ -453,6 +470,21 @@ randomx_dataset* Workers::getDataset(const uint8_t* seed_hash)
 
     const uint32_t num_threads = std::thread::hardware_concurrency();
     LOG_INFO("Started updating RandomX dataset (%u threads)", num_threads);
+
+    if (m_rx_variant != variant) {
+        switch (variant) {
+            case xmrig::VARIANT_RX_WOW:
+                randomx_apply_config(RandomX_WowneroConfig);
+                break;
+            case xmrig::VARIANT_RX_LOKI:
+                randomx_apply_config(RandomX_LokiConfig);
+                break;
+            default:
+                randomx_apply_config(RandomX_MoneroConfig);
+                break;
+        }
+        m_rx_variant = variant;
+    }
 
     if (memcmp(m_rx_seed_hash, seed_hash, sizeof(m_rx_seed_hash)) != 0) {
         memcpy(m_rx_seed_hash, seed_hash, sizeof(m_rx_seed_hash));

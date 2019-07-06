@@ -613,7 +613,7 @@ __global__ void fillAes1Rx4(void* state, void* out, uint32_t batch_size)
 }
 
 template<uint64_t outputSize, bool strided>
-__global__ void fillAes4Rx4(void* state, void* out, uint32_t batch_size)
+__global__ void fillAes4Rx4_v103(void* state, void* out, uint32_t batch_size)
 {
 	static_assert((outputSize % 128) == 0, "Output size must be a multiple of 128");
 
@@ -669,6 +669,89 @@ __global__ void fillAes4Rx4(void* state, void* out, uint32_t batch_size)
 		x[1] = t0[get_byte(y[1], 0)] ^ t1[get_byte(y[2], s1)] ^ t2[get_byte(y[3], 16)] ^ t3[get_byte(y[0], s3)] ^ 0x99a9aeffu;
 		x[2] = t0[get_byte(y[2], 0)] ^ t1[get_byte(y[3], s1)] ^ t2[get_byte(y[0], 16)] ^ t3[get_byte(y[1], s3)] ^ 0x42d3dbd9u;
 		x[3] = t0[get_byte(y[3], 0)] ^ t1[get_byte(y[0], s1)] ^ t2[get_byte(y[1], 16)] ^ t3[get_byte(y[2], s3)] ^ 0x76f6db08u;
+
+		*p = *(uint4*)(x);
+	}
+
+	*(uint4*)(s) = *(uint4*)(x);
+}
+
+template<uint64_t outputSize, bool strided>
+__global__ void fillAes4Rx4_v104(void* state, void* out, uint32_t batch_size)
+{
+	static_assert((outputSize % 128) == 0, "Output size must be a multiple of 128");
+
+	__shared__ uint32_t T[2048];
+
+	const uint32_t stride_size = batch_size * 4;
+	const uint32_t global_index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (global_index >= stride_size)
+		return;
+
+	const uint32_t idx = global_index / 4;
+	const uint32_t sub = global_index % 4;
+
+	for (int i = threadIdx.x; i < 2048; i += blockDim.x)
+		T[i] = AES_TABLE[i];
+
+	__syncthreads();
+
+	uint32_t* s = ((uint32_t*)state) + idx * (64 / sizeof(uint32_t)) + sub * (16 / sizeof(uint32_t));
+	uint32_t x[4] = { s[0], s[1], s[2], s[3] };
+
+	const uint32_t s1 = (sub & 1) ? 8 : 24;
+	const uint32_t s3 = (sub & 1) ? 24 : 8;
+
+	uint4* p = strided ? (((uint4*) out) + idx * 4 + sub) : (((uint4*)out) + idx * (outputSize / sizeof(uint4)) + sub);
+
+	const uint32_t* const t0 = (sub & 1) ? T : (T + 1024);
+	const uint32_t* const t1 = (sub & 1) ? (T + 256) : (T + 1792);
+	const uint32_t* const t2 = (sub & 1) ? (T + 512) : (T + 1536);
+	const uint32_t* const t3 = (sub & 1) ? (T + 768) : (T + 1280);
+
+	const bool b = (sub < 2);
+	uint32_t k[16];
+	k[ 0] = b ? 0x6421aaddu : 0xb5826f73u;
+	k[ 1] = b ? 0xd1833ddbu : 0xe3d6a7a6u;
+	k[ 2] = b ? 0x2f546d2bu : 0x3d518b6du;
+	k[ 3] = b ? 0x99e5d23fu : 0x229effb4u;
+	k[ 4] = b ? 0xb20e3450u : 0xc7566bf3u;
+	k[ 5] = b ? 0xb6913f55u : 0x9c10b3d9u;
+	k[ 6] = b ? 0x06f79d53u : 0xe9024d4eu;
+	k[ 7] = b ? 0xa5dfcde5u : 0xb272b7d2u;
+	k[ 8] = b ? 0x5c3ed904u : 0xf273c9e7u;
+	k[ 9] = b ? 0x515e7bafu : 0xf765a38bu;
+	k[10] = b ? 0x0aa4679fu : 0x2ba9660au;
+	k[11] = b ? 0x171c02bfu : 0xf63befa7u;
+	k[12] = b ? 0x85623763u : 0x7a7cd609u;
+	k[13] = b ? 0xe78f5d08u : 0x915839deu;
+	k[14] = b ? 0xcd673785u : 0x0c06d1fdu;
+	k[15] = b ? 0xd8ded291u : 0xc0b0762du;
+
+	#pragma unroll(((outputSize % 512) == 0) ? 8 : 2)
+	for (uint32_t i = 0; i < outputSize / sizeof(uint4); i += 4, p += strided ? stride_size : 4)
+	{
+		uint32_t y[4];
+
+		y[0] = t0[get_byte(x[0], 0)] ^ t1[get_byte(x[1], s1)] ^ t2[get_byte(x[2], 16)] ^ t3[get_byte(x[3], s3)] ^ k[ 0];
+		y[1] = t0[get_byte(x[1], 0)] ^ t1[get_byte(x[2], s1)] ^ t2[get_byte(x[3], 16)] ^ t3[get_byte(x[0], s3)] ^ k[ 1];
+		y[2] = t0[get_byte(x[2], 0)] ^ t1[get_byte(x[3], s1)] ^ t2[get_byte(x[0], 16)] ^ t3[get_byte(x[1], s3)] ^ k[ 2];
+		y[3] = t0[get_byte(x[3], 0)] ^ t1[get_byte(x[0], s1)] ^ t2[get_byte(x[1], 16)] ^ t3[get_byte(x[2], s3)] ^ k[ 3];
+
+		x[0] = t0[get_byte(y[0], 0)] ^ t1[get_byte(y[1], s1)] ^ t2[get_byte(y[2], 16)] ^ t3[get_byte(y[3], s3)] ^ k[ 4];
+		x[1] = t0[get_byte(y[1], 0)] ^ t1[get_byte(y[2], s1)] ^ t2[get_byte(y[3], 16)] ^ t3[get_byte(y[0], s3)] ^ k[ 5];
+		x[2] = t0[get_byte(y[2], 0)] ^ t1[get_byte(y[3], s1)] ^ t2[get_byte(y[0], 16)] ^ t3[get_byte(y[1], s3)] ^ k[ 6];
+		x[3] = t0[get_byte(y[3], 0)] ^ t1[get_byte(y[0], s1)] ^ t2[get_byte(y[1], 16)] ^ t3[get_byte(y[2], s3)] ^ k[ 7];
+
+		y[0] = t0[get_byte(x[0], 0)] ^ t1[get_byte(x[1], s1)] ^ t2[get_byte(x[2], 16)] ^ t3[get_byte(x[3], s3)] ^ k[ 8];
+		y[1] = t0[get_byte(x[1], 0)] ^ t1[get_byte(x[2], s1)] ^ t2[get_byte(x[3], 16)] ^ t3[get_byte(x[0], s3)] ^ k[ 9];
+		y[2] = t0[get_byte(x[2], 0)] ^ t1[get_byte(x[3], s1)] ^ t2[get_byte(x[0], 16)] ^ t3[get_byte(x[1], s3)] ^ k[10];
+		y[3] = t0[get_byte(x[3], 0)] ^ t1[get_byte(x[0], s1)] ^ t2[get_byte(x[1], 16)] ^ t3[get_byte(x[2], s3)] ^ k[11];
+
+		x[0] = t0[get_byte(y[0], 0)] ^ t1[get_byte(y[1], s1)] ^ t2[get_byte(y[2], 16)] ^ t3[get_byte(y[3], s3)] ^ k[12];
+		x[1] = t0[get_byte(y[1], 0)] ^ t1[get_byte(y[2], s1)] ^ t2[get_byte(y[3], 16)] ^ t3[get_byte(y[0], s3)] ^ k[13];
+		x[2] = t0[get_byte(y[2], 0)] ^ t1[get_byte(y[3], s1)] ^ t2[get_byte(y[0], 16)] ^ t3[get_byte(y[1], s3)] ^ k[14];
+		x[3] = t0[get_byte(y[3], 0)] ^ t1[get_byte(y[0], s1)] ^ t2[get_byte(y[1], 16)] ^ t3[get_byte(y[2], s3)] ^ k[15];
 
 		*p = *(uint4*)(x);
 	}

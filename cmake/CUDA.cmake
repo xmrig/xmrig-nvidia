@@ -131,10 +131,16 @@ endif()
 
 if (WITH_RANDOMX)
     set(CUDA_RANDOMX_SOURCES
-        src/nvidia/RandomWOW/random_wow.cu
-        src/nvidia/RandomWOW/aes_cuda.hpp
-        src/nvidia/RandomWOW/blake2b_cuda.hpp
-        src/nvidia/RandomWOW/randomx_cuda.hpp
+        src/nvidia/RandomX/aes_cuda.hpp
+        src/nvidia/RandomX/blake2b_cuda.hpp
+        src/nvidia/RandomX/common.hpp
+        src/nvidia/RandomX/hash.hpp
+        src/nvidia/RandomX/randomx.cu
+        src/nvidia/RandomX/randomx_cuda.hpp
+        src/nvidia/RandomX_Wownero/configuration.h
+        src/nvidia/RandomX_Wownero/randomx_wownero.cu
+        src/nvidia/RandomX_Loki/configuration.h
+        src/nvidia/RandomX_Loki/randomx_loki.cu
     )
 else()
     set(CUDA_RANDOMX_SOURCES "")

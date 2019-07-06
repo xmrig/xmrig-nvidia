@@ -59,7 +59,12 @@ CudaWorker::CudaWorker(Handle *handle) :
     m_ctx.device_bsleep  = thread->bsleep();
     m_ctx.syncMode       = thread->syncMode();
 
+    m_ctx.d_ctx_key1 = nullptr;
+    m_ctx.d_long_state = nullptr;
+    m_ctx.d_scratchpads_size = 0;
+
     memset(m_ctx.rx_dataset_seedhash, 0, sizeof(m_ctx.rx_dataset_seedhash));
+    m_ctx.rx_variant = xmrig::VARIANT_MAX;
     m_ctx.d_rx_dataset = nullptr;
     m_ctx.d_rx_hashes = nullptr;
     m_ctx.d_rx_entropy = nullptr;
@@ -95,27 +100,40 @@ void CudaWorker::start()
 
         cryptonight_extra_cpu_set_data(&m_ctx, m_blob, m_job.size());
 
-        uint32_t batch_size = m_ctx.device_blocks * m_ctx.device_threads;
-
-#       ifdef XMRIG_ALGO_RANDOMX
-        batch_size -= batch_size % 32;
-#       endif
-
         while (!Workers::isOutdated(m_sequence)) {
             uint32_t foundNonce[10];
             uint32_t foundCount;
 
+            const xmrig::Algorithm& algorithm = m_job.algorithm();
+            uint32_t batch_size = m_ctx.device_blocks * m_ctx.device_threads;
+
 #           ifdef XMRIG_ALGO_RANDOMX
-            if (m_job.algorithm().variant() == xmrig::VARIANT_RX_WOW) {
-                randomx_prepare(&m_ctx, m_job.seed_hash(), batch_size);
-                randomx_hash(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, batch_size);
+            if (algorithm.algo() == xmrig::RANDOM_X) {
+                if (m_ctx.d_scratchpads_size) {
+                    const uint32_t num_scratchpads = m_ctx.d_scratchpads_size / rx_select_memory(algorithm.variant());
+                    if (batch_size > num_scratchpads) {
+                        batch_size = num_scratchpads;
+                    }
+                }
+                batch_size -= batch_size % 32;
+
+                randomx_prepare(&m_ctx, m_job.seed_hash(), algorithm.variant(), batch_size);
+
+                switch (algorithm.variant()) {
+                case xmrig::VARIANT_RX_WOW:
+                    RandomX_Wownero::hash(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, batch_size);
+                    break;
+                case xmrig::VARIANT_RX_LOKI:
+                    RandomX_Loki::hash(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, batch_size);
+                    break;
+                }
             }
             else
 #           endif
             {
-                cryptonight_extra_cpu_prepare(&m_ctx, m_nonce, m_algorithm, m_job.algorithm().variant());
-                cryptonight_gpu_hash(&m_ctx, m_algorithm, m_job.algorithm().variant(), m_job.height(), m_nonce);
-                cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, m_algorithm, m_job.algorithm().variant());
+                cryptonight_extra_cpu_prepare(&m_ctx, m_nonce, m_algorithm, algorithm.variant());
+                cryptonight_gpu_hash(&m_ctx, m_algorithm, algorithm.variant(), m_job.height(), m_nonce);
+                cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, m_algorithm, algorithm.variant());
             }
 
             for (size_t i = 0; i < foundCount; i++) {
