@@ -2088,7 +2088,7 @@ __global__ void __launch_bounds__((WORKERS_PER_HASH == 16) ? 32 : 16, 16) execut
 	uint32_t spAddr0 = first ? mx : 0;
 	uint32_t spAddr1 = first ? ma : 0;
 
-	uint8_t* scratchpad = ((uint8_t*) scratchpads) + idx * (RANDOMX_SCRATCHPAD_L3 + 64);
+	uint8_t* scratchpad = ((uint8_t*) scratchpads) + idx * static_cast<uint64_t>(RANDOMX_SCRATCHPAD_L3 + 64);
 
 	const bool f_group = (sub < 4);
 
