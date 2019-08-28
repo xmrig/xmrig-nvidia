@@ -137,6 +137,8 @@ if (WITH_RANDOMX)
         src/nvidia/RandomX/hash.hpp
         src/nvidia/RandomX/randomx.cu
         src/nvidia/RandomX/randomx_cuda.hpp
+        src/nvidia/RandomX_Monero/configuration.h
+        src/nvidia/RandomX_Monero/randomx_monero.cu
         src/nvidia/RandomX_Wownero/configuration.h
         src/nvidia/RandomX_Wownero/randomx_wownero.cu
         src/nvidia/RandomX_Loki/configuration.h
