@@ -120,6 +120,9 @@ void CudaWorker::start()
                 randomx_prepare(&m_ctx, m_job.seed_hash(), algorithm.variant(), batch_size);
 
                 switch (algorithm.variant()) {
+                case xmrig::VARIANT_RX_0:
+                    RandomX_Monero::hash(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, batch_size);
+                    break;
                 case xmrig::VARIANT_RX_WOW:
                     RandomX_Wownero::hash(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, batch_size);
                     break;

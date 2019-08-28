@@ -96,6 +96,7 @@ void cryptonight_extra_cpu_free(nvid_ctx *ctx, xmrig::Algo algo);
 #ifdef XMRIG_ALGO_RANDOMX
 void randomx_prepare(nvid_ctx *ctx, const uint8_t* seed_hash, xmrig::Variant variant, uint32_t batch_size);
 
+namespace RandomX_Monero  { void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size); }
 namespace RandomX_Wownero { void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size); }
 namespace RandomX_Loki    { void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size); }
 #endif
