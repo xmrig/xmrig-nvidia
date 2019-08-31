@@ -58,15 +58,17 @@ public:
         HostLookupState,
         ConnectingState,
         ConnectedState,
-        ClosingState
+        ClosingState,
+        ReconnectingState
     };
 
-    constexpr static int kResponseTimeout = 20 * 1000;
+    constexpr static uint64_t kConnectTimeout  = 20 * 1000;
+    constexpr static uint64_t kResponseTimeout = 20 * 1000;
 
 #   ifndef XMRIG_NO_TLS
-    constexpr static int kInputBufferSize = 1024 * 16;
+    constexpr static size_t kInputBufferSize = 1024 * 16;
 #   else
-    constexpr static int kInputBufferSize = 1024 * 2;
+    constexpr static size_t kInputBufferSize = 1024 * 2;
 #   endif
 
     Client(int id, const char *agent, IClientListener *listener);

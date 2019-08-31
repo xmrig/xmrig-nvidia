@@ -1,3 +1,6 @@
+# v2.14.5
+- [#1138](https://github.com/xmrig/xmrig/issues/1138) Fixed multiple network bugs.
+
 # v2.14.4
 - [#260](https://github.com/xmrig/xmrig-nvidia/issues/260) Fixed `cn/r` algorithm slowdown with CUDA 10.1+.
 - [#268](https://github.com/xmrig/xmrig-nvidia/pull/268) Added support for NVIDIA Jetson.

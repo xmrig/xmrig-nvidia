@@ -66,7 +66,8 @@ static const char *states[] = {
     "host-lookup",
     "connecting",
     "connected",
-    "closing"
+    "closing",
+    "reconnecting"
 };
 #endif
 
@@ -173,10 +174,16 @@ void xmrig::Client::tick(uint64_t now)
         else if (m_keepAlive && now > m_keepAlive) {
             ping();
         }
+
+        return;
     }
 
-    if (m_expire && now > m_expire && m_state == ConnectingState) {
-        connect();
+    if (m_state == ReconnectingState && m_expire && now > m_expire) {
+        return connect();
+    }
+
+    if (m_state == ConnectingState && m_expire && now > m_expire) {
+        return reconnect();
     }
 }
 
@@ -479,7 +486,6 @@ int xmrig::Client::resolve(const char *host)
 {
     setState(HostLookupState);
 
-    m_expire     = 0;
     m_recvBufPos = 0;
 
     if (m_failures == -1) {
@@ -815,6 +821,8 @@ void xmrig::Client::parseResponse(int64_t id, const rapidjson::Value &result, co
 void xmrig::Client::ping()
 {
     send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"method\":\"keepalived\",\"params\":{\"id\":\"%s\"}}\n", m_sequence, m_rpcId.data()));
+
+    m_keepAlive = 0;
 }
 
 
@@ -861,7 +869,7 @@ void xmrig::Client::reconnect()
         return m_listener->onClose(this, -1);
     }
 
-    setState(ConnectingState);
+    setState(ReconnectingState);
 
     m_failures++;
     m_listener->onClose(this, (int) m_failures);
@@ -876,6 +884,23 @@ void xmrig::Client::setState(SocketState state)
 
     if (m_state == state) {
         return;
+    }
+
+    switch (state) {
+    case HostLookupState:
+        m_expire = 0;
+        break;
+
+    case ConnectingState:
+        m_expire = uv_now(uv_default_loop()) + kConnectTimeout;
+        break;
+
+    case ReconnectingState:
+        m_expire = uv_now(uv_default_loop()) + m_retryPause;
+        break;
+
+    default:
+        break;
     }
 
     m_state = state;
