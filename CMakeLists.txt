@@ -257,6 +257,13 @@ if (WITH_RANDOMX)
             )
         # cheat because cmake and ccache hate each other
         set_property(SOURCE src/crypto/randomx/jit_compiler_x86_static.S PROPERTY LANGUAGE C)
+    elseif (CMAKE_SIZEOF_VOID_P EQUAL 8)
+        list(APPEND SOURCES_CRYPTO
+             src/crypto/randomx/jit_compiler_a64_static.S
+             src/crypto/randomx/jit_compiler_a64.cpp
+            )
+        # cheat because cmake and ccache hate each other
+        set_property(SOURCE src/crypto/randomx/jit_compiler_a64_static.S PROPERTY LANGUAGE C)
     endif()
 else()
     remove_definitions(/DXMRIG_ALGO_RANDOMX)

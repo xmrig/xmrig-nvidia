@@ -51,13 +51,7 @@ void Mem::allocate(MemInfo &info, bool enabled)
         return;
     }
 
-#   if defined(__APPLE__)
-    info.memory = static_cast<uint8_t*>(mmap(0, info.size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, VM_FLAGS_SUPERPAGE_SIZE_2MB, 0));
-#   elif defined(__FreeBSD__)
-    info.memory = static_cast<uint8_t*>(mmap(0, info.size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_ALIGNED_SUPER | MAP_PREFAULT_READ, -1, 0));
-#   else
-    info.memory = static_cast<uint8_t*>(mmap(0, info.size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, 0, 0));
-#   endif
+    info.memory = static_cast<uint8_t*>(allocateLargePagesMemory(info.size));
 
     if (info.memory == MAP_FAILED) {
         return allocate(info, false);;
@@ -111,4 +105,22 @@ void Mem::flushInstructionCache(void *p, size_t size)
 #   ifndef __FreeBSD__
     __builtin___clear_cache(reinterpret_cast<char*>(p), reinterpret_cast<char*>(p) + size);
 #   endif
+}
+
+
+void* Mem::allocateLargePagesMemory(size_t size)
+{
+#   if defined(__APPLE__)
+    return mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, VM_FLAGS_SUPERPAGE_SIZE_2MB, 0);
+#   elif defined(__FreeBSD__)
+    return mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_ALIGNED_SUPER | MAP_PREFAULT_READ, -1, 0);
+#   else
+    return mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, 0, 0);
+#   endif
+}
+
+
+void Mem::freeLargePagesMemory(void* p, size_t size)
+{
+    munmap(p, size);
 }

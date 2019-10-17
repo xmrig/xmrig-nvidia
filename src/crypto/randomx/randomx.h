@@ -29,10 +29,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef RANDOMX_H
 #define RANDOMX_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 #include <type_traits>
-#include "intrin_portable.h"
+#include "crypto/randomx/intrin_portable.h"
 
 #define RANDOMX_HASH_SIZE 32
 #define RANDOMX_DATASET_ITEM_SIZE 64
@@ -41,17 +41,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RANDOMX_EXPORT
 #endif
 
-typedef enum {
+
+enum randomx_flags {
   RANDOMX_FLAG_DEFAULT = 0,
   RANDOMX_FLAG_LARGE_PAGES = 1,
   RANDOMX_FLAG_HARD_AES = 2,
   RANDOMX_FLAG_FULL_MEM = 4,
   RANDOMX_FLAG_JIT = 8,
-} randomx_flags;
+};
 
-typedef struct randomx_dataset randomx_dataset;
-typedef struct randomx_cache randomx_cache;
-typedef struct randomx_vm randomx_vm;
+
+struct randomx_dataset;
+struct randomx_cache;
+class randomx_vm;
+
 
 struct RandomX_ConfigurationBase
 {
@@ -116,7 +119,7 @@ struct RandomX_ConfigurationBase
 	uint8_t codeShhPrefetchTweaked[20];
 	uint8_t codeReadDatasetTweaked[64];
 	uint8_t codeReadDatasetLightSshInitTweaked[68];
-	uint8_t codeLoopLoadTweaked[140];
+	uint8_t codePrefetchScratchpadTweaked[32];
 
 	uint32_t CacheLineAlignMask_Calculated;
 	uint32_t DatasetExtraItems_Calculated;
@@ -129,6 +132,14 @@ struct RandomX_ConfigurationBase
 	uint32_t ScratchpadL3Mask64_Calculated;
 
 	uint32_t ConditionMask_Calculated;
+
+#ifdef XMRIG_ARM
+	uint32_t Log2_ScratchpadL1;
+	uint32_t Log2_ScratchpadL2;
+	uint32_t Log2_ScratchpadL3;
+	uint32_t Log2_DatasetBaseSize;
+	uint32_t Log2_CacheSize;
+#endif
 
 	int CEIL_IADD_RS;
 	int CEIL_IADD_M;
@@ -165,10 +176,12 @@ struct RandomX_ConfigurationBase
 struct RandomX_ConfigurationMonero : public RandomX_ConfigurationBase {};
 struct RandomX_ConfigurationWownero : public RandomX_ConfigurationBase { RandomX_ConfigurationWownero(); };
 struct RandomX_ConfigurationLoki : public RandomX_ConfigurationBase { RandomX_ConfigurationLoki(); };
+struct RandomX_ConfigurationArqma : public RandomX_ConfigurationBase { RandomX_ConfigurationArqma(); };
 
 extern RandomX_ConfigurationMonero RandomX_MoneroConfig;
 extern RandomX_ConfigurationWownero RandomX_WowneroConfig;
 extern RandomX_ConfigurationLoki RandomX_LokiConfig;
+extern RandomX_ConfigurationArqma RandomX_ArqmaConfig;
 
 extern RandomX_ConfigurationBase RandomX_CurrentConfig;
 
@@ -286,7 +299,7 @@ RANDOMX_EXPORT void randomx_release_dataset(randomx_dataset *dataset);
  *         (3) cache parameter is NULL and RANDOMX_FLAG_FULL_MEM is not set
  *         (4) dataset parameter is NULL and RANDOMX_FLAG_FULL_MEM is set
 */
-RANDOMX_EXPORT randomx_vm *randomx_create_vm(randomx_flags flags, randomx_cache *cache, randomx_dataset *dataset);
+RANDOMX_EXPORT randomx_vm *randomx_create_vm(randomx_flags flags, randomx_cache *cache, randomx_dataset *dataset, uint8_t *scratchpad);
 
 /**
  * Reinitializes a virtual machine with a new Cache. This function should be called anytime

@@ -26,12 +26,12 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "configuration.h"
-#include "program.hpp"
-#include "blake2/endian.h"
-#include "superscalar.hpp"
-#include "intrin_portable.h"
-#include "reciprocal.h"
+#include "crypto/randomx/configuration.h"
+#include "crypto/randomx/program.hpp"
+#include "crypto/randomx/blake2/endian.h"
+#include "crypto/randomx/superscalar.hpp"
+#include "crypto/randomx/intrin_portable.h"
+#include "crypto/randomx/reciprocal.h"
 
 namespace randomx {
 
@@ -329,7 +329,7 @@ namespace randomx {
 			return false;
 
 		if (availableRegisters.size() > 1) {
-			index = gen.getInt32() % availableRegisters.size();
+			index = gen.getUInt32() % availableRegisters.size();
 		}
 		else {
 			index = 0;
@@ -442,7 +442,7 @@ namespace randomx {
 			case SuperscalarInstructionType::IADD_C8:
 			case SuperscalarInstructionType::IADD_C9: {
 				mod_ = 0;
-				imm32_ = gen.getInt32();
+				imm32_ = gen.getUInt32();
 				opGroup_ = SuperscalarInstructionType::IADD_C7;
 				opGroupPar_ = -1;
 			} break;
@@ -451,7 +451,7 @@ namespace randomx {
 			case SuperscalarInstructionType::IXOR_C8:
 			case SuperscalarInstructionType::IXOR_C9: {
 				mod_ = 0;
-				imm32_ = gen.getInt32();
+				imm32_ = gen.getUInt32();
 				opGroup_ = SuperscalarInstructionType::IXOR_C7;
 				opGroupPar_ = -1;
 			} break;
@@ -461,7 +461,7 @@ namespace randomx {
 				mod_ = 0;
 				imm32_ = 0;
 				opGroup_ = SuperscalarInstructionType::IMULH_R;
-				opGroupPar_ = gen.getInt32();
+				opGroupPar_ = gen.getUInt32();
 			} break;
 
 			case SuperscalarInstructionType::ISMULH_R: {
@@ -469,14 +469,14 @@ namespace randomx {
 				mod_ = 0;
 				imm32_ = 0;
 				opGroup_ = SuperscalarInstructionType::ISMULH_R;
-				opGroupPar_ = gen.getInt32();
+				opGroupPar_ = gen.getUInt32();
 			} break;
 
 			case SuperscalarInstructionType::IMUL_RCP: {
 				mod_ = 0;
 				do {
-					imm32_ = gen.getInt32();
-				} while ((imm32_ & (imm32_ - 1)) == 0);
+					imm32_ = gen.getUInt32();
+				} while (isZeroOrPowerOf2(imm32_));
 				opGroup_ = SuperscalarInstructionType::IMUL_RCP;
 				opGroupPar_ = -1;
 			} break;
@@ -500,7 +500,7 @@ namespace randomx {
 			// * either the last instruction applied to the register or its source must be different than this instruction
 			//   - this avoids optimizable instruction sequences such as "xor r1, r2; xor r1, r2" or "ror r, C1; ror r, C2" or "add r, C1; add r, C2"
 			// * register r5 cannot be the destination of the IADD_RS instruction (limitation of the x86 lea instruction)
-			for (unsigned i = 0; i < 8; ++i) {
+			for (int i = 0; i < 8; ++i) {
 				if (registers[i].latency <= cycle && (canReuse_ || i != src_) && (allowChainedMul || opGroup_ != SuperscalarInstructionType::IMUL_R || registers[i].lastOpGroup != SuperscalarInstructionType::IMUL_R) && (registers[i].lastOpGroup != opGroup_ || registers[i].lastOpPar != opGroupPar_) && (info_->getType() != SuperscalarInstructionType::IADD_RS || i != RegisterNeedsDisplacement))
 					availableRegisters.push_back(i);
 			}
@@ -581,7 +581,7 @@ namespace randomx {
 	static int scheduleUop(ExecutionPort::type uop, ExecutionPort::type(&portBusy)[CYCLE_MAP_SIZE][3], int cycle) {
 		//The scheduling here is done optimistically by checking port availability in order P5 -> P0 -> P1 to not overload
 		//port P1 (multiplication) by instructions that can go to any port.
-		for (; cycle < RandomX_CurrentConfig.SuperscalarLatency + 4; ++cycle) {
+		for (; cycle < static_cast<int>(RandomX_CurrentConfig.SuperscalarLatency) + 4; ++cycle) {
 			if ((uop & ExecutionPort::P5) != 0 && !portBusy[cycle][2]) {
 				if (commit) {
 					if (trace) std::cout << "; P5 at cycle " << cycle << std::endl;
@@ -626,12 +626,12 @@ namespace randomx {
 		}
 		else {
 			//macro-ops with 2 uOPs are scheduled conservatively by requiring both uOPs to execute in the same cycle
-			for (; cycle < RandomX_CurrentConfig.SuperscalarLatency + 4; ++cycle) {
+			for (; cycle < static_cast<int>(RandomX_CurrentConfig.SuperscalarLatency) + 4; ++cycle) {
 
 				int cycle1 = scheduleUop<false>(mop.getUop1(), portBusy, cycle);
 				int cycle2 = scheduleUop<false>(mop.getUop2(), portBusy, cycle);
 
-				if (cycle1 == cycle2) {
+				if (cycle1 >= 0 && cycle1 == cycle2) {
 					if (commit) {
 						scheduleUop<true>(mop.getUop1(), portBusy, cycle1);
 						scheduleUop<true>(mop.getUop2(), portBusy, cycle2);
@@ -669,7 +669,7 @@ namespace randomx {
 		//Since a decode cycle produces on average 3.45 macro-ops and there are only 3 ALU ports, execution ports are always
 		//saturated first. The cycle limit is present only to guarantee loop termination.
 		//Program size is limited to SuperscalarMaxSize instructions.
-		for (decodeCycle = 0; decodeCycle < RandomX_CurrentConfig.SuperscalarLatency && !portsSaturated && programSize < 3 * RandomX_CurrentConfig.SuperscalarLatency + 2; ++decodeCycle) {
+		for (decodeCycle = 0; decodeCycle < static_cast<int>(RandomX_CurrentConfig.SuperscalarLatency) && !portsSaturated && programSize < 3 * static_cast<int>(RandomX_CurrentConfig.SuperscalarLatency) + 2; ++decodeCycle) {
 
 			//select a decode configuration
 			decodeBuffer = decodeBuffer->fetchNext(currentInstruction.getType(), decodeCycle, mulCount, gen);
@@ -683,7 +683,7 @@ namespace randomx {
 
 				//if we have issued all macro-ops for the current RandomX instruction, create a new instruction
 				if (macroOpIndex >= currentInstruction.getInfo().getSize()) {
-					if (portsSaturated || programSize >= 3 * RandomX_CurrentConfig.SuperscalarLatency + 2)
+					if (portsSaturated || programSize >= 3 * static_cast<int>(RandomX_CurrentConfig.SuperscalarLatency) + 2)
 						break;
 					//select an instruction so that the first macro-op fits into the current slot
 					currentInstruction.createForSlot(gen, decodeBuffer->getCounts()[bufferIndex], decodeBuffer->getIndex(), decodeBuffer->getSize() == bufferIndex + 1, bufferIndex == 0);
@@ -755,6 +755,12 @@ namespace randomx {
 				//recalculate when the instruction can be scheduled for execution based on operand availability
 				scheduleCycle = scheduleMop<true>(mop, portBusy, scheduleCycle, scheduleCycle);
 
+				if (scheduleCycle < 0) {
+					if (trace) std::cout << "Unable to map operation '" << mop.getName() << "' to execution port (cycle " << scheduleCycle << ")" << std::endl;
+					portsSaturated = true;
+					break;
+				}
+
 				//calculate when the result will be ready
 				depCycle = scheduleCycle + mop.getLatency();
 
@@ -777,7 +783,7 @@ namespace randomx {
 				macroOpCount++;
 
 				//terminating condition
-				if (scheduleCycle >= RandomX_CurrentConfig.SuperscalarLatency) {
+				if (scheduleCycle >= static_cast<int>(RandomX_CurrentConfig.SuperscalarLatency)) {
 					portsSaturated = true;
 				}
 				cycle = topCycle;

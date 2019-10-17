@@ -202,3 +202,15 @@ void Mem::flushInstructionCache(void *p, size_t size)
 {
     ::FlushInstructionCache(GetCurrentProcess(), p, size);
 }
+
+
+void* Mem::allocateLargePagesMemory(size_t size)
+{
+    return VirtualAlloc(0, size, MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES, PAGE_READWRITE);
+}
+
+
+void Mem::freeLargePagesMemory(void* p, size_t)
+{
+    VirtualFree(p, 0, MEM_RELEASE);
+}
