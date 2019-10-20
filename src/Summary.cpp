@@ -40,28 +40,21 @@
 
 static void print_cpu(xmrig::Config *config)
 {
-    if (config->isColors()) {
-        Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("%-13s") WHITE_BOLD("%s %sx64 %sAES"),
-                       "CPU",
-                       xmrig::Cpu::info()->brand(),
-                       xmrig::Cpu::info()->isX64() ? "\x1B[1;32m" : "\x1B[1;31m-",
-                       xmrig::Cpu::info()->hasAES() ? "\x1B[1;32m" : "\x1B[1;31m-");
-    }
-    else {
-        Log::i()->text(" * %-13s%s %sx64 %sAES", "CPU", xmrig::Cpu::info()->brand(), xmrig::Cpu::info()->isX64() ? "" : "-", xmrig::Cpu::info()->hasAES() ? "" : "-");
-    }
+    Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("%-13s%s") " %s %s",
+                   "CPU",
+                   xmrig::Cpu::info()->brand(),
+                   xmrig::Cpu::info()->isX64()  ? GREEN_BOLD("x64") : RED_BOLD("-x64"),
+                   xmrig::Cpu::info()->hasAES() ? GREEN_BOLD("AES") : RED_BOLD("-AES"));
 }
 
 
 static void print_algo(xmrig::Config *config)
 {
-    Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s%s, %sdonate=%d%%")
-                                      : " * %-13s%s, %sdonate=%d%%",
+    Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("%-13s%s, %sdonate=%d%%"),
                    "ALGO",
                    config->algorithm().name(),
-                   config->isColors() && config->donateLevel() == 0 ? "\x1B[1;31m" : "",
-                   config->donateLevel()
-    );
+                   config->donateLevel() == 0 ? RED_BOLD_S : "",
+                   config->donateLevel());
 }
 
 
@@ -70,24 +63,18 @@ static void print_gpu(xmrig::Config *config)
     constexpr size_t byteToMiB = 1024u * 1024u;
     for (const xmrig::IThread *t : config->threads()) {
         auto thread = static_cast<const CudaThread *>(t);
-        Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("GPU #%-8zu") YELLOW("PCI:%04x:%02x:%02x") GREEN(" %s @ %d/%d MHz") " \x1B[1;30m%dx%d %dx%d arch:%d%d SMX:%d MEM:%zu/%zu MiB"
-                                          : " * GPU #%-8zuPCI:%04x:%02x:%02x %s @ %d/%d MHz %dx%d %dx%d arch:%d%d SMX:%d MEM:%zu/%zu MiB",
+        Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("GPU #%-8zu")
+                       YELLOW("PCI:%04x:%02x:%02x")
+                       GREEN(" %s @ %d/%d MHz") " "
+                       BLACK_BOLD("%dx%d %dx%d arch:%d%d SMX:%d MEM:%zu/%zu MiB"),
                        thread->index(),
-                       thread->pciDomainID(),
-                       thread->pciBusID(),
-                       thread->pciDeviceID(),
-                       thread->name(),
-                       thread->clockRate() / 1000,
-                       thread->memoryClockRate() / 1000,
-                       thread->threads(),
-                       thread->blocks(),
-                       thread->bfactor(),
-                       thread->bsleep(),
-                       thread->arch()[0],
-                       thread->arch()[1],
+                       thread->pciDomainID(), thread->pciBusID(), thread->pciDeviceID(),
+                       thread->name(), thread->clockRate() / 1000, thread->memoryClockRate() / 1000,
+                       thread->threads(), thread->blocks(),
+                       thread->bfactor(), thread->bsleep(),
+                       thread->arch()[0], thread->arch()[1],
                        thread->smx(),
-                       thread->memoryFree() / byteToMiB,
-                       thread->memoryTotal() / byteToMiB
+                       thread->memoryFree() / byteToMiB, thread->memoryTotal() / byteToMiB
         );
     }
 }
@@ -95,15 +82,11 @@ static void print_gpu(xmrig::Config *config)
 
 static void print_commands(xmrig::Config *config)
 {
-    if (config->isColors()) {
-        Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("COMMANDS     ") MAGENTA_BOLD("h") WHITE_BOLD("ashrate, ")
-                                                                     WHITE_BOLD("h") MAGENTA_BOLD("e") WHITE_BOLD("alth, ")
-                                                                     MAGENTA_BOLD("p") WHITE_BOLD("ause, ")
-                                                                     MAGENTA_BOLD("r") WHITE_BOLD("esume"));
-    }
-    else {
-        Log::i()->text(" * COMMANDS     'h' hashrate, 'e' health, 'p' pause, 'r' resume");
-    }
+    Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("COMMANDS     '")
+        MAGENTA_BOLD("h") WHITE_BOLD("' hashrate, '")
+        MAGENTA_BOLD("e") WHITE_BOLD("' health, '")
+        MAGENTA_BOLD("p") WHITE_BOLD("' pause, '")
+        MAGENTA_BOLD("r") WHITE_BOLD("' resume"));
 }
 
 
@@ -118,6 +101,4 @@ void Summary::print(xmrig::Controller *controller)
 
     print_commands(controller->config());
 }
-
-
 

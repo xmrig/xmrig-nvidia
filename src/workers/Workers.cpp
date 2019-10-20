@@ -118,22 +118,20 @@ void Workers::printHashrate(bool detail)
     }
 
     if (detail) {
-        const bool isColors = m_controller->config()->isColors();
         char num1[8] = { 0 };
         char num2[8] = { 0 };
         char num3[8] = { 0 };
 
-        Log::i()->text("%s| THREAD | GPU | 10s H/s | 60s H/s | 15m H/s | NAME", isColors ? "\x1B[1;37m" : "");
+        Log::i()->text(WHITE_BOLD_S "| THREAD | GPU | 10s H/s | 60s H/s | 15m H/s | NAME");
 
         size_t i = 0;
         for (const xmrig::IThread *t : m_controller->config()->threads()) {
             auto thread = static_cast<const CudaThread *>(t);
-             Log::i()->text("| %6zu | %3zu | %7s | %7s | %7s | %s%s",
+             Log::i()->text("| %6zu | %3zu | %7s | %7s | %7s | " BLACK_BOLD_S "%s",
                             i, thread->index(),
                             Hashrate::format(m_hashrate->calc(i, Hashrate::ShortInterval), num1, sizeof num1),
                             Hashrate::format(m_hashrate->calc(i, Hashrate::MediumInterval), num2, sizeof num2),
                             Hashrate::format(m_hashrate->calc(i, Hashrate::LargeInterval), num3, sizeof num3),
-                            isColors ? "\x1B[1;30m" : "",
                             thread->name()
                             );
 
@@ -144,6 +142,18 @@ void Workers::printHashrate(bool detail)
     m_hashrate->print();
 }
 
+const std::string _spf(const char * const fmt, ...)
+{
+    va_list args = nullptr, copy = nullptr;
+    va_start(args, fmt);
+    va_copy(copy, args);
+    const auto len = static_cast<const unsigned __int64>(std::vsnprintf(nullptr, 0, fmt, copy));
+    va_end(copy);
+    std::vector<char> str(len + 1);
+    std::vsnprintf(str.data(), str.size(), fmt, args);
+    va_end(args);
+    return std::string(str.data(), len);
+}
 
 void Workers::printHealth()
 {
@@ -161,25 +171,27 @@ void Workers::printHealth()
 
         const uint32_t temp = health.temperature;
 
-        if (health.clock && health.clock) {
-            if (m_controller->config()->isColors()) {
-                LOG_INFO("\x1B[00;35mGPU #%d: \x1B[01m%u\x1B[00;35m/\x1B[01m%u MHz\x1B[00;35m \x1B[01m%uW\x1B[00;35m %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
-                    thread->index(), health.clock, health.memClock, health.power / 1000, (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
-            }
-            else {
-                LOG_INFO(" * GPU #%d: %u/%u MHz %uW %uC FAN %u%%", thread->index(), health.clock, health.memClock, health.power / 1000, health.temperature, health.fanSpeed);
-            }
+        if (health.clock && health.memClock) {
+            LOG_INFO(" * " MAGENTA("GPU #%d:") " "
+                     MAGENTA_BOLD("%u") MAGENTA("/") MAGENTA_BOLD("%u MHz") " "
+                     MAGENTA_BOLD("%uW") " "
+                     "%s%uC%s "
+                     MAGENTA("FAN") " " MAGENTA_BOLD_S "%u%%",
+                thread->index(),
+                health.clock, health.memClock,
+                health.power / 1000,
+                (temp < 45 ? GREEN_BOLD_S : (temp > 65 ? RED_BOLD_S : YELLOW_BOLD_S)), temp, CLEAR,
+                health.fanSpeed);
 
             continue;
         }
 
-        if (m_controller->config()->isColors()) {
-            LOG_INFO("\x1B[00;35mGPU #%d: %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
-                thread->index(), (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
-        }
-        else {
-            LOG_INFO(" * GPU #%d: %uC FAN %u%%", thread->index(), health.temperature, health.fanSpeed);
-        }
+        LOG_INFO(" * " MAGENTA("GPU #%d:") " "
+                 "%s%uC%s "
+                 MAGENTA("FAN") " " MAGENTA_BOLD_S "%u%%",
+            thread->index(),
+            (temp < 45 ? GREEN_BOLD_S : (temp > 65 ? RED_BOLD_S : YELLOW_BOLD_S)), temp, CLEAR,
+            health.fanSpeed);
     }
 }
 

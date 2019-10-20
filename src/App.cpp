@@ -93,19 +93,19 @@ int xmrig::App::exec()
     background();
 
     if (!CryptoNight::init(m_controller->config()->algorithm().algo())) {
-        LOG_ERR("\"%s\" hash self-test failed.", m_controller->config()->algorithm().name());
+        LOG_ERR(RED_BOLD("\"%s\" hash self-test failed."), m_controller->config()->algorithm().name());
         return 1;
     }
 
     Summary::print(m_controller);
 
     if (m_controller->config()->threads().empty()) {
-        LOG_ERR("No CUDA device found!");
+        LOG_ERR(RED_BOLD("No CUDA device found!"));
         return 1;
     }
 
     if (m_controller->config()->isDryRun()) {
-        LOG_NOTICE("OK");
+        LOG_NOTICE(GREEN_BOLD("OK"));
         return 0;
     }
 
@@ -149,7 +149,7 @@ void xmrig::App::onConsoleCommand(char command)
     case 'p':
     case 'P':
         if (Workers::isEnabled()) {
-            LOG_INFO(m_controller->config()->isColors() ? "\x1B[01;33mpaused\x1B[0m, press \x1B[01;35mr\x1B[0m to resume" : "paused, press 'r' to resume");
+            LOG_INFO(YELLOW("paused") ", press '" MAGENTA_BOLD("r") "' to resume");
             Workers::setEnabled(false);
         }
         break;
@@ -157,7 +157,7 @@ void xmrig::App::onConsoleCommand(char command)
     case 'r':
     case 'R':
         if (!Workers::isEnabled()) {
-            LOG_INFO(m_controller->config()->isColors() ? "\x1B[01;32mresumed" : "resumed");
+            LOG_INFO(GREEN_BOLD("resumed"));
             Workers::setEnabled(true);
         }
         break;
@@ -168,7 +168,7 @@ void xmrig::App::onConsoleCommand(char command)
         break;
 
     case 3:
-        LOG_WARN("Ctrl+C received, exiting");
+        LOG_WARN("Ctrl+C received, exiting" CLEAR);
         close();
         break;
 
@@ -183,15 +183,15 @@ void xmrig::App::onSignal(int signum)
     switch (signum)
     {
     case SIGHUP:
-        LOG_WARN("SIGHUP received, exiting");
+        LOG_WARN("SIGHUP received, exiting" CLEAR);
         break;
 
     case SIGTERM:
-        LOG_WARN("SIGTERM received, exiting");
+        LOG_WARN("SIGTERM received, exiting" CLEAR);
         break;
 
     case SIGINT:
-        LOG_WARN("SIGINT received, exiting");
+        LOG_WARN("SIGINT received, exiting" CLEAR);
         break;
 
     default:

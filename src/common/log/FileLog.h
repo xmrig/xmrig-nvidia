@@ -47,7 +47,8 @@ public:
 private:
     static void onWrite(uv_fs_t *req);
 
-    void write(char *data, size_t size);
+    void write(char *data, const unsigned int size);
+    void stripColor();
 
     char m_fmt[256];
     int m_file;

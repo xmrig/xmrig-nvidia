@@ -66,6 +66,21 @@ ConsoleLog::ConsoleLog(xmrig::Controller *controller) :
 }
 
 
+void ConsoleLog::stripColor()
+{
+    if (! m_controller->config()->isColors()) {
+        // strip ANSI CSI sequences
+        std::string txt(m_fmt);
+        std::string::size_type i, j;
+        while ((i = txt.find(CSI)) != std::string::npos) {
+            j = txt.find('m', i);
+            txt.erase(i, j-i+1);
+        }
+        snprintf(m_fmt, sizeof(m_fmt) - 1, "%s", txt.c_str());
+    }
+}
+
+
 void ConsoleLog::message(Level level, const char* fmt, va_list args)
 {
     time_t now = time(nullptr);
@@ -77,8 +92,6 @@ void ConsoleLog::message(Level level, const char* fmt, va_list args)
     localtime_r(&now, &stime);
 #   endif
 
-    const bool isColors = m_controller->config()->isColors();
-
     snprintf(m_fmt, sizeof(m_fmt) - 1, "[%d-%02d-%02d %02d:%02d:%02d]%s %s%s",
              stime.tm_year + 1900,
              stime.tm_mon + 1,
@@ -86,9 +99,9 @@ void ConsoleLog::message(Level level, const char* fmt, va_list args)
              stime.tm_hour,
              stime.tm_min,
              stime.tm_sec,
-             Log::colorByLevel(level, isColors),
+             Log::colorByLevel(level),
              fmt,
-             Log::endl(isColors)
+             Log::endl()
         );
 
     print(args);
@@ -97,7 +110,7 @@ void ConsoleLog::message(Level level, const char* fmt, va_list args)
 
 void ConsoleLog::text(const char* fmt, va_list args)
 {
-    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s%s", fmt, Log::endl(m_controller->config()->isColors()));
+    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s%s", fmt, Log::endl());
 
     print(args);
 }
@@ -116,7 +129,11 @@ bool ConsoleLog::isWritable() const
 
 void ConsoleLog::print(va_list args)
 {
-    m_uvBuf.len = vsnprintf(m_buf, sizeof(m_buf) - 1, m_fmt, args);
+    char buf[kBufferSize];
+    vsnprintf(buf, sizeof(buf) - 1, m_fmt, args);
+    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s", buf);
+    ConsoleLog::stripColor();
+    m_uvBuf.len = snprintf(m_buf, sizeof(m_buf) - 1, "%s", m_fmt);
     if (m_uvBuf.len <= 0) {
         return;
     }

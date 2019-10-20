@@ -40,14 +40,14 @@ bool Log::colors = true;
 
 
 static const char *color[5] = {
-    "\x1B[0;31m",  /* ERR     */
-    "\x1B[0;33m",  /* WARNING */
-    "\x1B[1;37m",  /* NOTICE  */
+    RED_S,         /* ERR     */
+    YELLOW_S,      /* WARNING */
+    WHITE_BOLD_S,  /* NOTICE  */
     "",            /* INFO    */
 #   ifdef WIN32
-    "\x1B[1;30m"   /* DEBUG   */
+    BLACK_BOLD_S   /* DEBUG   */
 #   else
-    "\x1B[90m"     /* DEBUG   */
+    BRIGHT_BLACK_S /* DEBUG   */
 #   endif
 };
 
@@ -92,23 +92,15 @@ void Log::text(const char* fmt, ...)
 }
 
 
-const char *Log::colorByLevel(ILogBackend::Level level, bool isColors)
+const char *Log::colorByLevel(ILogBackend::Level level)
 {
-    if (!isColors) {
-        return "";
-    }
-
     return color[level];
 }
 
 
-const char *Log::endl(bool isColors)
+const char *Log::endl()
 {
-#   ifdef _WIN32
-    return isColors ? "\x1B[0m\r\n" : "\r\n";
-#   else
-    return isColors ? "\x1B[0m\n" : "\n";
-#   endif
+    return CLEAR ENDL;
 }
 
 

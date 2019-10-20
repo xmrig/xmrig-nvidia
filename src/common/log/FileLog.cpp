@@ -44,6 +44,21 @@ FileLog::FileLog(xmrig::Controller *controller, const char *fileName) :
 }
 
 
+void FileLog::stripColor()
+{
+    if (! m_controller->config()->isColors()) {
+        // strip ANSI CSI sequences
+        std::string txt(m_fmt);
+        std::string::size_type i,j;
+        while ((i = txt.find(CSI)) != std::string::npos){
+            j = txt.find('m',i);
+            txt.erase(i, j-i+1);
+        }
+        snprintf(m_fmt, sizeof(m_fmt) - 1, "%s", txt.c_str());
+    }
+}
+
+
 void FileLog::message(Level level, const char* fmt, va_list args)
 {
     if (m_file < 0) {
@@ -59,8 +74,6 @@ void FileLog::message(Level level, const char* fmt, va_list args)
     localtime_r(&now, &stime);
 #   endif
 
-    const bool isColors = m_controller->config()->isColors();
-
     snprintf(m_fmt, sizeof(m_fmt) - 1, "[%d-%02d-%02d %02d:%02d:%02d]%s %s%s",
              stime.tm_year + 1900,
              stime.tm_mon + 1,
@@ -68,13 +81,15 @@ void FileLog::message(Level level, const char* fmt, va_list args)
              stime.tm_hour,
              stime.tm_min,
              stime.tm_sec,
-             Log::colorByLevel(level, isColors),
+             Log::colorByLevel(level),
              fmt,
-             Log::endl(isColors)
+             Log::endl()
         );
-
     char *buf = new char[kBufferSize];
-    const int size = vsnprintf(buf, kBufferSize - 1, m_fmt, args);
+    vsnprintf(buf, kBufferSize - 1, m_fmt, args);
+    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s", buf);
+    FileLog::stripColor();
+    const int size = snprintf(buf, kBufferSize - 1, "%s", m_fmt);
 
     write(buf, size);
 }
@@ -95,10 +110,10 @@ void FileLog::onWrite(uv_fs_t *req)
 }
 
 
-void FileLog::write(char *data, size_t size)
+void FileLog::write(char *data, const unsigned int size)
 {
-    uv_buf_t buf = uv_buf_init(data, (unsigned int) size);
-    uv_fs_t *req = new uv_fs_t;
+    uv_buf_t buf = uv_buf_init(data, size);
+    auto *req = new uv_fs_t;
     req->data = buf.base;
 
     uv_fs_write(uv_default_loop(), req, m_file, &buf, 1, -1, FileLog::onWrite);

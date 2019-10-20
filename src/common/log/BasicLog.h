@@ -47,6 +47,7 @@ public:
 private:
     bool isWritable() const;
     void print(va_list args);
+    void stripColor();
 
     char m_buf[kBufferSize];
     char m_fmt[256];

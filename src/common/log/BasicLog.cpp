@@ -43,6 +43,19 @@ BasicLog::BasicLog()
 }
 
 
+void BasicLog::stripColor()
+{
+    // strip ANSI CSI sequences
+    std::string txt(m_fmt);
+    std::string::size_type i,j;
+    while ((i = txt.find(CSI)) != std::string::npos){
+        j = txt.find('m',i);
+        txt.erase(i, j-i+1);
+    }
+    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s", txt.c_str());
+}
+
+
 void BasicLog::message(Level level, const char* fmt, va_list args)
 {
     time_t now = time(nullptr);
@@ -61,9 +74,9 @@ void BasicLog::message(Level level, const char* fmt, va_list args)
              stime.tm_hour,
              stime.tm_min,
              stime.tm_sec,
-             Log::colorByLevel(level, false),
+             Log::colorByLevel(level),
              fmt,
-             Log::endl(false)
+             Log::endl()
         );
 
     print(args);
@@ -72,7 +85,7 @@ void BasicLog::message(Level level, const char* fmt, va_list args)
 
 void BasicLog::text(const char* fmt, va_list args)
 {
-    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s%s", fmt, Log::endl(false));
+    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s%s", fmt, Log::endl());
 
     print(args);
 }
@@ -80,7 +93,11 @@ void BasicLog::text(const char* fmt, va_list args)
 
 void BasicLog::print(va_list args)
 {
-    if (vsnprintf(m_buf, sizeof(m_buf) - 1, m_fmt, args) <= 0) {
+    char buf[kBufferSize];
+    vsnprintf(buf, sizeof(buf) - 1, m_fmt, args);
+    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s", buf);
+    BasicLog::stripColor();
+    if (snprintf(m_buf, sizeof(m_buf) - 1, "%s", m_fmt) <= 0) {
         return;
     }
 
