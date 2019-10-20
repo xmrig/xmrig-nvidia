@@ -109,6 +109,7 @@ private:
     static uv_rwlock_t m_rx_dataset_lock;
     static randomx_cache *m_rx_cache;
     static randomx_dataset *m_rx_dataset;
+    static uint8_t* m_rx_scratchpad;
     static randomx_vm *m_rx_vm;
     static uint8_t m_rx_seed_hash[32];
     static xmrig::Variant m_rx_variant;

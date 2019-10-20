@@ -31,6 +31,8 @@
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "crypto/CryptoNight.h"
+#include "crypto/randomx/allocator.hpp"
+#include "crypto/randomx/configuration.h"
 #include "interfaces/IJobResultListener.h"
 #include "interfaces/IThread.h"
 #include "nvidia/NvmlApi.h"
@@ -65,6 +67,7 @@ xmrig::Job Workers::m_job;
 uv_rwlock_t Workers::m_rx_dataset_lock;
 randomx_cache *Workers::m_rx_cache = nullptr;
 randomx_dataset *Workers::m_rx_dataset = nullptr;
+uint8_t *Workers::m_rx_scratchpad = nullptr;
 randomx_vm *Workers::m_rx_vm = nullptr;
 uint8_t Workers::m_rx_seed_hash[32] = {};
 xmrig::Variant Workers::m_rx_variant = xmrig::VARIANT_MAX;
@@ -375,9 +378,9 @@ void Workers::onResult(uv_async_t *)
                             flags |= RANDOMX_FLAG_HARD_AES;
                         }
 
-                        m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags), nullptr, m_rx_dataset);
+                        m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags), nullptr, m_rx_dataset, m_rx_scratchpad);
                         if (!m_rx_vm) {
-                            m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags - RANDOMX_FLAG_LARGE_PAGES), nullptr, m_rx_dataset);
+                            m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags - RANDOMX_FLAG_LARGE_PAGES), nullptr, m_rx_dataset, m_rx_scratchpad);
                         }
                     }
                     randomx_calculate_hash(m_rx_vm, job.blob(), job.size(), result.result);
@@ -449,6 +452,16 @@ void Workers::start(IWorker *worker)
 randomx_dataset* Workers::getDataset(const uint8_t* seed_hash, xmrig::Variant variant)
 {
     uv_rwlock_wrlock(&m_rx_dataset_lock);
+
+    // Check if we need to allocate the scratchpad
+    if (!m_rx_scratchpad) {
+        try {
+            m_rx_scratchpad = (uint8_t*) randomx::LargePageAllocator::allocMemory(RANDOMX_SCRATCHPAD_L3_MAX_SIZE);
+        }
+        catch (...) {
+            m_rx_scratchpad = (uint8_t*)randomx::AlignedAllocator<64>::allocMemory(RANDOMX_SCRATCHPAD_L3_MAX_SIZE);
+        }
+    }
 
     // Check if we need to update cache and dataset
     if (m_rx_dataset && ((memcmp(m_rx_seed_hash, seed_hash, sizeof(m_rx_seed_hash)) == 0) && (m_rx_variant == variant))) {

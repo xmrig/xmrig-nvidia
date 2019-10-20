@@ -26,35 +26,36 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "vm_compiled.hpp"
-#include "common.hpp"
+#include "crypto/randomx/vm_compiled.hpp"
+#include "crypto/randomx/common.hpp"
 
 namespace randomx {
 
 	static_assert(sizeof(MemoryRegisters) == 2 * sizeof(addr_t) + sizeof(uintptr_t), "Invalid alignment of struct randomx::MemoryRegisters");
 	static_assert(sizeof(RegisterFile) == 256, "Invalid alignment of struct randomx::RegisterFile");
 
-	template<class Allocator, bool softAes>
-	void CompiledVm<Allocator, softAes>::setDataset(randomx_dataset* dataset) {
+	template<bool softAes>
+	void CompiledVm<softAes>::setDataset(randomx_dataset* dataset) {
 		datasetPtr = dataset;
 	}
 
-	template<class Allocator, bool softAes>
-	void CompiledVm<Allocator, softAes>::run(void* seed) {
-		VmBase<Allocator, softAes>::generateProgram(seed);
+	template<bool softAes>
+	void CompiledVm<softAes>::run(void* seed) {
+		VmBase<softAes>::generateProgram(seed);
 		randomx_vm::initialize();
 		compiler.generateProgram(program, config);
 		mem.memory = datasetPtr->memory + datasetOffset;
 		execute();
 	}
 
-	template<class Allocator, bool softAes>
-	void CompiledVm<Allocator, softAes>::execute() {
+	template<bool softAes>
+	void CompiledVm<softAes>::execute() {
+#ifdef XMRIG_ARM
+		memcpy(reg.f, config.eMask, sizeof(config.eMask));
+#endif
 		compiler.getProgramFunc()(reg, mem, scratchpad, RandomX_CurrentConfig.ProgramIterations);
 	}
 
-	template class CompiledVm<AlignedAllocator<CacheLineSize>, false>;
-	template class CompiledVm<AlignedAllocator<CacheLineSize>, true>;
-	template class CompiledVm<LargePageAllocator, false>;
-	template class CompiledVm<LargePageAllocator, true>;
+	template class CompiledVm<false>;
+	template class CompiledVm<true>;
 }

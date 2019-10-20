@@ -64,6 +64,9 @@ public:
     static void protectExecutableMemory(void *p, size_t size);
     static void flushInstructionCache(void *p, size_t size);
 
+    static void *allocateLargePagesMemory(size_t size);
+    static void freeLargePagesMemory(void *p, size_t size);
+
     static inline bool isHugepagesAvailable() { return (m_flags & HugepagesAvailable) != 0; }
 
 private:

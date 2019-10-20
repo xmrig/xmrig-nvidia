@@ -1991,8 +1991,8 @@ __device__ void inner_loop(
 				else if (opcode == 11)
 				{
 					asm("// FSWAP_R (4/256) ------>");
-					dst = __shfl_xor_sync(fp_workers_mask, dst, 1, 8);
-					asm("// <------ FSWAP_R (8/256)");
+					dst = *(uint64_t*)((uint8_t*)(R) + (dst_offset ^ 8));
+					asm("// <------ FSWAP_R (4/256)");
 				}
 				else if (opcode == 8)
 				{
