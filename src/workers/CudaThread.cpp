@@ -27,6 +27,7 @@
 #include <string.h>
 
 
+#include "defaults.h"
 #include "rapidjson/document.h"
 #include "workers/CudaThread.h"
 
@@ -38,6 +39,8 @@ CudaThread::CudaThread() :
     m_clockRate(0),
     m_memoryClockRate(0),
     m_nvmlId(-1),
+    m_nvmlTempL(DFL_nvmlTempL),
+    m_nvmlTempH(DFL_nvmlTempH),
     m_smx(0),
     m_threads(0),
     m_affinity(-1),
@@ -63,6 +66,8 @@ CudaThread::CudaThread(const nvid_ctx &ctx, int64_t affinity, xmrig::Algo algori
     m_clockRate(ctx.device_clockRate),
     m_memoryClockRate(ctx.device_memoryClockRate),
     m_nvmlId(-1),
+    m_nvmlTempL(DFL_nvmlTempL),
+    m_nvmlTempH(DFL_nvmlTempH),
     m_smx(ctx.device_mpcount),
     m_threads(ctx.device_threads),
     m_affinity(affinity),
@@ -88,6 +93,8 @@ CudaThread::CudaThread(const rapidjson::Value &object) :
     m_clockRate(0),
     m_memoryClockRate(0),
     m_nvmlId(-1),
+    m_nvmlTempL(DFL_nvmlTempL),
+    m_nvmlTempH(DFL_nvmlTempH),
     m_smx(0),
     m_threads(0),
     m_affinity(-1),
@@ -116,6 +123,16 @@ CudaThread::CudaThread(const rapidjson::Value &object) :
     const rapidjson::Value &affinity = object["affine_to_cpu"];
     if (affinity.IsInt()) {
         setAffinity(affinity.GetInt());
+    }
+
+    const rapidjson::Value &tempL = object["temp_low"];
+    if (tempL.IsInt()) {
+        setNvmlTempL(static_cast<uint32_t>(tempL.GetInt()));
+    }
+
+    const rapidjson::Value &tempH = object["temp_high"];
+    if (tempH.IsInt()) {
+        setNvmlTempH(static_cast<uint32_t>(tempH.GetInt()));
     }
 }
 

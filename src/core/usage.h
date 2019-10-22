@@ -63,6 +63,8 @@ Options:\n\
       --cuda-bfactor=[0-12] run CryptoNight core kernel in smaller pieces\n\
       --cuda-bsleep=N       insert a delay of N microseconds between kernel launches\n\
       --cuda-affinity=N     affine GPU threads to a CPU\n\
+      --temp-low=N          list of celsius temperature below which is green\n\
+      --temp-high=N         list of celsius temperature above which is red\n\
       --no-color            disable colored output\n\
       --variant             algorithm PoW variant\n\
       --donate-level=N      donate level, default 5%% (5 minutes in 100 minutes)\n\

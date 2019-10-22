@@ -127,7 +127,7 @@ void Workers::printHashrate(bool detail)
 
         size_t i = 0;
         for (const xmrig::IThread *t : m_controller->config()->threads()) {
-            auto thread = static_cast<const CudaThread *>(t);
+            auto thread = dynamic_cast<const CudaThread *>(t);
              Log::i()->text("| %6zu | %3zu | %7s | %7s | %7s | %s%s",
                             i, thread->index(),
                             Hashrate::format(m_hashrate->calc(i, Hashrate::ShortInterval), num1, sizeof num1),
@@ -144,6 +144,18 @@ void Workers::printHashrate(bool detail)
     m_hashrate->print();
 }
 
+const std::string _spf(const char * const fmt, ...)
+{
+    va_list args = {}, copy = {};
+    va_start(args, fmt);
+    va_copy(copy, args);
+    const auto len = static_cast<const uint64_t>(std::vsnprintf(nullptr, 0, fmt, copy));
+    va_end(copy);
+    std::vector<char> str(len + 1);
+    std::vsnprintf(str.data(), str.size(), fmt, args);
+    va_end(args);
+    return std::string(str.data(), len);
+}
 
 void Workers::printHealth()
 {
@@ -154,32 +166,52 @@ void Workers::printHealth()
 
     Health health;
     for (const xmrig::IThread *t : m_controller->config()->threads()) {
-        auto thread = static_cast<const CudaThread *>(t);
+        auto thread = dynamic_cast<const CudaThread *>(t);
         if (!NvmlApi::health(thread->nvmlId(), health)) {
             continue;
         }
 
-        const uint32_t temp = health.temperature;
+        const bool isColors = m_controller->config()->isColors();
+        std::string report, chunk;
 
-        if (health.clock && health.clock) {
-            if (m_controller->config()->isColors()) {
-                LOG_INFO("\x1B[00;35mGPU #%d: \x1B[01m%u\x1B[00;35m/\x1B[01m%u MHz\x1B[00;35m \x1B[01m%uW\x1B[00;35m %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
-                    thread->index(), health.clock, health.memClock, health.power / 1000, (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
-            }
-            else {
-                LOG_INFO(" * GPU #%d: %u/%u MHz %uW %uC FAN %u%%", thread->index(), health.clock, health.memClock, health.power / 1000, health.temperature, health.fanSpeed);
-            }
-
-            continue;
+        report = _spf(isColors
+               ? MAGENTA("GPU #%d: ")
+               : "GPU #%d: "
+               , thread->index()
+        );
+        if (health.clock != PROBED_UNSUPPORTED && health.memClock != PROBED_UNSUPPORTED) {
+            report += _spf(isColors
+                    ? MAGENTA_BOLD("%u") MAGENTA("/") MAGENTA_BOLD("%u MHz") " "
+                    : "%u/%u MHz "
+                    , health.clock, health.memClock
+            );
         }
-
-        if (m_controller->config()->isColors()) {
-            LOG_INFO("\x1B[00;35mGPU #%d: %s%uC\x1B[00;35m FAN \x1B[01m%u%%",
-                thread->index(), (temp < 45 ? "\x1B[01;32m" : (temp > 65 ? "\x1B[01;31m" : "\x1B[01;33m")), temp, health.fanSpeed);
+        if (health.power != PROBED_UNSUPPORTED) {
+            report += _spf(isColors
+                    ? MAGENTA_BOLD("%uW") " "
+                    : "%uW "
+                    , health.power / 1000
+            );
         }
-        else {
-            LOG_INFO(" * GPU #%d: %uC FAN %u%%", thread->index(), health.temperature, health.fanSpeed);
+        if (health.temperature) {
+            if (isColors) {
+                if (health.temperature > thread->nvmlTempH())
+                    report += _spf(RED_BOLD("%uC"),health.temperature);
+                else if (health.temperature < thread->nvmlTempL())
+                    report += _spf(GREEN_BOLD("%uC"),health.temperature);
+                else
+                    report += _spf(YELLOW_BOLD("%uC"),health.temperature);
+            } else
+                report += _spf("%uC ", health.temperature);
         }
+        if (health.fanSpeed != PROBED_UNSUPPORTED) {
+            report += _spf(isColors
+                    ? "FAN " MAGENTA_BOLD("%u%%")
+                    : "FAN %u%%"
+                    , health.fanSpeed
+            );
+        }
+        LOG_INFO("%s", report.c_str());
     }
 }
 

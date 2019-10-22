@@ -53,6 +53,8 @@ public:
     inline size_t memoryTotal() const     { return m_memoryTotal; }
     inline size_t memoryFree() const      { return m_memoryFree; }
     inline int nvmlId() const             { return m_nvmlId; }
+    inline uint32_t nvmlTempL() const     { return m_nvmlTempL; }
+    inline uint32_t nvmlTempH() const     { return m_nvmlTempH; }
     inline int smx() const                { return m_smx; }
     inline int threads() const            { return m_threads; }
     inline size_t threadId() const        { return m_threadId; }
@@ -74,6 +76,8 @@ public:
     inline void setBSleep(int bsleep)          { m_bsleep = bsleep; }
     inline void setIndex(size_t index)         { m_index = index; }
     inline void setNvmlId(int id)              { m_nvmlId = id; }
+    inline void setNvmlTempL(uint32_t temp)    { m_nvmlTempL = temp; }
+    inline void setNvmlTempH(uint32_t temp)    { m_nvmlTempH = temp; }
     inline void setThreadId(size_t threadId)   { m_threadId = threadId; }
     inline void setThreads(int threads)        { m_threads = threads; }
     inline void setSyncMode(uint32_t syncMode) { m_syncMode = syncMode > 3 ? 3 : syncMode; }
@@ -98,6 +102,8 @@ private:
     int m_clockRate;
     int m_memoryClockRate;
     int m_nvmlId;
+    uint32_t m_nvmlTempL;
+    uint32_t m_nvmlTempH;
     int m_smx;
     int m_threads;
     int64_t m_affinity;

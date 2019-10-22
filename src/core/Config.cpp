@@ -99,6 +99,8 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("cuda-bfactor",     m_cudaCLI.bfactor(), allocator);
     doc.AddMember("cuda-bsleep",      m_cudaCLI.bsleep(), allocator);
     doc.AddMember("cuda-max-threads", m_maxGpuThreads, allocator);
+    doc.AddMember("temp-low",         m_cudaCLI.temp_low(), allocator);
+    doc.AddMember("temp-high",        m_cudaCLI.temp_high(), allocator);
     doc.AddMember("donate-level",     donateLevel(), allocator);
     doc.AddMember("log-file",         logFile() ? Value(StringRef(logFile())).Move() : Value(kNullType).Move(), allocator);
     doc.AddMember("pools",            m_pools.toJSON(doc), allocator);
@@ -180,6 +182,14 @@ bool xmrig::Config::parseString(int key, const char *arg)
     case CudaMaxThreadsKey:
     case CudaMaxUsageKey:
         return parseUint64(key, strtoul(arg, nullptr, 10));
+
+    case NvmlTempL: /* --temp-low */
+        m_cudaCLI.parseTempLow(arg);
+        break;
+
+    case NvmlTempH: /* --temp-high */
+        m_cudaCLI.parseTempHigh(arg);
+        break;
 
     default:
         break;
