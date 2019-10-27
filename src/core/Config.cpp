@@ -6,8 +6,8 @@
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
- *
- *   This program is free software: you can redistribute it and/or modify
+ * Copyright 2019	   SP          <https://github.com/sp-hash>
+  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
@@ -41,7 +41,7 @@
 xmrig::Config::Config() : xmrig::CommonConfig(),
     m_autoConf(false),
     m_shouldSave(false),
-    m_maxGpuThreads(64),
+    m_maxGpuThreads(128),
     m_maxGpuUsage(100)
 {
 }

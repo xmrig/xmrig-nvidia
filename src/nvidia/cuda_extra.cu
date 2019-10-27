@@ -9,6 +9,7 @@
  * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
  * Copyright 2019      Spudz76     <https://github.com/Spudz76>
  * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2019	   SP          <https://github.com/sp-hash>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -117,7 +118,7 @@ __device__ __forceinline__ void mix_and_propagate( uint32_t* state )
 
 
 template<xmrig::Algo ALGO, xmrig::Variant VARIANT>
-__global__ void cryptonight_extra_gpu_prepare(
+__launch_bounds__(1024, 1) __global__ void cryptonight_extra_gpu_prepare(
         int threads,
         uint32_t *__restrict__ d_input,
         uint32_t len,
@@ -202,7 +203,7 @@ __global__ void cryptonight_extra_gpu_prepare(
 
 
 template<xmrig::Algo ALGO>
-__global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
+__launch_bounds__(1024,1) __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
 {
     const int thread = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -275,7 +276,7 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
 
 
 template<xmrig::Algo ALGO>
-__global__ void cryptonight_gpu_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
+__launch_bounds__(1024, 1) __global__ void cryptonight_gpu_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
 {
 	const int thread = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -578,32 +579,40 @@ int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo, bool isCNv2)
     ctx->device_pciDomainID     = props.pciDomainID;
 
     // set all device option those marked as auto (-1) to a valid value
-    if (ctx->device_blocks == -1) {
+    if (ctx->device_blocks == -1) 
+	{
         /* good values based of my experience
          *   - 3 * SMX count >=sm_30
          *   - 2 * SMX count for <sm_30
          */
-        ctx->device_blocks = props.multiProcessorCount * (props.major < 3 ? 2 : 3);
-
-        // increase bfactor for low end devices to avoid that the miner is killed by the OS
-#       ifdef _WIN32
-        if (props.multiProcessorCount <= 6 && ctx->device_bfactor == 6) {
-            ctx->device_bfactor = 8;
-        }
-#       endif
+        ctx->device_blocks = props.multiProcessorCount * (props.major < 3 ? 2 : 1);
     }
 
-    if (ctx->device_threads == -1) {
+    if (ctx->device_threads == -1) 
+	{
         /* sm_20 devices can only run 512 threads per cuda block
         * `cryptonight_core_gpu_phase1` and `cryptonight_core_gpu_phase3` starts
         * `8 * ctx->device_threads` threads per block
         */
-        ctx->device_threads = 64;
+		if (props.major < 6)
+		{
+			ctx->device_threads = 64;
+			if ((ctx->device_arch[0] == 5) && ctx->device_arch[1] == 0)
+			{
+				ctx->device_threads = 40;
+			}
+		}
+		else
+		{
+			ctx->device_threads = 128U;
+		}
+
         constexpr size_t byteToMiB = 1024u * 1024u;
 
         // no limit by default 1TiB
         size_t maxMemUsage = byteToMiB * byteToMiB;
-        if (props.major == 6) {
+        /*if (props.major == 6) 
+		{
             if (props.multiProcessorCount < 15) {
                 // limit memory usage for GPUs for pascal < GTX1070
                 maxMemUsage = size_t(2048u) * byteToMiB;
@@ -613,6 +622,7 @@ int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo, bool isCNv2)
                 maxMemUsage = size_t(4096u) * byteToMiB;
             }
         }
+		*/
 
         if (props.major < 6) {
             // limit memory usage for GPUs before pascal
@@ -657,18 +667,20 @@ int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo, bool isCNv2)
             perThread += 50 * 4; // state double buffer
         }
 
-        const size_t max_intensity = limitedMemory / perThread;
+       // const size_t max_intensity = limitedMemory / perThread;
 
-        ctx->device_threads  = max_intensity / ctx->device_blocks;
+      //  ctx->device_threads  = max_intensity / ctx->device_blocks;
         // use only odd number of threads
-        ctx->device_threads = ctx->device_threads & 0xFFFFFFFE;
+      //  ctx->device_threads = ctx->device_threads & 0xFFFFFFFE;
 
-        if (props.major == 2 && ctx->device_threads > 64) {
+        if (props.major == 2 && ctx->device_threads > 64) 
+		{
             // Fermi gpus only support 512 threads per block (we need start 4 * configured threads)
             ctx->device_threads = 64;
         }
 
-        if (isCNv2 && props.major < 6) {
+        if (isCNv2 && props.major < 6 && !(props.major== 5 && props.minor==0))
+		{
             // 4 based on my test maybe it must be adjusted later
             size_t threads = 4;
             // 8 is chosen by checking the occupancy calculator
@@ -679,9 +691,7 @@ int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo, bool isCNv2)
                 ctx->device_blocks = blockOptimal;
             }
         }
-
-    }
-
+	}
     return 0;
 }
 

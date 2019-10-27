@@ -46,7 +46,7 @@ R"===(
     "colors": true,
     "cuda-bfactor": null,
     "cuda-bsleep": null,
-    "cuda-max-threads": 64,
+    "cuda-max-threads": 128,
     "donate-level": 5,
     "log-file": null,
     "pools": [
