@@ -60,7 +60,7 @@ void xmrig::Arguments::add(const char *arg)
 
     const size_t size = strlen(arg);
     if (size > 4 && arg[0] == '-' && arg[1] == '-') {
-        const char *p = strstr(arg, "=");
+        const char *p = strchr(arg, '=');
 
         if (p) {
             const size_t keySize = static_cast<size_t>(p - arg);
