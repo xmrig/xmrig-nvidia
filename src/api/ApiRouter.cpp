@@ -159,6 +159,7 @@ void ApiRouter::genId(const char *id)
         return;
     }
 
+    const size_t appKindLength = strlen(APP_KIND);
     uv_interface_address_t *interfaces;
     int count = 0;
 
@@ -170,13 +171,13 @@ void ApiRouter::genId(const char *id)
         if (!interfaces[i].is_internal && interfaces[i].address.address4.sin_family == AF_INET) {
             uint8_t hash[200];
             const size_t addrSize = sizeof(interfaces[i].phys_addr);
-            const size_t inSize   = strlen(APP_KIND) + addrSize + sizeof(uint16_t);
+            const size_t inSize   = appKindLength + addrSize + sizeof(uint16_t);
             const uint16_t port   = static_cast<uint16_t>(m_controller->config()->apiPort());
 
             uint8_t *input = new uint8_t[inSize]();
             memcpy(input, &port, sizeof(uint16_t));
             memcpy(input + sizeof(uint16_t), interfaces[i].phys_addr, addrSize);
-            memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, strlen(APP_KIND));
+            memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, appKindLength);
 
             xmrig::keccak(input, inSize, hash);
             xmrig::Job::toHex(hash, 8, m_id);
