@@ -1,17 +1,17 @@
 # XMRig NVIDIA
 
-[![Github All Releases](https://img.shields.io/github/downloads/xmrig/xmrig-nvidia/total.svg)](https://github.com/xmrig/xmrig-nvidia/releases)
-[![GitHub release](https://img.shields.io/github/release/xmrig/xmrig-nvidia/all.svg)](https://github.com/xmrig/xmrig-nvidia/releases)
-[![GitHub Release Date](https://img.shields.io/github/release-date-pre/xmrig/xmrig-nvidia.svg)](https://github.com/xmrig/xmrig-nvidia/releases)
-[![GitHub license](https://img.shields.io/github/license/xmrig/xmrig-nvidia.svg)](https://github.com/xmrig/xmrig-nvidia/blob/master/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/xmrig/xmrig-nvidia.svg)](https://github.com/xmrig/xmrig-nvidia/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/xmrig/xmrig-nvidia.svg)](https://github.com/xmrig/xmrig-nvidia/network)
+[![Github All Releases](https://img.shields.io/github/downloads/xmrig/xmrig-nvidia/total.svg)](../../releases)
+[![GitHub release](https://img.shields.io/github/release/xmrig/xmrig-nvidia/all.svg)](../../releases/latest)
+[![GitHub Release Date](https://img.shields.io/github/release-date-pre/xmrig/xmrig-nvidia.svg)](../../releases/latest)
+[![GitHub license](https://img.shields.io/github/license/xmrig/xmrig-nvidia.svg)](./LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/xmrig/xmrig-nvidia.svg)](../../stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/xmrig/xmrig-nvidia.svg)](../../network)
 
 XMRig is high performance Monero (XMR) NVIDIA miner, with the official full Windows support.
 
 GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used in xmr-stak-nvidia.
 
-* This is the **NVIDIA GPU** mining version, there is also a [CPU version](https://github.com/xmrig/xmrig) and [AMD GPU version]( https://github.com/xmrig/xmrig-amd).
+* This is the **NVIDIA GPU** mining version, there is also a [CPU version](../../../xmrig) and [AMD GPU version](../../../xmrig-amd).
 * [Roadmap](https://github.com/xmrig/xmrig/issues/106) for next releases.
 
 :warning: Suggested values for GPU auto configuration can be not optimal or not working, you may need tweak your threads options. Please feel free open an [issue](https://github.com/xmrig/xmrig-nvidia/issues) if auto configuration suggest wrong values.
@@ -22,9 +22,8 @@ GPU mining part based on [psychocrypt](https://github.com/psychocrypt) code used
 * [Features](#features)
 * [Download](#download)
 * [Usage](#usage)
-* [Build](https://github.com/xmrig/xmrig-nvidia/wiki/Build)
+  * [Command line options](#command-line-options)
 * [Donations](#donations)
-* [Release checksums](#release-checksums)
 * [Contacts](#contacts)
 
 ## Features
